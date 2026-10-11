@@ -15,6 +15,8 @@ Open http://localhost:8000. To populate an empty portfolio with fictional data:
 Use a separate Compose project for real data. Never import real history into the demo
 database. Development binds to localhost only.
 
+See [AGENT.md](AGENT.md) for the project handoff and [DEPLOYMENT.md](DEPLOYMENT.md) for the full production runbook.
+
 ## Production behind Traefik
 
 Copy .env.example to .env and set a random DJANGO_SECRET_KEY, hostname and existing
