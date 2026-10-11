@@ -51,13 +51,7 @@
   function drawMovement() {
     const source=document.getElementById("movement-data"), node=document.getElementById("movement-chart");
     if (!source || !node) return;
-    const data=JSON.parse(source.textContent), last=data.values.length-1;
-    let running=data.values[0];
-    const base=[],positive=[],negative=[];
-    data.values.forEach((value,i)=>{
-      if(i===0 || i===last){base.push(Math.min(0,value));positive.push(value>=0?value:0);negative.push(value<0?-value:0);}
-      else { const next=running+value; base.push(Math.min(running,next));positive.push(value>=0?value:0);negative.push(value<0?-value:0);running=next;}
-    });
+    const data=JSON.parse(source.textContent);
     const style=getComputedStyle(document.documentElement), ink=style.getPropertyValue("--muted").trim();
     const line=style.getPropertyValue("--line").trim();
     const money=new Intl.NumberFormat(document.documentElement.lang,{style:"currency",currency:"EUR",maximumFractionDigits:0});
@@ -66,9 +60,9 @@
       tooltip:{backgroundColor:style.getPropertyValue("--surface").trim(),borderColor:line,textStyle:{color:ink},trigger:"axis",formatter:params=>money.format(data.values[params[0].dataIndex])},
       xAxis:{type:"category",data:data.labels,axisLabel:{color:ink,interval:0,rotate:18,fontSize:10},axisTick:{show:false},axisLine:{lineStyle:{color:line}}},
       yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>new Intl.NumberFormat(document.documentElement.lang,{notation:"compact"}).format(v)},splitLine:{lineStyle:{color:line}}},
-      series:[{type:"bar",stack:"movement",data:base,itemStyle:{color:"transparent"},emphasis:{itemStyle:{color:"transparent"}},silent:true},
-      {type:"bar",stack:"movement",data:positive,itemStyle:{color:"#307d6e"},barMaxWidth:50},
-      {type:"bar",stack:"movement",data:negative,itemStyle:{color:"#bd8f9d"},barMaxWidth:50}]});
+      series:[{type:"bar",barMaxWidth:50,data:data.values.map(value=>({
+        value,itemStyle:{color:value>=0?"#307d6e":"#bd8f9d"}
+      }))}]});
   }
   document.addEventListener("htmx:afterSwap",draw);
   window.addEventListener("resize",()=>charts.forEach(c=>c.resize()));

@@ -321,6 +321,37 @@ def test_movement_bridge_reconciles_and_ignores_internal_flows(owner, snap):
     )
 
 
+@pytest.mark.parametrize("language", ["en", "nl"])
+def test_analysis_chart_excludes_wealth_totals_and_tracks_period(logged, account, snap, language):
+    import json
+    import re
+    from wealth.templatetags.money import money
+
+    Valuation.objects.create(account=account, snapshot=snap, amount_minor=100000000)
+    later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
+    Valuation.objects.create(account=account, snapshot=later,
+                            amount_minor=100010000, interest_minor=20000)
+    latest = Snapshot.objects.create(date=date(2026, 9, 1), complete=True)
+    Valuation.objects.create(account=account, snapshot=latest,
+                            amount_minor=100005000, interest_minor=0)
+    with translation.override(language):
+        for selected, opening, closing, values in [
+            (later, 100000000, 100010000, [0, 200, 0, 0, -100]),
+            (latest, 100010000, 100005000, [0, 0, 0, 0, -50]),
+        ]:
+            response = logged.get("/analysis/", {"at": selected.pk})
+            assert response.status_code == 200
+            html = response.content.decode()
+            chart = json.loads(re.search(
+                r'<script id="movement-data" type="application/json">(.*?)</script>', html
+            ).group(1))
+            assert chart["values"] == values
+            assert len(chart["labels"]) == 5
+            assert money(opening) in html
+            assert money(closing) in html
+            assert response.context["movement"]["after"] == selected
+
+
 def test_company_account_requires_basis_when_publishing(logged, snap):
     entity = Entity.objects.create(name="Example company", kind="company")
     account = Account.objects.create(

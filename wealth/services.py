@@ -229,8 +229,8 @@ def movement(snapshot):
         (_("Tax assumption change"), tax_change),
         (_("Other / unexplained"), residual),
     ]
-    labels = [_("Opening wealth")] + [p[0] for p in parts] + [_("Closing wealth")]
-    values = [before["total"]] + [p[1] for p in parts] + [after["total"]]
+    labels = [p[0] for p in parts]
+    values = [p[1] for p in parts]
     return {
         "before": previous,
         "after": snapshot,
