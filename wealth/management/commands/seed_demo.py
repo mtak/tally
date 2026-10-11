@@ -1,7 +1,7 @@
 from datetime import date
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from wealth.models import Entity, Account, Snapshot, Valuation, Position
+from wealth.models import Entity, Account, Snapshot, Valuation
 
 
 class Command(BaseCommand):
@@ -104,21 +104,6 @@ class Command(BaseCommand):
                     basis_minor=10000000
                     if a.entity == holding and a.kind == "broker"
                     else None,
-                    inflow_minor=200000 if a.kind == "broker" and year > 2022 else None,
-                    outflow_minor=0 if a.kind == "broker" and year > 2022 else None,
-                    flow_start_date=date(year - 1, 1, 1) if a.kind == "broker" and year > 2022 else None,
-                    flow_end_date=s.date if a.kind == "broker" and year > 2022 else None,
+                    net_deposits_minor=amount + (year - 2022) * 200000 if a.kind == "broker" else None,
                 )
-                if a.kind == "broker":
-                    for name, asset, share in [
-                        ("Global equity ETF", "equities", 80),
-                        ("Bond ETF", "bonds", 18),
-                        ("Cash", "cash", 2),
-                    ]:
-                        Position.objects.create(
-                            valuation=v,
-                            name=name,
-                            asset_class=asset,
-                            value_minor=value * share // 100,
-                        )
         self.stdout.write("Fictional demo created.")

@@ -100,6 +100,7 @@ class Valuation(models.Model):
     )
     amount_minor = models.BigIntegerField()
     basis_minor = models.BigIntegerField(null=True, blank=True)
+    net_deposits_minor = models.BigIntegerField(null=True, blank=True)
     inflow_minor = models.BigIntegerField(
         null=True, blank=True, validators=[MinValueValidator(0)]
     )

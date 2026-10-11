@@ -18,56 +18,26 @@ def owned(account, amount):
 
 
 def cumulative_result(valuation):
-    """Euro result from complete inception counters and a zero opening balance.
-
-    Complete history is the user's confirmed convention for cumulative inputs.
-    This is independent of the comparison baseline used for period returns.
-    """
-    if valuation is None or valuation.flow_mode != "cumulative":
+    """Total gain/loss from the full account value and signed inception net deposits."""
+    if valuation is None or valuation.net_deposits_minor is None:
         return None
-    deposits = valuation.cumulative_inflow_minor
-    withdrawals = valuation.cumulative_outflow_minor
-    if deposits is None or withdrawals is None or deposits < 0 or withdrawals < 0:
-        return None
-    if valuation.flow_end_date != valuation.snapshot.date:
-        return None
-    return valuation.amount_minor - deposits + withdrawals
+    return valuation.amount_minor - valuation.net_deposits_minor
 
 
 def performance(valuation):
-    start = (valuation.cumulative_start_date if valuation.flow_mode == "cumulative"
-             else valuation.flow_start_date)
-    if start is None or valuation.flow_end_date != valuation.snapshot.date or start >= valuation.snapshot.date:
+    """Period result between consecutive observations; no estimated return percentage."""
+    if valuation.net_deposits_minor is None:
         return None
     previous = Valuation.objects.filter(
-        account=valuation.account, snapshot__complete=True, snapshot__date=start,
-    ).select_related("snapshot").first()
-    if previous is None:
+        account=valuation.account, snapshot__complete=True,
+        snapshot__date__lt=valuation.snapshot.date,
+    ).select_related("snapshot").order_by("-snapshot__date").first()
+    if previous is None or previous.net_deposits_minor is None:
         return None
-    if valuation.flow_mode == "cumulative":
-        if (previous.flow_mode != "cumulative"
-            or valuation.cumulative_baseline_date is None
-            or previous.cumulative_baseline_date != valuation.cumulative_baseline_date):
-            return None
-        counters = (valuation.cumulative_inflow_minor, valuation.cumulative_outflow_minor,
-                    previous.cumulative_inflow_minor, previous.cumulative_outflow_minor)
-        if any(value is None for value in counters):
-            return None
-        inflow, outflow = counters[0] - counters[2], counters[1] - counters[3]
-        if inflow < 0 or outflow < 0:
-            return None
-    else:
-        inflow, outflow = valuation.inflow_minor, valuation.outflow_minor
-        if inflow is None or outflow is None:
-            return None
-    net = inflow - outflow
-    result = valuation.amount_minor - previous.amount_minor - net
-    capital = Decimal(previous.amount_minor) + Decimal(net) / 2
+    net = valuation.net_deposits_minor - previous.net_deposits_minor
     return {
-        "result": result,
-        "deposits": inflow,
-        "withdrawals": outflow,
-        "percent": (Decimal(result) / capital * 100 if capital > 0 else None),
+        "result": valuation.amount_minor - previous.amount_minor - net,
+        "net_deposits": net,
         "since": previous.snapshot.date,
         "days": (valuation.snapshot.date - previous.snapshot.date).days,
     }
@@ -83,7 +53,6 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
         Valuation.objects.filter(snapshot__date__lte=snapshot.date)
         .filter(Q(snapshot__complete=True) | Q(snapshot=snapshot))
         .select_related("account__entity", "snapshot")
-        .prefetch_related("positions")
         .order_by("snapshot__date")
     )
     latest = {v.account_id: v for v in available}
@@ -132,21 +101,9 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
             boxes[box] += amount
         if v.snapshot.date != snapshot.date:
             stale.append(account.name)
-        positions = list(v.positions.all())
-        allocated = sum(p.value_minor for p in positions)
-        # Allocation uses gross assets; mortgages and scenario taxes shown separately.
+        # Account classification is authoritative; archived positions are ignored.
         if account.kind != "mortgage":
-            if positions:
-                for p in positions:
-                    assets[p.asset_class] += owned(account, p.value_minor)
-                if allocated < v.amount_minor:
-                    assets["other"] += owned(account, v.amount_minor - allocated)
-                if allocated > v.amount_minor:
-                    warnings.append(
-                        _("Positions exceed the account value: ") + account.name
-                    )
-            else:
-                assets[account.asset_class] += amount
+            assets[account.asset_class] += amount
         if account.entity.kind == "company":
             if account.kind == "broker":
                 if v.basis_minor is None:
@@ -167,9 +124,6 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
                 "stale": v.snapshot.date != snapshot.date,
                 "performance": performance(v) if account.kind == "broker" else None,
                 "cumulative_result": cumulative_result(v) if account.kind == "broker" else None,
-                "allocation_difference": v.amount_minor - allocated
-                if positions
-                else None,
             }
         )
     tax = {

@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Account, Entity, Snapshot, Position, ASSETS
+from .models import Account, Entity, Snapshot, ASSETS
 from .preferences import whole_amount
 
 
@@ -155,92 +155,19 @@ class SnapshotForm(forms.ModelForm):
 class ValuationForm(MoneyFormMixin, forms.Form):
     account_id = forms.IntegerField(widget=forms.HiddenInput)
     amount = money_field(_("Value (EUR)"))
+    net_deposits = money_field(_("Net deposits since opening (EUR)"))
     basis = money_field(_("Tax basis (EUR)"))
-    flow_mode = forms.ChoiceField(label=_("Flow entry"), choices=[("period", _("Period totals")), ("cumulative", _("Cumulative totals"))], required=False)
-    flow_start = forms.ChoiceField(label=_("Period starts at valuation"), required=False)
-    cumulative_start = forms.ChoiceField(label=_("Compare counters with valuation"), required=False)
-    no_flows = forms.BooleanField(label=_("No deposits or withdrawals"), required=False)
-    cumulative_inflow = money_field(_("Total deposited (EUR)"), minimum=0)
-    cumulative_outflow = money_field(_("Total withdrawn (EUR)"), minimum=0)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["flow_start"].choices = [("", _("No opening valuation"))]
-        self.fields["cumulative_start"].choices = [("", _("No earlier comparison"))]
-        mode = self.data.get(self.add_prefix("flow_mode"), "period") if self.is_bound else self.initial.get("flow_mode", "period")
-        inactive = ("flow_start", "no_flows", "inflow", "outflow") if mode == "cumulative" else ("cumulative_start", "cumulative_inflow", "cumulative_outflow")
-        for key in inactive:
-            self.fields[key].disabled = True
-
-    inflow = money_field(_("Deposits since previous valuation (EUR)"), minimum=0)
-    outflow = money_field(_("Withdrawals since previous valuation (EUR)"), minimum=0)
     interest = money_field(_("Interest received or accrued (EUR)"))
 
     def clean(self):
         data = super().clean()
-        data["flow_mode"] = data.get("flow_mode") or "period"
-        if data["flow_mode"] == "period" and data.get("no_flows"):
-            if any(data.get(key) not in (None, Decimal(0)) for key in ("inflow", "outflow")):
-                raise forms.ValidationError(_("Clear the flow amounts before confirming no deposits or withdrawals."))
-            data["inflow"] = data["outflow"] = Decimal(0)
-        keys = ("cumulative_inflow", "cumulative_outflow") if data["flow_mode"] == "cumulative" else ("inflow", "outflow")
-        if (data.get(keys[0]) is None) != (data.get(keys[1]) is None):
-            raise forms.ValidationError(
-                _(
-                    "Enter both deposits and withdrawals, including zero, or leave both blank."
-                )
-            )
         if data.get("amount") is None and any(
-            data.get(x) is not None for x in ("basis", *keys, "interest")
+            data.get(key) is not None for key in ("net_deposits", "basis", "interest")
         ):
             raise forms.ValidationError(
-                _("Enter a value before entering contributions or a tax basis.")
+                _("Enter an account value before entering net deposits, interest or tax basis.")
             )
         return data
-
-
-class PositionForm(MoneyFormMixin, forms.ModelForm):
-    value = money_field(_("Position value (EUR)"), required=True, minimum=0)
-    quantity = forms.DecimalField(
-        label=_("Quantity"),
-        required=False,
-        max_digits=24,
-        decimal_places=10,
-        min_value=0,
-        localize=True,
-    )
-    price = MoneyField(
-        label=_("Price in original currency"),
-        required=False,
-        max_digits=24,
-        decimal_places=10,
-        min_value=0,
-        localize=True,
-    )
-
-    class Meta:
-        model = Position
-        fields = [
-            "name",
-            "asset_class",
-            "value",
-            "isin",
-            "ticker",
-            "exchange",
-            "currency",
-            "quantity",
-            "price",
-        ]
-
-    def save(self, commit=True):
-        obj = super().save(False)
-        obj.value_minor = minor(self.cleaned_data["value"])
-        for k in ("quantity", "price"):
-            val = self.cleaned_data[k]
-            setattr(obj, k, "" if val is None else str(val))
-        if commit:
-            obj.save()
-        return obj
 
 
 class ImportForm(forms.Form):

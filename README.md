@@ -96,19 +96,14 @@ Save a draft or publish it. Blank is not zero: older available observations reta
 their original date and are flagged. Closed accounts disappear on/after their closing
 date, while earlier history remains.
 
-For broker accounts, choose period totals between explicit valuation dates, or
-cumulative deposit/withdrawal counters. Cumulative tracking starts with a baseline
-valuation and starting counters; later matching counters yield the period flows.
-Cumulative totals cover complete history since account opening from a zero balance,
-as confirmed by the user. Total euro result (value minus deposits plus withdrawals)
-is shown on the first reading, independently of the period comparison.
-Counter decreases require correction or an explicit new baseline. Switching modes
-preserves inactive inputs. Backdated valuations do not change recorded flow periods.
-Use “No deposits or withdrawals” to confirm zero flows; blank means unknown.
-Tax basis is a separate input used for the liquidation scenario. Add current positions,
-including cash, for asset allocation. EUR position value is authoritative. Optional
-ISIN/ticker, exchange, currency, quantity and price prepare for future quote adapters.
-No automatic quote connection is made.
+For investment accounts, enter the account value (including cash) and net deposits
+since opening: all deposits minus all withdrawals, in EUR. Total gain/loss is account
+value minus net deposits, available on the first observation. Blank net deposits mean
+unknown; zero and negative net deposits are valid. Deposits/withdrawals do not change
+the gain/loss when there is no investment movement. No flow modes, comparison
+baselines, trade history or individual positions are required. Allocation uses the
+account's asset class. Existing position data remains archived in the database.
+Company accounts keep a separate tax-basis input for the liquidation scenario.
 
 Only underlying company accounts are valued: do not add participation value again
 on top of subsidiaries' assets. Sole-proprietor assets are not classified as Box 2.
@@ -123,7 +118,9 @@ from 2024-01-01, its first absent source date; adjust if you know the precise da
 The new joint account has no invented historical balance.
 
 CSV values are rounded displayed euros: small differences with source totals can
-remain. Individual positions and historic flows are not invented. Files are not retained.
+remain. Example Brokerage Contributions supplies Example Brokerage net deposits as confirmed by the user, and remains
+a separate tax-basis value. Net deposits for other investment accounts remain unknown.
+Files are not retained.
 
     python manage.py import_overview /path/to/Overview.csv
     python manage.py import_overview /path/to/Overview.csv --apply
@@ -133,10 +130,9 @@ remain. Individual positions and historic flows are not invented. Files are not 
 Money: integer EUR cents; calculations: Python Decimal, half-up rounding. Exact
 optional quantities/prices are stored as decimal strings, avoiding SQLite REAL.
 
-- Result = closing - opening - deposits + withdrawals.
-- Estimated period return = result / (opening + 0.5 × net contributions).
-  Midpoint flow assumption; not annualized, not exact time-weighted performance.
-  Unavailable for nonpositive estimated invested capital.
+- Total investment gain/loss = account value − net deposits since account opening.
+- Period gain/loss = change in account value − change in net deposits, using
+  consecutive known observations. No timing-adjusted or annualized percentage is shown.
 - Bank AB = -company bank balances × AB rate.
 - Broker VPB = -(value - tax basis) × VPB rate.
 - Broker AB = -(value + VPB adjustment) × AB rate.
@@ -145,8 +141,8 @@ optional quantities/prices are stored as decimal strings, avoiding SQLite REAL.
 - Imported historical tax corrections take precedence and remain unchanged when
   editing the associated balances.
 - Net wealth deducts mortgages and scenario tax. Allocation shows gross assets.
-  Liquidity includes mortgages but displays tax separately. Unallocated positions
-  appear as Other.
+  Liquidity includes mortgages but displays tax separately. Allocation uses
+  account-level classification.
 - Account flows explain account return, not household income/spending.
   Internal transfers do not constitute total-wealth growth.
 
@@ -213,3 +209,13 @@ Create your login and import your own CSV; do not seed demo data in this instanc
 
 This is a local development environment with DEBUG enabled and a loopback-only port,
 not the server's production deployment.
+
+## Investment simplification (#13)
+
+Migration 0005 converts active, complete inception deposit/withdrawal counters to
+signed net deposits and backfills imported Example Brokerage Value observations from the
+Overview importer's Example Brokerage Contributions field (stored as basis). This mapping is specific
+to the confirmed Example Brokerage source; other tax bases and period-only flows are not treated
+as inception net deposits. Legacy flow inputs, positions and tax corrections remain
+stored. Ordinary editing changes net deposits independently of tax basis. CSV export
+includes net_deposits_eur and preserves legacy columns for recovery.

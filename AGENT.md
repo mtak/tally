@@ -38,13 +38,13 @@ the same portfolio; authentication does not provide tenant isolation.
 
 - Only the joint private bank account is shared: enter the full balance, count 50%.
   All other assets belong fully to the user.
-- Accounts contain positions; never add both account total and position totals to wealth.
-  Positions primarily support allocation. EUR position value is authoritative; quantity,
-  price, ISIN/ticker, exchange and currency are optional.
-- Broker performance is calculated at whole-account level, without trade-by-trade input:
-  result = closing - opening - deposits + withdrawals.
-  Estimated period return divides by opening + half the net contributions; label it
-  as an estimate, not annualized. Unknown flows do not yield a claimed return.
+- Account values are authoritative. Allocation uses account-level classification.
+  Individual-position workflows are removed; existing position data remains archived.
+- Investment result = account value - net deposits since opening (all deposits minus
+  all withdrawals). Both inputs in EUR; blank remains unknown, zero/negative are valid.
+  Total result is available on the first observation. No return percentages, flow modes
+  or comparison baselines. Period gains use differences between consecutive known
+  net-deposit observations; missing endpoints stay unexplained.
 - Internal transfers are not total-wealth growth. Unexplained differences remain visible.
 - Loans and deposits share the interest-bearing-claim model. The personal loan is money
   lent out. Deposits can have different rates/maturities. Principal repayment is not income.
@@ -162,13 +162,11 @@ Check current CI rather than treating this historical result as current verifica
 - No per-trade performance, ETF look-through, bank sync or automated tax filing.
 - Classification and ownership are currently account-level settings: changing them can
   reinterpret past reports. Add versioning if historical changes become a requirement.
-- Investment flows store explicit opening/end dates; backdated valuations do not
-  reinterpret recorded period totals. Cumulative counters use a defined baseline,
-  matching counter endpoints and explicit resets. Switching modes retains inactive
-  inputs. Cumulative totals cover complete history from a zero opening balance,
-  explicitly confirmed by the user. Show total euro result on the first cumulative
-  reading; comparison baselines apply only to period returns. Truncated counters
-  are not supported. Tax basis is separate from performance counters (issue #3).
+- Issue #13 supersedes #3. Migration 0005 converts active inception counters and
+  backfills imported Example Brokerage Value from the Overview importer's Example Brokerage Contributions/basis field,
+  confirmed by the user as inception net deposits. Other tax bases and period-only
+  totals do not imply inception flows. Old inputs remain stored; net deposits edit
+  independently of tax basis. Historical tax corrections are never rewritten.
 - CSV export covers observations; a full SQLite backup is required for positions,
   configuration and login data.
 - Further decisions are recorded in docs/decisions.md. Update this handoff when a

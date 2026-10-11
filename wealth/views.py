@@ -12,18 +12,16 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 from django.utils.http import url_has_allowed_host_and_scheme
 from .preferences import cents_cookie_name
-from .models import Account, Entity, Snapshot, Valuation, Position, ASSETS
+from .models import Account, Entity, Snapshot, Valuation, ASSETS
 from .forms import (
     AccountForm,
     EntityForm,
     SnapshotForm,
     ValuationForm,
-    PositionForm,
     ImportForm,
     minor,
 )
-from django.utils import formats
-from .services import report, performance, movement, cumulative_result
+from .services import report, movement, cumulative_result
 from .importer import parse_overview, import_overview
 
 
@@ -174,17 +172,6 @@ def snapshot_add(request):
     )
 
 
-def _counter_at(observations, selected_date):
-    return next((
-        item for item in observations
-        if item.snapshot.date.isoformat() == selected_date
-        and item.flow_mode == "cumulative"
-        and item.cumulative_baseline_date is not None
-        and item.cumulative_inflow_minor is not None
-        and item.cumulative_outflow_minor is not None
-    ), None)
-
-
 @login_required
 def snapshot_edit(request, pk):
     s = get_object_or_404(Snapshot, pk=pk)
@@ -195,37 +182,22 @@ def snapshot_edit(request, pk):
     )
     existing = {v.account_id: v for v in s.valuations.all()}
     prior = {}
-    history = {}
     for v in (
         Valuation.objects.filter(snapshot__complete=True, snapshot__date__lt=s.date)
         .select_related("snapshot")
         .order_by("snapshot__date")
     ):
         prior[v.account_id] = v
-        history.setdefault(v.account_id, []).append(v)
     initial = []
     for a in accounts:
         v = existing.get(a.pk)
-        row = {"account_id": a.pk, "flow_mode": prior[a.pk].flow_mode if a.pk in prior else "period"}
-        if a.pk in prior:
-            row["flow_start"] = prior[a.pk].snapshot.date.isoformat()
-            cumulative = [item for item in history[a.pk]
-                          if _counter_at([item], item.snapshot.date.isoformat())]
-            if cumulative:
-                row["cumulative_start"] = cumulative[-1].snapshot.date.isoformat()
+        row = {"account_id": a.pk}
         if v:
-            row["flow_mode"] = v.flow_mode
-            row["flow_start"] = v.flow_start_date.isoformat() if v.flow_start_date else ""
-            row["cumulative_start"] = v.cumulative_start_date.isoformat() if v.cumulative_start_date else ""
-
             for field, key in [
                 ("amount_minor", "amount"),
                 ("basis_minor", "basis"),
-                ("inflow_minor", "inflow"),
-                ("outflow_minor", "outflow"),
+                ("net_deposits_minor", "net_deposits"),
                 ("interest_minor", "interest"),
-                ("cumulative_inflow_minor", "cumulative_inflow"),
-                ("cumulative_outflow_minor", "cumulative_outflow"),
             ]:
                 amount = getattr(v, field)
                 row[key] = None if amount is None else Decimal(amount) / 100
@@ -233,19 +205,12 @@ def snapshot_edit(request, pk):
     FormSet = formset_factory(ValuationForm, extra=0, max_num=500, validate_max=True)
     formset = FormSet(request.POST or None, initial=initial, form_kwargs={"show_cents": request.show_cents})
     for form, account in zip(formset, accounts):
-        observations = history.get(account.pk, [])
-        for item in observations:
-            day = item.snapshot.date.isoformat()
-            choice = (day, formats.date_format(item.snapshot.date, "SHORT_DATE_FORMAT"))
-            form.fields["flow_start"].choices.append(choice)
-            if _counter_at([item], day):
-                form.fields["cumulative_start"].choices.append(choice)
-        # Keep recorded endpoints selectable when their opening observation is no
-        # longer published. Calculations then explicitly remain unavailable.
-        for key in ("flow_start", "cumulative_start"):
-            recorded = form.initial.get(key)
-            if recorded and recorded not in {value for value, label in form.fields[key].choices}:
-                form.fields[key].choices.append((recorded, recorded + " — " + str(_("Opening observation unavailable"))))
+        if account.kind != "broker":
+            form.fields["net_deposits"].disabled = True
+        if account.kind != "broker" or account.entity.kind != "company":
+            form.fields["basis"].disabled = True
+        if account.kind not in ("bank", "claim"):
+            form.fields["interest"].disabled = True
     if request.method == "POST" and formset.is_valid():
         ids = [f.cleaned_data.get("account_id") for f in formset]
         if len(ids) != len(set(ids)) or set(ids) != {a.pk for a in accounts}:
@@ -256,20 +221,6 @@ def snapshot_edit(request, pk):
                 return HttpResponseBadRequest("Invalid order")
             data = form.cleaned_data
             value = data.get("amount")
-            if a.kind == "broker" and value is not None:
-                if data["flow_mode"] == "period":
-                    if data.get("inflow") is not None and history.get(a.pk) and not data.get("flow_start"):
-                        form.add_error("flow_start", _("Choose an opening valuation, or leave flows unknown for the first observation."))
-                        valid = False
-                else:
-                    if data.get("cumulative_inflow") is None:
-                        form.add_error("cumulative_inflow", _("Enter both cumulative counters, including zero."))
-                        valid = False
-                    elif data.get("cumulative_start"):
-                        opening = _counter_at(history.get(a.pk, []), data["cumulative_start"])
-                        if opening and (minor(data["cumulative_inflow"]) < opening.cumulative_inflow_minor or minor(data["cumulative_outflow"]) < opening.cumulative_outflow_minor):
-                            form.add_error("cumulative_start", _("Counters decreased. Correct the totals or start a new comparison. Totals must still cover the complete account history; no period return is calculated across this change."))
-                            valid = False
             if value is not None and (
                 (a.kind == "mortgage" and value > 0)
                 or (a.kind != "mortgage" and value < 0)
@@ -300,7 +251,7 @@ def snapshot_edit(request, pk):
                 and existing[a.pk].positions.exists()
             ):
                 form.add_error(
-                    "amount", _("Remove the positions before clearing this value.")
+                    "amount", _("Keep this account value to preserve its archived position data.")
                 )
                 valid = False
         if valid:
@@ -310,28 +261,8 @@ def snapshot_edit(request, pk):
                     if d["amount"] is None:
                         s.valuations.filter(account_id=d["account_id"]).delete()
                     else:
-                        old = existing.get(d["account_id"])
                         broker = next(a for a in accounts if a.pk == d["account_id"]).kind == "broker"
-                        flow_defaults = {}
-                        if broker:
-                            flow_defaults = {"flow_mode": d["flow_mode"], "flow_end_date": s.date}
-                            if d["flow_mode"] == "period":
-                                flow_defaults.update(
-                                    inflow_minor=minor(d["inflow"]),
-                                    outflow_minor=minor(d["outflow"]),
-                                    flow_start_date=d["flow_start"] or None,
-                                )
-                            else:
-                                opening = _counter_at(history.get(d["account_id"], []), d["cumulative_start"])
-                                baseline = opening.cumulative_baseline_date if opening else s.date
-                                if old and d["cumulative_start"] and old.cumulative_start_date and old.cumulative_start_date.isoformat() == d["cumulative_start"]:
-                                    baseline = old.cumulative_baseline_date
-                                flow_defaults.update(
-                                    cumulative_inflow_minor=minor(d["cumulative_inflow"]),
-                                    cumulative_outflow_minor=minor(d["cumulative_outflow"]),
-                                    cumulative_start_date=d["cumulative_start"] or None,
-                                    cumulative_baseline_date=baseline,
-                                )
+                        flow_defaults = {"net_deposits_minor": minor(d["net_deposits"])} if broker else {}
                         Valuation.objects.update_or_create(
                             snapshot=s,
                             account_id=d["account_id"],
@@ -363,48 +294,6 @@ def snapshot_edit(request, pk):
         "wealth/snapshot_edit.html",
         {"snapshot": s, "formset": formset, "entries": entries, "summary": report(s)},
     )
-
-
-@login_required
-def positions(request, pk, position_pk=None):
-    v = get_object_or_404(
-        Valuation.objects.select_related("account", "snapshot"),
-        pk=pk,
-        account__kind="broker",
-    )
-    position = (
-        get_object_or_404(Position, pk=position_pk, valuation=v)
-        if position_pk
-        else None
-    )
-    initial = {"value": Decimal(position.value_minor) / 100, "price": position.price or None} if position else None
-    form = PositionForm(request.POST or None, instance=position, initial=initial, show_cents=request.show_cents)
-    if request.method == "POST" and form.is_valid():
-        obj = form.save(False)
-        obj.valuation = v
-        obj.save()
-        return redirect("positions", pk=v.pk)
-    positions = list(v.positions.all())
-    return render(
-        request,
-        "wealth/positions.html",
-        {
-            "valuation": v,
-            "positions": positions,
-            "form": form,
-            "difference": v.amount_minor - sum(p.value_minor for p in positions),
-            "editing": bool(position),
-        },
-    )
-
-
-@login_required
-@require_POST
-def position_delete(request, pk):
-    p = get_object_or_404(Position, pk=pk)
-    v = p.valuation_id
-    p.delete()
-    return redirect("positions", pk=v)
 
 
 @login_required
@@ -445,6 +334,7 @@ def export(request):
             "flow_mode", "flow_start_date", "flow_end_date",
             "cumulative_deposits_eur", "cumulative_withdrawals_eur",
             "cumulative_start_date", "cumulative_baseline_date",
+            "net_deposits_eur",
         ]
     )
 
@@ -472,6 +362,7 @@ def export(request):
                 "" if v.cumulative_inflow_minor is None else str(Decimal(v.cumulative_inflow_minor) / 100),
                 "" if v.cumulative_outflow_minor is None else str(Decimal(v.cumulative_outflow_minor) / 100),
                 v.cumulative_start_date or "", v.cumulative_baseline_date or "",
+                "" if v.net_deposits_minor is None else str(Decimal(v.net_deposits_minor) / 100),
             ]
         )
     return response
@@ -493,7 +384,8 @@ def analysis(request):
                     {
                         "name": row["account"].name,
                         "date": row["valuation"].snapshot.date,
-                        "performance": row["performance"],
+                        "amount": row["valuation"].amount_minor,
+                        "net_deposits": row["valuation"].net_deposits_minor,
                         "cumulative_result": row["cumulative_result"],
                     }
                 )

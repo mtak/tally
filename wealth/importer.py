@@ -126,6 +126,7 @@ def parse_overview(content):
                 "amounts": amounts,
                 "taxes": taxvalues,
                 "basis": value("Example Brokerage Contributions", idx),
+                "net_deposits": value("Example Brokerage Contributions", idx),
                 "source_total": total,
             }
         )
@@ -135,7 +136,7 @@ def parse_overview(content):
         )
     )
     warnings.append(
-        _("Historical balances do not include cash flows or individual positions.")
+        _("Example Brokerage net deposits come from Example Brokerage Contributions. Net deposits for other investment accounts are unknown.")
     )
     return {
         "digest": hashlib.sha256(content).hexdigest(),
@@ -210,6 +211,7 @@ def import_overview(parsed):
                     account=accounts[label],
                     amount_minor=amount,
                     basis_minor=obs["basis"] if label == "Example Brokerage Value" else None,
+                    net_deposits_minor=obs["net_deposits"] if label == "Example Brokerage Value" else None,
                 )
         for kind, amount in obs["taxes"].items():
             TaxAdjustment.objects.create(snapshot=s, kind=kind, amount_minor=amount)

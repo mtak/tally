@@ -11,13 +11,6 @@ urlpatterns = [
     path("valuations/", views.snapshots, name="snapshots"),
     path("valuations/new/", views.snapshot_add, name="snapshot_add"),
     path("valuations/<int:pk>/", views.snapshot_edit, name="snapshot_edit"),
-    path(
-        "positions/<int:pk>/edit/<int:position_pk>/",
-        views.positions,
-        name="position_edit",
-    ),
-    path("positions/<int:pk>/", views.positions, name="positions"),
-    path("positions/<int:pk>/delete/", views.position_delete, name="position_delete"),
     path("import/", views.imports, name="imports"),
     path("export/", views.export, name="export"),
     path("analysis/", views.analysis, name="analysis"),

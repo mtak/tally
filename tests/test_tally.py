@@ -131,7 +131,7 @@ def test_sole_proprietor_is_not_box_two(snap):
 
 
 def test_account_return_uses_flows_not_trades(account, snap):
-    Valuation.objects.create(account=account, snapshot=snap, amount_minor=10000000)
+    Valuation.objects.create(account=account, snapshot=snap, amount_minor=10000000, net_deposits_minor=10000000)
     s = Snapshot.objects.create(date=date(2025, 8, 1), complete=True)
     v = Valuation.objects.create(
         account=account,
@@ -139,24 +139,15 @@ def test_account_return_uses_flows_not_trades(account, snap):
         amount_minor=11800000,
         flow_start_date=snap.date,
         flow_end_date=s.date,
+        net_deposits_minor=11000000,
         inflow_minor=1200000,
         outflow_minor=200000,
     )
     result = performance(v)
     assert result["result"] == 800000
-    assert result["percent"] == Decimal(800000) / Decimal(10500000) * 100
-    v.inflow_minor = None
+    assert result["net_deposits"] == 1000000
+    v.net_deposits_minor = None
     assert performance(v) is None
-
-
-def test_negative_capital_has_no_percentage(account, snap):
-    Valuation.objects.create(account=account, snapshot=snap, amount_minor=0)
-    s = Snapshot.objects.create(date=date(2025, 8, 1), complete=True)
-    v = Valuation.objects.create(
-        account=account, snapshot=s, amount_minor=0, inflow_minor=0, outflow_minor=100,
-        flow_start_date=snap.date, flow_end_date=s.date,
-    )
-    assert performance(v)["percent"] is None
 
 
 def test_positions_do_not_double_count(account, snap):
@@ -165,11 +156,11 @@ def test_positions_do_not_double_count(account, snap):
         valuation=v, name="Equity", asset_class="equities", value_minor=7500
     )
     r = report(snap)
-    assert r["total"] == 10000 and r["assets"] == {"equities": 7500, "other": 2500}
+    assert r["total"] == 10000 and r["assets"] == {account.asset_class: 10000}
     Position.objects.create(
         valuation=v, name="Excess", asset_class="cash", value_minor=5000
     )
-    assert report(snap)["warnings"]
+    assert not report(snap)["warnings"]
 
 
 def fixture_csv():
@@ -233,7 +224,6 @@ def test_render_all_screens_in_both_languages(logged, lang):
         "/valuations/",
         "/valuations/new/",
         f"/valuations/{s.pk}/",
-        f"/positions/{v.pk}/",
         "/analysis/",
         "/import/",
     ]:
@@ -244,15 +234,15 @@ def test_render_all_screens_in_both_languages(logged, lang):
     assert expected in logged.get("/").content.decode()
 
 
-def test_nl_input_and_missing_flow_validation():
+def test_nl_input_and_missing_value_validation():
     with translation.override("nl"):
         f = ValuationForm(
-            {"account_id": 1, "amount": "1234,56", "inflow": "0", "outflow": "0"}, show_cents=True
+            {"account_id": 1, "amount": "1234,56", "net_deposits": "-100,25"}, show_cents=True
         )
         assert f.is_valid(), f.errors
         assert f.cleaned_data["amount"] == Decimal("1234.56")
         f = ValuationForm(
-            {"account_id": 1, "amount": "1", "inflow": "0", "outflow": ""}
+            {"account_id": 1, "amount": "", "net_deposits": "0"}
         )
         assert not f.is_valid()
 
@@ -284,7 +274,7 @@ def test_snapshot_saves_zero_and_publishes(logged, account, snap):
 def test_position_deletion_requires_post_and_auth(logged, account, snap):
     v = Valuation.objects.create(account=account, snapshot=snap, amount_minor=100)
     p = Position.objects.create(valuation=v, name="Test", value_minor=100)
-    assert logged.get(f"/positions/{p.pk}/delete/").status_code == 405
+    assert logged.get(f"/positions/{p.pk}/delete/").status_code == 404
     assert Position.objects.filter(pk=p.pk).exists()
 
 
@@ -303,7 +293,7 @@ def test_movement_bridge_reconciles_and_ignores_internal_flows(owner, snap):
     cash = Account.objects.create(name="Cash", entity=owner)
     broker = Account.objects.create(name="Broker", entity=owner, kind="broker")
     Valuation.objects.create(account=cash, snapshot=snap, amount_minor=20000)
-    Valuation.objects.create(account=broker, snapshot=snap, amount_minor=10000)
+    Valuation.objects.create(account=broker, snapshot=snap, amount_minor=10000, net_deposits_minor=10000)
     later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
     Valuation.objects.create(
         account=cash, snapshot=later, amount_minor=15100, interest_minor=100
@@ -314,6 +304,7 @@ def test_movement_bridge_reconciles_and_ignores_internal_flows(owner, snap):
         amount_minor=17000,
         flow_start_date=snap.date,
         flow_end_date=later.date,
+        net_deposits_minor=15000,
         inflow_minor=5000,
         outflow_minor=0,
     )
@@ -375,30 +366,6 @@ def test_company_account_requires_basis_when_publishing(logged, snap):
     payload["form-0-basis"] = "900"
     assert logged.post(f"/valuations/{snap.pk}/", payload).status_code == 302
     assert Valuation.objects.get().basis_minor == 90000
-
-
-def test_editing_position_preserves_exact_quantity(logged, account, snap):
-    account.kind = "broker"
-    account.save()
-    v = Valuation.objects.create(snapshot=snap, account=account, amount_minor=10000)
-    p = Position.objects.create(
-        valuation=v, name="ETF", value_minor=8000, quantity="0.1234567890"
-    )
-    logged.cookies["django_language"] = "en"
-    response = logged.post(
-        f"/positions/{v.pk}/edit/{p.pk}/",
-        {
-            "name": "ETF",
-            "asset_class": "equities",
-            "value": "90.00",
-            "quantity": "0.1234567890",
-            "currency": "EUR",
-        },
-    )
-    assert response.status_code == 302
-    p.refresh_from_db()
-    assert p.value_minor == 9000 and p.quantity == "0.1234567890"
-    assert Position.objects.count() == 1
 
 
 @pytest.mark.parametrize("saved", [None, "unsupported", ""])
@@ -468,21 +435,3 @@ def test_rounded_valuation_save_preserves_cents(logged, account, snap):
     assert logged.post(path, data).status_code == 302
     v.refresh_from_db()
     assert v.amount_minor == 123600
-
-
-def test_rounded_position_preserves_value_and_quote(logged, account, snap):
-    account.kind = "broker"
-    account.save()
-    v = Valuation.objects.create(account=account, snapshot=snap, amount_minor=200000)
-    p = Position.objects.create(valuation=v, name="Fictional", asset_class="equities",
-                                value_minor=123456, price="12.34567", quantity="100.0001")
-    path = f"/positions/{v.pk}/edit/{p.pk}/"
-    assert 'value="1235"' in logged.get(path).content.decode()
-    response = logged.post(path, {"name": "Renamed", "asset_class": "equities",
-                                  "value": "1235", "price": "12", "quantity": "100.0001",
-                                  "currency": "EUR"})
-    assert response.status_code == 302, response.context["form"].errors
-    p.refresh_from_db()
-    assert p.value_minor == 123456
-    assert Decimal(p.price) == Decimal("12.34567")
-    assert Decimal(p.quantity) == Decimal("100.0001")
