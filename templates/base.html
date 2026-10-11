@@ -1,5 +1,6 @@
 {% load static i18n %}{% get_current_language as language %}
-<!doctype html><html lang="{{ language }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Tally{% endblock %}</title>
+<!doctype html><html lang="{{ language }}" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Tally{% endblock %}</title>
+<script src="{% static 'theme.js' %}"></script>
 <link rel="stylesheet" href="{% static 'app.css' %}"><script src="{% static 'vendor/htmx.min.js' %}" defer></script><script src="{% static 'vendor/echarts.min.js' %}" defer></script><script src="{% static 'app.js' %}" defer></script></head>
 <body><div class="app-shell">
 <aside class="sidebar"><a class="brand" href="{% url 'dashboard' %}"><span class="brand-mark">t</span>tally<span class="brand-dot">.</span></a>

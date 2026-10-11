@@ -21,7 +21,9 @@ Updates are irregular, roughly quarterly; older history is annual with some inte
 dates. Track values at explicit dates and support saving/resuming partial drafts.
 Keep missing observations distinct from zero. Show dates when carrying values forward.
 
-Use a calm, compact financial dashboard with a light default and optional dark mode.
+Use a calm, compact financial dashboard with a dark default and optional light mode.
+English is the default language; honor explicitly saved Dutch/English and theme choices.
+Browser language and OS color preference do not override these defaults.
 The main figure is net private-equivalent wealth including home and pension, each
 toggleable. Important charts: annual stacked private/home/business/pension bars,
 liquidity, asset allocation and a change-explanation waterfall.

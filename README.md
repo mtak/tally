@@ -1,7 +1,7 @@
 # Tally
 
 Self-hosted, bilingual personal wealth tracker. Django 5.2 LTS, SQLite, HTMX and
-Apache ECharts. Dutch (default) and English. All assets served locally.
+Apache ECharts. English (default) and Dutch. Dark mode by default, with optional light mode. All assets served locally.
 
 ## Local development (Docker, no Traefik)
 

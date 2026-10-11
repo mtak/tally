@@ -1,6 +1,10 @@
 # Product and architecture decisions
 
 - One self-hosted portfolio per instance. Dutch and English, EUR reporting.
+- English and dark mode are the first-visit defaults, independent of browser language
+  and OS color preference. Explicit language cookies and saved theme choices take
+  precedence. Initialize the theme before rendering; unavailable storage falls back
+  to dark mode. Dutch and light mode remain available in the existing controls.
 - Owner types: private, sole proprietor and company; holding/subsidiary metadata.
   Underlying assets are counted once. A shared private bank account counts at 50%.
 - Any valuation date, draft/resume workflow, explicit observation dates, blanks not zeros.

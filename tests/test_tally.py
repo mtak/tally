@@ -363,3 +363,26 @@ def test_editing_position_preserves_exact_quantity(logged, account, snap):
     p.refresh_from_db()
     assert p.value_minor == 9000 and p.quantity == "0.1234567890"
     assert Position.objects.count() == 1
+
+
+@pytest.mark.parametrize("saved", [None, "unsupported", ""])
+def test_first_visit_uses_english_despite_dutch_browser(logged, saved):
+    if saved is not None:
+        logged.cookies["django_language"] = saved
+    for path in ["/login/", "/", "/accounts/new/", "/analysis/"]:
+        response = logged.get(path, HTTP_ACCEPT_LANGUAGE="nl-NL,nl;q=0.9,en;q=0.8")
+        assert response.status_code == 200
+        assert response.headers["Content-Language"] == "en"
+        assert '<html lang="en" data-theme="dark">' in response.content.decode()
+
+
+@pytest.mark.parametrize("language", ["nl", "en"])
+def test_explicit_language_selection_persists(logged, language):
+    response = logged.post("/language/setlang/", {"language": language, "next": "/"})
+    assert response.status_code == 302
+    assert response.cookies["django_language"].value == language
+    for path in ["/login/", "/", "/accounts/new/", "/analysis/"]:
+        response = logged.get(path, HTTP_ACCEPT_LANGUAGE="en" if language == "nl" else "nl")
+        assert response.headers["Content-Language"] == language
+        assert f'<html lang="{language}"' in response.content.decode()
+        assert "Cookie" in response.headers["Vary"]

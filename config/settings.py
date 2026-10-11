@@ -41,7 +41,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
+    "config.middleware.PreferenceLocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -73,7 +73,7 @@ DATABASES = {
         "OPTIONS": {"timeout": 20, "transaction_mode": "IMMEDIATE"},
     }
 }
-LANGUAGE_CODE = "nl"
+LANGUAGE_CODE = "en"
 LANGUAGES = [("nl", "Nederlands"), ("en", "English")]
 USE_I18N = True
 LOCALE_PATHS = [BASE_DIR / "locale"]
