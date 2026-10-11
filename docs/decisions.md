@@ -59,3 +59,13 @@
   sets, mode and endpoint/baseline dates.
 - Confirmed zero flows use a dedicated shortcut. Blank flows remain unknown.
 - Tax basis remains independent of performance counters and imported adjustments.
+
+## Amount precision (#7)
+
+- Show and enter whole currency amounts by default, with a persistent browser preference
+  in the top bar to enable cents. The preference is isolated by instance cookie name.
+- Round display half-up; retain integer cents in storage and exact calculation/export.
+  Saving an unchanged rounded input preserves its original precision. Editing it to
+  a different whole amount replaces that value. Optional quote prices follow this
+  preference; enabling cents restores their existing higher precision. Quantities
+  and percentages retain their own precision.

@@ -247,7 +247,7 @@ def test_render_all_screens_in_both_languages(logged, lang):
 def test_nl_input_and_missing_flow_validation():
     with translation.override("nl"):
         f = ValuationForm(
-            {"account_id": 1, "amount": "1234,56", "inflow": "0", "outflow": "0"}
+            {"account_id": 1, "amount": "1234,56", "inflow": "0", "outflow": "0"}, show_cents=True
         )
         assert f.is_valid(), f.errors
         assert f.cleaned_data["amount"] == Decimal("1234.56")
@@ -409,7 +409,7 @@ def test_first_visit_uses_english_despite_dutch_browser(logged, saved):
         response = logged.get(path, HTTP_ACCEPT_LANGUAGE="nl-NL,nl;q=0.9,en;q=0.8")
         assert response.status_code == 200
         assert response.headers["Content-Language"] == "en"
-        assert '<html lang="en" data-theme="dark">' in response.content.decode()
+        assert '<html lang="en" data-theme="dark"' in response.content.decode()
 
 
 @pytest.mark.parametrize("language", ["nl", "en"])
@@ -422,3 +422,67 @@ def test_explicit_language_selection_persists(logged, language):
         assert response.headers["Content-Language"] == language
         assert f'<html lang="{language}"' in response.content.decode()
         assert "Cookie" in response.headers["Vary"]
+
+
+@pytest.mark.parametrize("lang, expected", [("en", "€ 1,235"), ("nl", "€ 1.235")])
+def test_whole_amount_display_and_preference(logged, account, snap, lang, expected):
+    from wealth.preferences import cents_cookie_name
+    Valuation.objects.create(account=account, snapshot=snap, amount_minor=123456)
+    logged.cookies["django_language"] = lang
+    page = logged.get("/").content.decode()
+    assert expected in page
+    assert 'data-show-cents="false"' in page
+    response = logged.post("/preferences/money/", {"show_cents": "1", "next": "/?home=0"})
+    assert response.url == "/?home=0"
+    assert response.cookies[cents_cookie_name()]["max-age"] == 31536000
+    page = logged.get("/").content.decode()
+    assert ('€ 1.234,56' if lang == 'nl' else '€ 1,234.56') in page
+    assert 'data-show-cents="true"' in page
+    assert logged.post("/preferences/money/", {"next": "https://example.com"}).url == "/"
+    assert logged.get("/preferences/money/").status_code == 405
+
+
+@pytest.mark.parametrize("lang, amount", [("en", "123.45"), ("nl", "123,45")])
+def test_whole_money_input_rejects_fraction(lang, amount):
+    with translation.override(lang):
+        form = ValuationForm({"account_id": 1, "amount": amount})
+        assert not form.is_valid()
+        assert "amount" in form.errors
+        enabled = ValuationForm({"account_id": 1, "amount": amount}, show_cents=True)
+        assert enabled.is_valid(), enabled.errors
+
+
+def test_rounded_valuation_save_preserves_cents(logged, account, snap):
+    v = Valuation.objects.create(account=account, snapshot=snap, amount_minor=123456,
+                                basis_minor=120049, interest_minor=155)
+    path = f"/valuations/{snap.pk}/"
+    html = logged.get(path).content.decode()
+    assert 'value="1235"' in html
+    data = {"form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "1",
+            "form-0-account_id": account.pk, "form-0-amount": "1235",
+            "form-0-basis": "1200", "form-0-interest": "2", "action": "save"}
+    assert logged.post(path, data).status_code == 302
+    v.refresh_from_db()
+    assert (v.amount_minor, v.basis_minor, v.interest_minor) == (123456, 120049, 155)
+    data["form-0-amount"] = "1236"
+    assert logged.post(path, data).status_code == 302
+    v.refresh_from_db()
+    assert v.amount_minor == 123600
+
+
+def test_rounded_position_preserves_value_and_quote(logged, account, snap):
+    account.kind = "broker"
+    account.save()
+    v = Valuation.objects.create(account=account, snapshot=snap, amount_minor=200000)
+    p = Position.objects.create(valuation=v, name="Fictional", asset_class="equities",
+                                value_minor=123456, price="12.34567", quantity="100.0001")
+    path = f"/positions/{v.pk}/edit/{p.pk}/"
+    assert 'value="1235"' in logged.get(path).content.decode()
+    response = logged.post(path, {"name": "Renamed", "asset_class": "equities",
+                                  "value": "1235", "price": "12", "quantity": "100.0001",
+                                  "currency": "EUR"})
+    assert response.status_code == 302, response.context["form"].errors
+    p.refresh_from_db()
+    assert p.value_minor == 123456
+    assert Decimal(p.price) == Decimal("12.34567")
+    assert Decimal(p.quantity) == Decimal("100.0001")
