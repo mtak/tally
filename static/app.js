@@ -7,7 +7,15 @@
     try { localStorage.setItem("tally-theme", theme); } catch {}
     draw();
   });
-  const digits = document.documentElement.dataset.showCents === "true" ? 2 : 0;
+  function numberFormats() {
+    const locale = document.documentElement.lang === "nl" ? "nl-NL" : "en-US";
+    const digits = document.documentElement.dataset.showCents === "true" ? 2 : 0;
+    return {
+      money: new Intl.NumberFormat(locale, {style:"currency", currency:"EUR", minimumFractionDigits:digits, maximumFractionDigits:digits}),
+      decimal: new Intl.NumberFormat(locale, {maximumFractionDigits:2}),
+      compact: new Intl.NumberFormat(locale, {notation:"compact", maximumFractionDigits:1})
+    };
+  }
   let charts = [];
   function draw() {
     charts.forEach(c => c.dispose()); charts = [];
@@ -17,8 +25,7 @@
     const data = JSON.parse(source.textContent);
     const style = getComputedStyle(document.documentElement);
     const ink = style.getPropertyValue("--muted").trim(), line = style.getPropertyValue("--line").trim();
-    const lang = document.documentElement.lang;
-    const number = new Intl.NumberFormat(lang, {style:"currency", currency:"EUR", minimumFractionDigits:digits,maximumFractionDigits:digits});
+    const formats = numberFormats(), number = formats.money;
     const tooltipStyle = {backgroundColor:style.getPropertyValue("--surface").trim(), borderColor:line, textStyle:{color:ink}};
     const common = {animation:false,color:palette, textStyle:{fontFamily:"-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif", color:ink},
       aria:{enabled:false}, tooltip:{...tooltipStyle,trigger:"item", valueFormatter:v => number.format(v)},
@@ -29,7 +36,7 @@
       chart.setOption({...common, tooltip:{...tooltipStyle,trigger:"axis",valueFormatter:v=>number.format(v)},
         grid:{left:70,right:15,top:18,bottom:62},
         xAxis:{type:"category",data:data.years,axisLine:{show:false},axisTick:{show:false},axisLabel:{color:ink,margin:16}},
-        yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>new Intl.NumberFormat(lang,{notation:"compact",maximumFractionDigits:1}).format(v)},
+        yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>formats.compact.format(v)},
           splitLine:{lineStyle:{color:line,type:"dashed"}}},
         series:data.series.map(s=>({...s,type:"bar",stack:"total",barMaxWidth:48,emphasis:{focus:"series"}}))});
     }
@@ -38,13 +45,13 @@
       const chart=echarts.init(node);charts.push(chart);
       if(id==="liquidity-chart" && values.some(v=>v.value<0)) {
         chart.setOption({...common,grid:{left:100,right:15,top:20,bottom:30},
-          xAxis:{type:"value",axisLabel:{color:ink},splitLine:{lineStyle:{color:line}}},
+          xAxis:{type:"value",axisLabel:{color:ink,formatter:v=>formats.decimal.format(v)},splitLine:{lineStyle:{color:line}}},
           yAxis:{type:"category",data:values.map(v=>v.name),axisLabel:{color:ink},axisLine:{lineStyle:{color:line}}},
           series:[{type:"bar",data:values.map(v=>v.value)}]}); continue;
       }
       chart.setOption({...common,series:[{type:"pie",radius:["49%","72%"],center:["50%","42%"],
         avoidLabelOverlap:true,itemStyle:{borderRadius:3,borderColor:style.getPropertyValue("--surface").trim(),borderWidth:3},
-        label:{show:false},emphasis:{label:{show:true,fontSize:16,fontWeight:600,formatter:"{d}%"}},
+        label:{show:false},emphasis:{label:{show:true,fontSize:16,fontWeight:600,formatter:params=>formats.decimal.format(params.percent)+"%"}},
         data:values}]});
     }
   }
@@ -55,12 +62,12 @@
     const data=JSON.parse(source.textContent);
     const style=getComputedStyle(document.documentElement), ink=style.getPropertyValue("--muted").trim();
     const line=style.getPropertyValue("--line").trim();
-    const money=new Intl.NumberFormat(document.documentElement.lang,{style:"currency",currency:"EUR",minimumFractionDigits:digits,maximumFractionDigits:digits});
+    const formats=numberFormats(), money=formats.money;
     const c=echarts.init(node);charts.push(c);
     c.setOption({animation:false,aria:{enabled:false},grid:{left:75,right:15,top:20,bottom:85},
       tooltip:{backgroundColor:style.getPropertyValue("--surface").trim(),borderColor:line,textStyle:{color:ink},trigger:"axis",formatter:params=>money.format(data.values[params[0].dataIndex])},
       xAxis:{type:"category",data:data.labels,axisLabel:{color:ink,interval:0,rotate:18,fontSize:10},axisTick:{show:false},axisLine:{lineStyle:{color:line}}},
-      yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>new Intl.NumberFormat(document.documentElement.lang,{notation:"compact"}).format(v)},splitLine:{lineStyle:{color:line}}},
+      yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>formats.compact.format(v)},splitLine:{lineStyle:{color:line}}},
       series:[{type:"bar",barMaxWidth:50,data:data.values.map(value=>({
         value,itemStyle:{color:value>=0?"#307d6e":"#bd8f9d"}
       }))}]});

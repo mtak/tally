@@ -13,6 +13,10 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt
       - run: pytest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/test_chart_locale.cjs
       - run: python manage.py makemigrations --check --dry-run
       - run: docker compose -f compose.yaml -f compose.dev.yaml config --quiet
       - run: docker build -t tally:test .

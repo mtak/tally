@@ -424,7 +424,7 @@ def test_rounded_valuation_save_preserves_cents(logged, account, snap):
                                 basis_minor=120049, interest_minor=155)
     path = f"/valuations/{snap.pk}/"
     html = logged.get(path).content.decode()
-    assert 'value="1235"' in html
+    assert 'value="1,235"' in html
     data = {"form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "1",
             "form-0-account_id": account.pk, "form-0-amount": "1235",
             "form-0-basis": "1200", "form-0-interest": "2", "action": "save"}

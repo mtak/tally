@@ -1,11 +1,12 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import Account, Entity, Snapshot, ASSETS
 from .preferences import whole_amount
+from .numbers import LocalizedDecimalField
 
 
-class MoneyField(forms.DecimalField):
+class MoneyField(LocalizedDecimalField):
     whole_only = False
     original = None
 
@@ -39,7 +40,7 @@ def money_field(label, required=False, minimum=None):
         decimal_places=2,
         min_value=minimum,
         localize=True,
-        widget=forms.TextInput(attrs={"inputmode": "decimal", "autocomplete": "off"}),
+        widget=LocalizedDecimalField.widget(attrs={"inputmode": "decimal", "autocomplete": "off"}),
     )
 
 
@@ -54,7 +55,7 @@ class EntityForm(forms.ModelForm):
 
 
 class AccountForm(forms.ModelForm):
-    interest_rate = forms.DecimalField(
+    interest_rate = LocalizedDecimalField(
         label=_("Annual interest (%)"),
         required=False,
         min_value=0,
@@ -121,7 +122,7 @@ class AccountForm(forms.ModelForm):
 
 
 class SnapshotForm(forms.ModelForm):
-    ab_rate = forms.DecimalField(
+    ab_rate = LocalizedDecimalField(
         label=_("AB assumption (%)"),
         initial=Decimal("26.90"),
         min_value=0,
@@ -129,7 +130,7 @@ class SnapshotForm(forms.ModelForm):
         decimal_places=2,
         localize=True,
     )
-    vpb_rate = forms.DecimalField(
+    vpb_rate = LocalizedDecimalField(
         label=_("VPB assumption (%)"),
         initial=Decimal("19.00"),
         min_value=0,

@@ -64,3 +64,14 @@
   a different whole amount replaces that value. Optional quote prices follow this
   preference; enabling cents restores their existing higher precision. Quantities
   and percentages retain their own precision.
+
+## Locale boundaries (#14)
+
+- UI numbers follow the selected language: Dutch `1.234,56`, English `1,234.56`.
+  Inputs accept ungrouped numbers or valid groups of three and reject malformed or
+  foreign separator combinations. A single valid grouping separator is interpreted
+  as grouping in that locale; use the locale decimal separator for fractions.
+- Reuse Django locale formats and Intl.NumberFormat; no additional dependency.
+  Stored cents, Decimal calculations, canonical exports, archived exact position
+  values and the Overview importer's explicit Dutch source format stay independent
+  of UI language. Whole-amount saves retain unchanged stored cents.
