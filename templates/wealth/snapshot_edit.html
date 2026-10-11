@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load i18n money %}{% block content %}
+{% extends "base.html" %}{% load i18n money static %}{% block content %}
 <div class="page-heading"><div><a class="back-link" href="{% url 'snapshots' %}">← {% trans "Valuations" %}</a><h1>{{ snapshot.date|date:"DATE_FORMAT" }}</h1><p class="muted">{% trans "Enter full account balances in EUR. Joint ownership is applied automatically." %}</p></div><span class="tag">{% if snapshot.complete %}{% trans "Published" %}{% else %}{% trans "Draft" %}{% endif %}</span></div>
 <div class="notice">{% trans "Blank means no observation on this date. Older values keep their original date. Enter zero only when the balance is actually zero." %}</div>
 {% if snapshot.imported %}<div class="notice">{% trans "Historical tax adjustments are preserved. Editing balances does not recalculate these imported adjustments." %}</div>{% endif %}
@@ -6,8 +6,27 @@
 <div class="card table-wrap valuation-table"><table><thead><tr><th>{% trans "Account" %}</th><th class="number">{% trans "Previous value" %}</th><th>{% trans "Value (EUR)" %}</th><th>{% trans "Account details" %}</th></tr></thead><tbody>
 {% for entry in entries %}<tr><td><strong>{{ entry.account.name }}</strong><small>{{ entry.account.entity }}{% if entry.account.joint %} · 50%{% endif %}</small>{{ entry.form.account_id }}{{ entry.form.non_field_errors }}</td>
 <td class="number">{% if entry.previous %}{{ entry.previous.amount_minor|money }}<small>{{ entry.previous.snapshot.date|date:"SHORT_DATE_FORMAT" }}</small>{% else %}—{% endif %}</td><td><label class="sr-only" for="{{ entry.form.amount.id_for_label }}">{{ entry.account.name }} {% trans "Value (EUR)" %}</label>{{ entry.form.amount }}{{ entry.form.amount.errors }}</td>
-<td>{% if entry.account.kind == 'broker' %}<details {% if entry.form.basis.errors or entry.form.inflow.errors or entry.form.outflow.errors %}open{% endif %}><summary>{% trans "Cash flows & tax basis" %}</summary><p><label for="{{ entry.form.inflow.id_for_label }}">{% trans "Deposits" %}</label>{{ entry.form.inflow }}{{ entry.form.inflow.errors }}</p><p><label for="{{ entry.form.outflow.id_for_label }}">{% trans "Withdrawals" %}</label>{{ entry.form.outflow }}{{ entry.form.outflow.errors }}</p><p><label for="{{ entry.form.basis.id_for_label }}">{% trans "Tax basis / net contributions (EUR)" %}</label>{{ entry.form.basis }}{{ entry.form.basis.errors }}</p><small>{% trans "Flows cover the period since this account's previous valuation. Leave blank when unknown." %}</small></details>
+<td>{% if entry.account.kind == 'broker' %}<details data-flow-entry {% if entry.form.errors %}open{% endif %}><summary>{% trans "Deposits & withdrawals" %}</summary>
+<p><label for="{{ entry.form.flow_mode.id_for_label }}">{{ entry.form.flow_mode.label }}</label>{{ entry.form.flow_mode }}{{ entry.form.flow_mode.errors }}</p>
+<div data-flow-period>
+<p><label for="{{ entry.form.flow_start.id_for_label }}">{{ entry.form.flow_start.label }}</label>{{ entry.form.flow_start }}{{ entry.form.flow_start.errors }}<small>{% trans "Through" %} {{ snapshot.date|date:"SHORT_DATE_FORMAT" }}</small></p>
+<p><label for="{{ entry.form.no_flows.id_for_label }}">{{ entry.form.no_flows }} {{ entry.form.no_flows.label }}</label>{{ entry.form.no_flows.errors }}</p>
+<p><label for="{{ entry.form.inflow.id_for_label }}">{% trans "Deposits (EUR)" %}</label>{{ entry.form.inflow }}{{ entry.form.inflow.errors }}</p>
+<p><label for="{{ entry.form.outflow.id_for_label }}">{% trans "Withdrawals (EUR)" %}</label>{{ entry.form.outflow }}{{ entry.form.outflow.errors }}</p>
+<small>{% trans "Enter totals for the selected period. Blank means unknown; zero confirms no flow." %}</small>
+</div>
+<div data-flow-cumulative>
+{% if entry.valuation.cumulative_baseline_date %}<p class="muted">{% trans "Counter baseline" %}: {{ entry.valuation.cumulative_baseline_date|date:"SHORT_DATE_FORMAT" }}</p>{% endif %}
+<p><label for="{{ entry.form.cumulative_start.id_for_label }}">{{ entry.form.cumulative_start.label }}</label>{{ entry.form.cumulative_start }}{{ entry.form.cumulative_start.errors }}<small>{% trans "Through" %} {{ snapshot.date|date:"SHORT_DATE_FORMAT" }}</small></p>
+<p><label for="{{ entry.form.cumulative_inflow.id_for_label }}">{{ entry.form.cumulative_inflow.label }}</label>{{ entry.form.cumulative_inflow }}{{ entry.form.cumulative_inflow.errors }}</p>
+<p><label for="{{ entry.form.cumulative_outflow.id_for_label }}">{{ entry.form.cumulative_outflow.label }}</label>{{ entry.form.cumulative_outflow }}{{ entry.form.cumulative_outflow.errors }}</p>
+<small>{% trans "Enter all deposits and withdrawals since account opening, starting from a zero balance. Total result is available immediately after saving. An earlier comparison is only needed for period return." %}</small>
+{% if entry.cumulative_result != None %}<p><strong>{% trans "Saved result since opening" %}: {{ entry.cumulative_result|money }}</strong></p>{% endif %}
+</div>
+<p class="muted">{% trans "Include account cash in the value. Purchases and sales within the account are not deposits or withdrawals." %}</p>
+</details>
+<details {% if entry.form.basis.errors %}open{% endif %}><summary>{% trans "Tax basis" %}</summary><p><label for="{{ entry.form.basis.id_for_label }}">{{ entry.form.basis.label }}</label>{{ entry.form.basis }}{{ entry.form.basis.errors }}</p><small>{% trans "Used only for the liquidation tax scenario. Separate from performance deposits and withdrawals." %}</small></details>
 {% if entry.valuation %}<a class="position-link" href="{% url 'positions' entry.valuation.pk %}">{% trans "Positions" %} →</a>{% endif %}{% elif entry.account.kind == "bank" or entry.account.kind == "claim" %}<details><summary>{% trans "Interest" %}</summary><label for="{{ entry.form.interest.id_for_label }}">{% trans "Interest received or accrued (EUR)" %}</label>{{ entry.form.interest }}{{ entry.form.interest.errors }}</details>{% else %}<span class="muted">{{ entry.account.get_asset_class_display }}</span>{% endif %}</td></tr>
 {% empty %}<tr><td colspan="4">{% trans "Add accounts before entering a valuation." %} <a href="{% url 'account_add' %}">{% trans "Add account" %}</a></td></tr>{% endfor %}
 </tbody></table></div><div class="sticky-actions"><span>{% trans "Save before opening positions." %}</span><div class="actions"><button class="button secondary" name="action" value="draft">{% trans "Save draft" %}</button><button class="button" name="action" value="complete">{% trans "Save & publish" %}</button></div></div></form>
-{% endblock %}
+<script src="{% static 'flows.js' %}" defer></script>{% endblock %}

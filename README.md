@@ -42,8 +42,16 @@ Save a draft or publish it. Blank is not zero: older available observations reta
 their original date and are flagged. Closed accounts disappear on/after their closing
 date, while earlier history remains.
 
-For broker accounts, enter total deposits and withdrawals since their previous
-published valuation. Zero means no flow; blank means unknown. Add current positions,
+For broker accounts, choose period totals between explicit valuation dates, or
+cumulative deposit/withdrawal counters. Cumulative tracking starts with a baseline
+valuation and starting counters; later matching counters yield the period flows.
+Cumulative totals cover complete history since account opening from a zero balance,
+as confirmed by the user. Total euro result (value minus deposits plus withdrawals)
+is shown on the first reading, independently of the period comparison.
+Counter decreases require correction or an explicit new baseline. Switching modes
+preserves inactive inputs. Backdated valuations do not change recorded flow periods.
+Use “No deposits or withdrawals” to confirm zero flows; blank means unknown.
+Tax basis is a separate input used for the liquidation scenario. Add current positions,
 including cash, for asset allocation. EUR position value is authoritative. Optional
 ISIN/ticker, exchange, currency, quantity and price prepare for future quote adapters.
 No automatic quote connection is made.

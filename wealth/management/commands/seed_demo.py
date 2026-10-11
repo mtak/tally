@@ -106,6 +106,8 @@ class Command(BaseCommand):
                     else None,
                     inflow_minor=200000 if a.kind == "broker" and year > 2022 else None,
                     outflow_minor=0 if a.kind == "broker" and year > 2022 else None,
+                    flow_start_date=date(year - 1, 1, 1) if a.kind == "broker" and year > 2022 else None,
+                    flow_end_date=s.date if a.kind == "broker" and year > 2022 else None,
                 )
                 if a.kind == "broker":
                     for name, asset, share in [

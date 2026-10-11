@@ -147,8 +147,13 @@ Check current CI rather than treating this historical result as current verifica
 - No per-trade performance, ETF look-through, bank sync or automated tax filing.
 - Classification and ownership are currently account-level settings: changing them can
   reinterpret past reports. Add versioning if historical changes become a requirement.
-- Flow totals refer to the preceding account valuation. Inserting a backdated observation
-  can change that period; review affected flows, or add explicit interval storage.
+- Investment flows store explicit opening/end dates; backdated valuations do not
+  reinterpret recorded period totals. Cumulative counters use a defined baseline,
+  matching counter endpoints and explicit resets. Switching modes retains inactive
+  inputs. Cumulative totals cover complete history from a zero opening balance,
+  explicitly confirmed by the user. Show total euro result on the first cumulative
+  reading; comparison baselines apply only to period returns. Truncated counters
+  are not supported. Tax basis is separate from performance counters (issue #3).
 - CSV export covers observations; a full SQLite backup is required for positions,
   configuration and login data.
 - Further decisions are recorded in docs/decisions.md. Update this handoff when a

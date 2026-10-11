@@ -17,28 +17,56 @@ def owned(account, amount):
     return rounded(Decimal(amount) / 2) if account.joint else amount
 
 
-def performance(valuation):
-    previous = (
-        Valuation.objects.filter(
-            account=valuation.account,
-            snapshot__complete=True,
-            snapshot__date__lt=valuation.snapshot.date,
-        )
-        .select_related("snapshot")
-        .order_by("-snapshot__date")
-        .first()
-    )
-    if (
-        previous is None
-        or valuation.inflow_minor is None
-        or valuation.outflow_minor is None
-    ):
+def cumulative_result(valuation):
+    """Euro result from complete inception counters and a zero opening balance.
+
+    Complete history is the user's confirmed convention for cumulative inputs.
+    This is independent of the comparison baseline used for period returns.
+    """
+    if valuation is None or valuation.flow_mode != "cumulative":
         return None
-    net = valuation.inflow_minor - valuation.outflow_minor
+    deposits = valuation.cumulative_inflow_minor
+    withdrawals = valuation.cumulative_outflow_minor
+    if deposits is None or withdrawals is None or deposits < 0 or withdrawals < 0:
+        return None
+    if valuation.flow_end_date != valuation.snapshot.date:
+        return None
+    return valuation.amount_minor - deposits + withdrawals
+
+
+def performance(valuation):
+    start = (valuation.cumulative_start_date if valuation.flow_mode == "cumulative"
+             else valuation.flow_start_date)
+    if start is None or valuation.flow_end_date != valuation.snapshot.date or start >= valuation.snapshot.date:
+        return None
+    previous = Valuation.objects.filter(
+        account=valuation.account, snapshot__complete=True, snapshot__date=start,
+    ).select_related("snapshot").first()
+    if previous is None:
+        return None
+    if valuation.flow_mode == "cumulative":
+        if (previous.flow_mode != "cumulative"
+            or valuation.cumulative_baseline_date is None
+            or previous.cumulative_baseline_date != valuation.cumulative_baseline_date):
+            return None
+        counters = (valuation.cumulative_inflow_minor, valuation.cumulative_outflow_minor,
+                    previous.cumulative_inflow_minor, previous.cumulative_outflow_minor)
+        if any(value is None for value in counters):
+            return None
+        inflow, outflow = counters[0] - counters[2], counters[1] - counters[3]
+        if inflow < 0 or outflow < 0:
+            return None
+    else:
+        inflow, outflow = valuation.inflow_minor, valuation.outflow_minor
+        if inflow is None or outflow is None:
+            return None
+    net = inflow - outflow
     result = valuation.amount_minor - previous.amount_minor - net
     capital = Decimal(previous.amount_minor) + Decimal(net) / 2
     return {
         "result": result,
+        "deposits": inflow,
+        "withdrawals": outflow,
         "percent": (Decimal(result) / capital * 100 if capital > 0 else None),
         "since": previous.snapshot.date,
         "days": (valuation.snapshot.date - previous.snapshot.date).days,
@@ -138,6 +166,7 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
                 "amount": amount,
                 "stale": v.snapshot.date != snapshot.date,
                 "performance": performance(v) if account.kind == "broker" else None,
+                "cumulative_result": cumulative_result(v) if account.kind == "broker" else None,
                 "allocation_difference": v.amount_minor - allocated
                 if positions
                 else None,
