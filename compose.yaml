@@ -4,6 +4,7 @@ services:
     init: true
     environment:
       TALLY_DATA_DIR: /data
+      TALLY_INSTANCE_NAME: ${TALLY_INSTANCE_NAME:-}
       TZ: Europe/Amsterdam
     volumes:
       - tally-data:/data

@@ -34,6 +34,7 @@ Do not overwrite an existing .env when updating an installation. Set:
 | --- | --- |
 | DJANGO_SECRET_KEY | A unique, stable random secret |
 | TALLY_HOST | Bare hostname, e.g. tally.example.com (no scheme/path) |
+| TALLY_INSTANCE_NAME | Optional display name, e.g. Example portfolio; blank keeps the default appearance |
 | TRAEFIK_NETWORK | Existing external Docker network, e.g. traefik |
 | TRAEFIK_ENTRYPOINT | Existing HTTPS entrypoint, e.g. websecure |
 
@@ -235,6 +236,19 @@ its own hostname/secret AND distinct router/service label names (including middl
 and certificate resolver labels). Use a separate checkout and adapt its production
 Compose labels, removing the old tally labels there. Merely changing the Compose
 project name is insufficient for two routed instances.
+
+Give each instance a distinct `TALLY_INSTANCE_NAME` in its own environment file,
+for example `"Example portfolio"` and `"Second example portfolio"`. The name appears in the
+shared header, including before login, and in browser tab titles. It is a display
+label; it does not change portfolio access or data isolation. Avoid sensitive names
+if the login page is publicly accessible. Omitted or whitespace-only names preserve
+the default Tally appearance.
+
+Compose passes this setting to both development and production containers. After
+changing it, recreate the app with `dc up -d` (a restart alone does not reload the
+container environment). For development, use the usual Compose files and the
+instance's `--env-file` and project name with `up -d`. Without Docker, export
+`TALLY_INSTANCE_NAME` before starting Django and restart the process after changes.
 
 ## Troubleshooting
 

@@ -34,6 +34,16 @@ One instance represents one portfolio: every authenticated user in that instance
 access the portfolio. Separate logins are NOT data isolation. Use separate Compose
 projects and volumes for separate portfolios.
 
+## Instance names
+
+Set `TALLY_INSTANCE_NAME="Example portfolio"` in the instance's environment file to
+show a distinctive name in the shared header (including login) and browser title.
+Use a different name for each person's instance. Blank or omitted names keep the
+default appearance. Docker Compose passes the setting in development and production;
+recreate the app with your usual Compose command and `up -d` after changing it.
+For development, select the environment file with `--env-file`. Without Docker,
+export the variable before starting Django. The name is visible before login.
+
 ## Workflow
 
 Add owners and accounts, then start a valuation on any date. Enter full EUR balances:
