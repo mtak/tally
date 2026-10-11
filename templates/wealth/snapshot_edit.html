@@ -20,7 +20,8 @@
 <p><label for="{{ entry.form.cumulative_start.id_for_label }}">{{ entry.form.cumulative_start.label }}</label>{{ entry.form.cumulative_start }}{{ entry.form.cumulative_start.errors }}<small>{% trans "Through" %} {{ snapshot.date|date:"SHORT_DATE_FORMAT" }}</small></p>
 <p><label for="{{ entry.form.cumulative_inflow.id_for_label }}">{{ entry.form.cumulative_inflow.label }}</label>{{ entry.form.cumulative_inflow }}{{ entry.form.cumulative_inflow.errors }}</p>
 <p><label for="{{ entry.form.cumulative_outflow.id_for_label }}">{{ entry.form.cumulative_outflow.label }}</label>{{ entry.form.cumulative_outflow }}{{ entry.form.cumulative_outflow.errors }}</p>
-<small>{% trans "Enter running totals using the same counting origin as the earlier counters. A new baseline records the starting counters and account value; it does not produce a return." %}</small>
+<small>{% trans "Enter all deposits and withdrawals since account opening, starting from a zero balance. Total result is available immediately after saving. An earlier comparison is only needed for period return." %}</small>
+{% if entry.cumulative_result != None %}<p><strong>{% trans "Saved result since opening" %}: {{ entry.cumulative_result|money }}</strong></p>{% endif %}
 </div>
 <p class="muted">{% trans "Include account cash in the value. Purchases and sales within the account are not deposits or withdrawals." %}</p>
 </details>

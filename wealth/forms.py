@@ -139,7 +139,7 @@ class ValuationForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["flow_start"].choices = [("", _("No opening valuation"))]
-        self.fields["cumulative_start"].choices = [("", _("Start a new baseline on this date"))]
+        self.fields["cumulative_start"].choices = [("", _("No earlier comparison"))]
         mode = self.data.get(self.add_prefix("flow_mode"), "period") if self.is_bound else self.initial.get("flow_mode", "period")
         inactive = ("flow_start", "no_flows", "inflow", "outflow") if mode == "cumulative" else ("cumulative_start", "cumulative_inflow", "cumulative_outflow")
         for key in inactive:

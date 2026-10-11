@@ -753,3 +753,27 @@ msgstr "Beginwaarneming niet beschikbaar"
 
 msgid "Counter baseline"
 msgstr "Basis van de tellers"
+
+msgid "No earlier comparison"
+msgstr "Geen eerdere vergelijking"
+
+msgid "Enter all deposits and withdrawals since account opening, starting from a zero balance. Total result is available immediately after saving. An earlier comparison is only needed for period return."
+msgstr "Vul alle stortingen en onttrekkingen sinds opening van de rekening in, vanaf een beginsaldo van nul. Het totale resultaat is direct na opslaan beschikbaar. Een eerdere vergelijking is alleen nodig voor het perioderendement."
+
+msgid "Saved result since opening"
+msgstr "Opgeslagen resultaat sinds opening"
+
+msgid "Result since opening = current value − all deposits + all withdrawals. Cumulative totals cover the complete account history from a zero opening balance. This euro result needs no earlier valuation; an annual return percentage cannot be determined from these totals alone."
+msgstr "Resultaat sinds opening = huidige waarde − alle stortingen + alle onttrekkingen. Cumulatieve totalen omvatten de volledige rekeninghistorie vanaf een beginsaldo van nul. Voor dit resultaat in euro is geen eerder meetmoment nodig; een jaarlijks rendementspercentage is niet uit alleen deze totalen te bepalen."
+
+msgid "Result since opening"
+msgstr "Resultaat sinds opening"
+
+msgid "Period result"
+msgstr "Perioderesultaat"
+
+msgid "Estimated period return"
+msgstr "Geschat perioderendement"
+
+msgid "Counters decreased. Correct the totals or start a new comparison. Totals must still cover the complete account history; no period return is calculated across this change."
+msgstr "De tellers zijn gedaald. Corrigeer de totalen of begin een nieuwe vergelijking. De totalen moeten nog steeds de volledige rekeninghistorie omvatten; over deze wijziging wordt geen perioderendement berekend."

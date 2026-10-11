@@ -17,6 +17,23 @@ def owned(account, amount):
     return rounded(Decimal(amount) / 2) if account.joint else amount
 
 
+def cumulative_result(valuation):
+    """Euro result from complete inception counters and a zero opening balance.
+
+    Complete history is the user's confirmed convention for cumulative inputs.
+    This is independent of the comparison baseline used for period returns.
+    """
+    if valuation is None or valuation.flow_mode != "cumulative":
+        return None
+    deposits = valuation.cumulative_inflow_minor
+    withdrawals = valuation.cumulative_outflow_minor
+    if deposits is None or withdrawals is None or deposits < 0 or withdrawals < 0:
+        return None
+    if valuation.flow_end_date != valuation.snapshot.date:
+        return None
+    return valuation.amount_minor - deposits + withdrawals
+
+
 def performance(valuation):
     start = (valuation.cumulative_start_date if valuation.flow_mode == "cumulative"
              else valuation.flow_start_date)
@@ -149,6 +166,7 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
                 "amount": amount,
                 "stale": v.snapshot.date != snapshot.date,
                 "performance": performance(v) if account.kind == "broker" else None,
+                "cumulative_result": cumulative_result(v) if account.kind == "broker" else None,
                 "allocation_difference": v.amount_minor - allocated
                 if positions
                 else None,

@@ -21,7 +21,7 @@ from .forms import (
     minor,
 )
 from django.utils import formats
-from .services import report, performance, movement
+from .services import report, performance, movement, cumulative_result
 from .importer import parse_overview, import_overview
 
 
@@ -253,7 +253,7 @@ def snapshot_edit(request, pk):
                     elif data.get("cumulative_start"):
                         opening = _counter_at(history.get(a.pk, []), data["cumulative_start"])
                         if opening and (minor(data["cumulative_inflow"]) < opening.cumulative_inflow_minor or minor(data["cumulative_outflow"]) < opening.cumulative_outflow_minor):
-                            form.add_error("cumulative_start", _("Counters decreased. Correct the totals or explicitly start a new baseline; no return can be calculated across a reset."))
+                            form.add_error("cumulative_start", _("Counters decreased. Correct the totals or start a new comparison. Totals must still cover the complete account history; no period return is calculated across this change."))
                             valid = False
             if value is not None and (
                 (a.kind == "mortgage" and value > 0)
@@ -339,6 +339,7 @@ def snapshot_edit(request, pk):
             "form": f,
             "previous": prior.get(a.pk),
             "valuation": existing.get(a.pk),
+            "cumulative_result": cumulative_result(existing.get(a.pk)),
         }
         for a, f in zip(accounts, formset)
     ]
@@ -478,6 +479,7 @@ def analysis(request):
                         "name": row["account"].name,
                         "date": row["valuation"].snapshot.date,
                         "performance": row["performance"],
+                        "cumulative_result": row["cumulative_result"],
                     }
                 )
     return render(

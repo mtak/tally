@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.utils import translation
 from wealth.models import Entity, Account, Snapshot, Valuation, TaxAdjustment
-from wealth.services import performance, movement
+from wealth.services import performance, movement, cumulative_result
 from wealth.forms import ValuationForm
 
 pytestmark = pytest.mark.django_db
@@ -206,3 +206,62 @@ def test_migration_pins_legacy_flows_without_inventing_unknown_flows():
         assert value.inflow_minor is None and value.flow_start_date is None
     finally:
         MigrationExecutor(connection).migrate(new_target)
+
+
+@pytest.mark.parametrize("value,deposits,withdrawals,expected", [
+    (11800000, 11200000, 200000, 800000),
+    (1000000, 1000000, 0, 0),
+    (1000000, 1200000, 0, -200000),
+    (100000, 50000, 60000, 110000),
+])
+def test_total_result_on_first_reading_without_opening_observation(setup, value, deposits, withdrawals, expected):
+    client, account, opening, end = setup
+    opening.delete()
+    assert submit(setup, flow_mode="cumulative", cumulative_start="",
+                  amount=str(Decimal(value) / 100),
+                  cumulative_inflow=str(Decimal(deposits) / 100),
+                  cumulative_outflow=str(Decimal(withdrawals) / 100)).status_code == 302
+    recorded = Valuation.objects.get(snapshot=end)
+    assert cumulative_result(recorded) == expected
+    assert performance(recorded) is None
+    assert movement(end)["parts"][0]["amount"] == 0
+    analysis = client.get("/analysis/")
+    assert analysis.context["results"][0]["cumulative_result"] == expected
+    assert analysis.context["results"][0]["performance"] is None
+
+
+def test_total_and_period_result_use_distinct_origins(setup):
+    client, account, opening, end = setup
+    opening.amount_minor = 11000000
+    counters(opening)
+    assert submit(setup, flow_mode="cumulative", cumulative_start="2026-01-01",
+                  cumulative_inflow="112000", cumulative_outflow="2000").status_code == 302
+    recorded = Valuation.objects.get(snapshot=end)
+    assert cumulative_result(recorded) == 800000
+    assert performance(recorded)["result"] == -200000
+    opening.cumulative_baseline_date = date(2025, 1, 1)
+    opening.save()
+    assert performance(recorded) is None
+    assert cumulative_result(recorded) == 800000
+
+
+@pytest.mark.parametrize("lang,label", [("en", "Saved result since opening"), ("nl", "Opgeslagen resultaat sinds opening")])
+def test_saved_total_result_visible_in_form_and_analysis(setup, lang, label):
+    client, account, opening, end = setup
+    client.cookies["django_language"] = lang
+    assert submit(setup, flow_mode="cumulative", cumulative_start="", cumulative_inflow="112000", cumulative_outflow="2000").status_code == 302
+    page = client.get(f"/valuations/{end.pk}/")
+    assert label in page.content.decode()
+    assert page.context["entries"][0]["cumulative_result"] == 800000
+    assert client.get("/analysis/").context["results"][0]["cumulative_result"] == 800000
+
+
+def test_unknown_or_inactive_cumulative_counters_have_no_total_result(setup):
+    client, account, opening, end = setup
+    counters(opening)
+    assert cumulative_result(opening) == 0
+    opening.cumulative_outflow_minor = None
+    assert cumulative_result(opening) is None
+    opening.cumulative_outflow_minor = 0
+    opening.flow_mode = "period"
+    assert cumulative_result(opening) is None

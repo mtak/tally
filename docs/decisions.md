@@ -45,11 +45,15 @@
 - Period totals store explicit opening and closing valuation dates. Backdated
   observations do not reinterpret recorded totals; the opening date can be changed
   explicitly after reviewing the amounts.
-- Cumulative tracking begins with an explicitly selected baseline observation and
-  counters. Counters may start above zero; there is no implied lifetime profit.
-  Later observations compare counters within the same baseline. A decrease requires
-  correcting the entry or explicitly starting a new baseline, with no return across
-  that reset. Missing or incompatible endpoints produce no claimed return.
+- The user confirmed cumulative totals cover all deposits and withdrawals since
+  account opening, with a zero opening balance. Total euro result is therefore
+  current value minus cumulative deposits plus cumulative withdrawals, available
+  on the first reading. No lifetime or annualized percentage is inferred.
+- A comparison baseline is only needed for period results. Later observations
+  compare counters within the same baseline. A decrease requires correcting the
+  entry or explicitly starting a new comparison, with no period return across that
+  reset. Totals must still cover the complete account history; truncated counters
+  are not supported. Missing or incompatible endpoints produce no period return.
 - Switching modes retains the inactive inputs and their opening dates; only the
   selected mode participates in calculations. The CSV export includes both input
   sets, mode and endpoint/baseline dates.

@@ -45,6 +45,9 @@ date, while earlier history remains.
 For broker accounts, choose period totals between explicit valuation dates, or
 cumulative deposit/withdrawal counters. Cumulative tracking starts with a baseline
 valuation and starting counters; later matching counters yield the period flows.
+Cumulative totals cover complete history since account opening from a zero balance,
+as confirmed by the user. Total euro result (value minus deposits plus withdrawals)
+is shown on the first reading, independently of the period comparison.
 Counter decreases require correction or an explicit new baseline. Switching modes
 preserves inactive inputs. Backdated valuations do not change recorded flow periods.
 Use “No deposits or withdrawals” to confirm zero flows; blank means unknown.
