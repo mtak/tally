@@ -110,7 +110,20 @@ Keep migrations in Git and calculation rules explicitly tested.
 
 ## Development and verification
 
-Local Docker:
+Local Docker via Make:
+    make up TALLY_INSTANCE_NAME=tally-dev
+    make demo TALLY_INSTANCE_NAME=tally-demo TALLY_DEV_PORT=8002
+    make login TALLY_INSTANCE_NAME=tally-dev
+    make down TALLY_INSTANCE_NAME=tally-dev
+
+Make startup applies migrations and prints the URL plus a persistent, randomly
+generated development login (DEBUG only). Credentials live in the instance volume
+at /data/.dev-login.json with mode 600; never commit or include them in logs/screenshots.
+Use the same instance name and optional TALLY_ENV_FILE on subsequent commands.
+Demo seeding only accepts an empty portfolio. Existing credentials are never reset.
+See README.md for ports, cookie isolation and all Make targets.
+
+Local Docker without Make:
     docker compose -p tally-dev -f compose.yaml -f compose.dev.yaml up --build -d
     docker compose -p tally-dev -f compose.yaml -f compose.dev.yaml exec app python manage.py createsuperuser
 

@@ -5,15 +5,59 @@ Apache ECharts. English (default) and Dutch. Dark mode by default, with optional
 
 ## Local development (Docker, no Traefik)
 
+Install Docker with Compose v2 and GNU Make. Start a local instance:
+
+    make up
+
+For an instance with fictional test data:
+
+    make demo TALLY_INSTANCE_NAME=tally-demo
+
+Both commands build the image, apply migrations and start the app. The output shows
+the URL, username and password, so you can log in immediately. The default instance
+name is `tally-dev` and the default URL is http://localhost:8000. A `tally-dev`
+administrator is created with a random password; its credentials are saved with mode
+600 in `/data/.dev-login.json` in that instance's persistent volume. Restarts reuse
+the login. This convenience command requires DEBUG and is only for local development.
+Existing user passwords are never reset; if the saved login was changed or an existing
+`tally-dev` user has no saved password, the command reports an error.
+
+Set the instance name on **every** command targeting that instance. The name selects
+the Compose project, giving each instance separate database and backup volumes.
+Use a Compose-compatible name: lowercase letters, digits, hyphens or underscores,
+starting with a letter or digit. Make also passes this name to the application header,
+overriding `TALLY_INSTANCE_NAME` from an environment file.
+When running instances simultaneously, choose distinct ports and cookie names:
+
+    make demo TALLY_INSTANCE_NAME=tally-demo-2 TALLY_DEV_PORT=8002 TALLY_SESSION_COOKIE_NAME=tally_demo_2_session TALLY_CSRF_COOKIE_NAME=tally_demo_2_csrf
+
+Environment files are optional. For the existing real-data development instance:
+
+    make up TALLY_INSTANCE_NAME=tally-local TALLY_ENV_FILE=.env.local
+
+`TALLY_DEV_PORT` can be supplied on the command line or in the environment file
+(default 8000). Command-line options override values from the environment file.
+The same applies to `TALLY_SESSION_COOKIE_NAME` and `TALLY_CSRF_COOKIE_NAME`.
+
+Other commands (add the same instance/environment options as used for startup):
+
+    make help           # List commands and options
+    make seed           # Add fictional data to a running, empty portfolio
+    make login          # Display the URL and saved development credentials again
+    make superuser      # Interactively create an additional administrator
+    make logs           # Follow application logs
+    make down           # Stop the instance; keep its database, backups and login
+
+`make demo` runs startup followed by `make seed`. Seeding refuses a portfolio that
+already has accounts or valuations; it never clears existing data. Use `make up` to
+restart an existing instance. Use a separate Compose project for real data and never
+seed or import real history into a demo database. Development binds to localhost only.
+
+Without Make, the equivalent startup and seeding commands are:
+
     docker compose -p tally-dev -f compose.yaml -f compose.dev.yaml up --build -d
     docker compose -p tally-dev -f compose.yaml -f compose.dev.yaml exec app python manage.py createsuperuser
-
-Open http://localhost:8000. To populate an empty portfolio with fictional data:
-
     docker compose -p tally-dev -f compose.yaml -f compose.dev.yaml exec app python manage.py seed_demo
-
-Use a separate Compose project for real data. Never import real history into the demo
-database. Development binds to localhost only.
 
 See [AGENT.md](AGENT.md) for the project handoff and [DEPLOYMENT.md](DEPLOYMENT.md) for the full production runbook.
 
