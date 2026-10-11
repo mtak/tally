@@ -3,8 +3,11 @@ services:
     environment:
       DJANGO_DEBUG: "1"
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,[::1]
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-development-only-change-me}
+      TALLY_SESSION_COOKIE_NAME: ${TALLY_SESSION_COOKIE_NAME:-sessionid}
+      TALLY_CSRF_COOKIE_NAME: ${TALLY_CSRF_COOKIE_NAME:-csrftoken}
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${TALLY_DEV_PORT:-8000}:8000"
     volumes:
       - .:/app
     command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"

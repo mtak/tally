@@ -151,3 +151,15 @@ Check current CI rather than treating this historical result as current verifica
   configuration and login data.
 - Further decisions are recorded in docs/decisions.md. Update this handoff when a
   substantive decision or operational assumption changes.
+
+## Local instances prepared for review
+
+- Demo: Compose project tally-dev, http://localhost:8000, fictional data.
+- Real-data development: project tally-local, http://localhost:8001, using ignored
+  .env.local with a unique secret and distinct session/CSRF cookie names.
+- Restart the real-data instance with:
+      docker compose --env-file .env.local -p tally-local -f compose.yaml -f compose.dev.yaml up -d
+- Development uses fictional data. Never seed
+  this database or reset its volume. Inspect current state before importing again.
+- No production-server deployment is implied by this local real-data instance.
+- Draft deletion is tracked in GitHub issues; it has not been implemented yet.

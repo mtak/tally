@@ -94,6 +94,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+SESSION_COOKIE_NAME = os.getenv("TALLY_SESSION_COOKIE_NAME", "sessionid")
+CSRF_COOKIE_NAME = os.getenv("TALLY_CSRF_COOKIE_NAME", "csrftoken")
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG

@@ -131,3 +131,23 @@ results, explicitly entered bank/claim interest, property revaluation and tax co
 changes. Remaining income/spending, missing flows, mortgage principal movements and
 changes in coverage stay in Other / unexplained. Interest should be entered once, on
 the earning account, even when paid into another tracked account.
+
+## Local development with real history
+
+Keep demonstration and real portfolios in separate Compose projects/volumes.
+The development port and session/CSRF cookie names can be set through an ignored
+environment file, allowing both instances to run on localhost without login conflicts.
+
+The locally prepared real-data instance uses .env.local (mode 600), project tally-local
+and port 8001:
+
+    docker compose --env-file .env.local -p tally-local -f compose.yaml -f compose.dev.yaml up --build -d
+
+Open http://localhost:8001. Its login is separate from the demo. The configuration file
+contains a unique secret and must not be committed. To reproduce this setup elsewhere,
+create an ignored .env.local with TALLY_DEV_PORT=8001, TALLY_SESSION_COOKIE_NAME=tally_local_session,
+TALLY_CSRF_COOKIE_NAME=tally_local_csrf and a newly generated DJANGO_SECRET_KEY.
+Create your login and import your own CSV; do not seed demo data in this instance.
+
+This is a local development environment with DEBUG enabled and a loopback-only port,
+not the server's production deployment.
