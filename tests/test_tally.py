@@ -435,3 +435,86 @@ def test_rounded_valuation_save_preserves_cents(logged, account, snap):
     assert logged.post(path, data).status_code == 302
     v.refresh_from_db()
     assert v.amount_minor == 123600
+
+
+@pytest.fixture
+def draft(account):
+    snapshot = Snapshot.objects.create(date=date(2026, 2, 1))
+    observation = Valuation.objects.create(snapshot=snapshot, account=account, amount_minor=12345)
+    Position.objects.create(valuation=observation, name="Fictional position", value_minor=12345)
+    TaxAdjustment.objects.create(snapshot=snapshot, kind="bank_ab", amount_minor=-100)
+    return snapshot
+
+
+@pytest.mark.parametrize("lang", ["en", "nl"])
+def test_draft_delete_confirmation_and_cancellation(logged, draft, lang):
+    logged.cookies["django_language"] = lang
+    path = f"/valuations/{draft.pk}/delete/"
+    response = logged.get(path)
+    assert response.status_code == 200
+    text = response.content.decode()
+    assert ("Concept verwijderen?" if lang == "nl" else "Delete draft?") in text
+    assert ("waarnemingen, posities en belastingcorrecties" if lang == "nl" else "observations, positions and tax adjustments") in text
+    assert 'name="csrfmiddlewaretoken"' in text
+    assert f'href="/valuations/{draft.pk}/"' in text
+    assert logged.get(f"/valuations/{draft.pk}/").status_code == 200
+    assert Snapshot.objects.filter(pk=draft.pk).exists()
+    assert draft.valuations.count() == 1
+    assert Position.objects.count() == 1
+    assert draft.tax_adjustments.count() == 1
+    for page in ["/valuations/", f"/valuations/{draft.pk}/"]:
+        assert path in logged.get(page).content.decode()
+
+
+@pytest.mark.parametrize("lang", ["en", "nl"])
+def test_draft_delete_removes_related_records_only(logged, draft, account, snap, lang):
+    published = Valuation.objects.create(snapshot=snap, account=account, amount_minor=54321)
+    logged.cookies["django_language"] = lang
+    response = logged.post(f"/valuations/{draft.pk}/delete/", follow=True)
+    assert response.redirect_chain == [("/valuations/", 302)]
+    assert ("Concept verwijderd." if lang == "nl" else "Draft deleted.") in response.content.decode()
+    assert not Snapshot.objects.filter(pk=draft.pk).exists()
+    assert not Valuation.objects.filter(snapshot_id=draft.pk).exists()
+    assert not Position.objects.exists()
+    assert not TaxAdjustment.objects.filter(snapshot_id=draft.pk).exists()
+    assert Snapshot.objects.filter(pk=snap.pk, complete=True).exists()
+    assert Valuation.objects.filter(pk=published.pk).exists()
+    assert Account.objects.filter(pk=account.pk).exists()
+    assert Entity.objects.filter(pk=account.entity_id).exists()
+
+
+def test_draft_delete_protects_published_and_missing_snapshots(logged, draft, snap):
+    for page in ["/valuations/", f"/valuations/{snap.pk}/"]:
+        assert f"/valuations/{snap.pk}/delete/" not in logged.get(page).content.decode()
+    path = f"/valuations/{draft.pk}/delete/"
+    assert logged.get(path).status_code == 200
+    draft.complete = True
+    draft.save()
+    for pk in [snap.pk, draft.pk, max(snap.pk, draft.pk) + 1]:
+        for method in [logged.get, logged.post]:
+            assert method(f"/valuations/{pk}/delete/").status_code == 404
+    assert Snapshot.objects.filter(pk=draft.pk, complete=True).exists()
+    assert draft.valuations.count() == 1
+    assert Position.objects.count() == 1
+    assert draft.tax_adjustments.count() == 1
+
+
+def test_draft_delete_requires_login_and_csrf(logged, draft):
+    path = f"/valuations/{draft.pk}/delete/"
+    anonymous = Client(enforce_csrf_checks=True)
+    assert anonymous.get(path).status_code == 302
+    assert anonymous.post(path).status_code in [302, 403]
+    secure = Client(enforce_csrf_checks=True)
+    secure.force_login(get_user_model().objects.get(username="tester"))
+    assert secure.post(path).status_code == 403
+    assert Snapshot.objects.filter(pk=draft.pk).exists()
+    assert secure.get(path).status_code == 200
+    token = secure.cookies["csrftoken"].value
+    assert secure.post(path, {"csrfmiddlewaretoken": token}).status_code == 302
+    assert not Snapshot.objects.filter(pk=draft.pk).exists()
+
+
+@pytest.mark.parametrize("method", ["put", "patch", "delete"])
+def test_draft_delete_rejects_other_methods(logged, draft, method):
+    assert getattr(logged, method)(f"/valuations/{draft.pk}/delete/").status_code == 405
+    assert Snapshot.objects.filter(pk=draft.pk).exists()

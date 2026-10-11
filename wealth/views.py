@@ -9,7 +9,7 @@ from django.forms import formset_factory
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.utils.http import url_has_allowed_host_and_scheme
 from .preferences import cents_cookie_name
 from .models import Account, Entity, Snapshot, Valuation, ASSETS
@@ -170,6 +170,19 @@ def snapshot_add(request):
         "wealth/form.html",
         {"form": form, "title": _("New valuation"), "back": "snapshots"},
     )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def snapshot_delete(request, pk):
+    # Recheck draft status at submission, in the same transaction as deletion.
+    with transaction.atomic():
+        snapshot = get_object_or_404(Snapshot, pk=pk, complete=False)
+        if request.method == "POST":
+            snapshot.delete()
+            messages.success(request, _("Draft deleted."))
+            return redirect("snapshots")
+    return render(request, "wealth/snapshot_delete.html", {"snapshot": snapshot})
 
 
 @login_required

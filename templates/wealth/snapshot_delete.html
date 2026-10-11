@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% load i18n %}{% block content %}
+<div class="page-heading"><div><a class="back-link" href="{% url 'snapshots' %}">← {% trans "Valuations" %}</a><h1>{% trans "Delete draft?" %}</h1><p class="muted">{{ snapshot.date|date:"DATE_FORMAT" }}</p></div></div>
+<section class="card form-card">
+<p>{% trans "This will permanently delete this draft and all its associated observations, positions and tax adjustments. This cannot be undone." %}</p>
+<form method="post" action="{% url 'snapshot_delete' snapshot.pk %}">{% csrf_token %}
+<div class="actions"><a class="button secondary" href="{% url 'snapshot_edit' snapshot.pk %}">{% trans "Cancel" %}</a><button class="button" type="submit">{% trans "Delete draft" %}</button></div>
+</form></section>{% endblock %}

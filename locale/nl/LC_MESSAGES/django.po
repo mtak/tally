@@ -816,3 +816,15 @@ msgstr "Behoud deze rekeningwaarde om de gearchiveerde positiegegevens te beware
 
 msgid "A change in total wealth is not automatically investment return. Income, spending and unknown net deposits remain unexplained."
 msgstr "Een verandering in totaalvermogen is niet automatisch beleggingsrendement. Inkomsten, uitgaven en onbekende netto-inleg blijven onverklaard."
+
+msgid "Delete draft?"
+msgstr "Concept verwijderen?"
+
+msgid "Delete draft"
+msgstr "Concept verwijderen"
+
+msgid "This will permanently delete this draft and all its associated observations, positions and tax adjustments. This cannot be undone."
+msgstr "Dit verwijdert het concept en alle bijbehorende waarnemingen, posities en belastingcorrecties definitief. Dit kan niet ongedaan worden gemaakt."
+
+msgid "Draft deleted."
+msgstr "Concept verwijderd."

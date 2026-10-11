@@ -182,4 +182,6 @@ Check current CI rather than treating this historical result as current verifica
 - Development uses fictional data. Never seed
   this database or reset its volume. Inspect current state before importing again.
 - No production-server deployment is implied by this local real-data instance.
-- Draft deletion is tracked in GitHub issues; it has not been implemented yet.
+- Draft valuations can be deleted from the list or editor after a translated confirmation.
+  Deletion requires an authenticated CSRF-protected POST and removes associated
+  observations, archived positions and tax adjustments. Published valuations are protected.
