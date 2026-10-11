@@ -672,3 +672,84 @@ msgstr "Persoonlijke indeling; geen belastingaangifte"
 
 msgid "Enter a tax basis before publishing this company account."
 msgstr "Vul een belastinggrondslag in voordat je dit zakelijke account publiceert."
+
+msgid "Tax basis (EUR)"
+msgstr "Belastinggrondslag (EUR)"
+
+msgid "Flow entry"
+msgstr "Invoer van geldstromen"
+
+msgid "Period totals"
+msgstr "Periodetotalen"
+
+msgid "Cumulative totals"
+msgstr "Cumulatieve totalen"
+
+msgid "Period starts at valuation"
+msgstr "Periode begint bij meetmoment"
+
+msgid "Compare counters with valuation"
+msgstr "Vergelijk tellers met meetmoment"
+
+msgid "No deposits or withdrawals"
+msgstr "Geen stortingen of onttrekkingen"
+
+msgid "Total deposited (EUR)"
+msgstr "Totaal gestort (EUR)"
+
+msgid "Total withdrawn (EUR)"
+msgstr "Totaal onttrokken (EUR)"
+
+msgid "No opening valuation"
+msgstr "Geen beginmeetmoment"
+
+msgid "Start a new baseline on this date"
+msgstr "Begin een nieuwe basis op deze datum"
+
+msgid "Clear the flow amounts before confirming no deposits or withdrawals."
+msgstr "Wis de bedragen voordat je bevestigt dat er geen stortingen of onttrekkingen zijn."
+
+msgid "Deposits & withdrawals"
+msgstr "Stortingen en onttrekkingen"
+
+msgid "Through"
+msgstr "Tot en met"
+
+msgid "Deposits (EUR)"
+msgstr "Stortingen (EUR)"
+
+msgid "Withdrawals (EUR)"
+msgstr "Onttrekkingen (EUR)"
+
+msgid "Enter totals for the selected period. Blank means unknown; zero confirms no flow."
+msgstr "Vul totalen voor de gekozen periode in. Leeg betekent onbekend; nul bevestigt dat er geen geldstroom is."
+
+msgid "Enter running totals using the same counting origin as the earlier counters. A new baseline records the starting counters and account value; it does not produce a return."
+msgstr "Vul lopende totalen in met hetzelfde telbegin als de eerdere tellers. Een nieuwe basis legt de begintellers en accountwaarde vast; dit levert nog geen rendement op."
+
+msgid "Include account cash in the value. Purchases and sales within the account are not deposits or withdrawals."
+msgstr "Neem het kassaldo van het account mee in de waarde. Aankopen en verkopen binnen het account zijn geen stortingen of onttrekkingen."
+
+msgid "Tax basis"
+msgstr "Belastinggrondslag"
+
+msgid "Used only for the liquidation tax scenario. Separate from performance deposits and withdrawals."
+msgstr "Alleen gebruikt voor het liquidatiescenario. Los van stortingen en onttrekkingen voor de rendementsberekening."
+
+msgid "Flows unknown or no matching baseline"
+msgstr "Geldstromen onbekend of geen passende basis"
+
+msgid "Choose an opening valuation, or leave flows unknown for the first observation."
+msgstr "Kies een beginmeetmoment, of laat geldstromen onbekend bij de eerste waarneming."
+
+msgid "Enter both cumulative counters, including zero."
+msgstr "Vul beide cumulatieve tellers in, inclusief nul."
+
+msgid "Counters decreased. Correct the totals or explicitly start a new baseline; no return can be calculated across a reset."
+msgstr "De tellers zijn gedaald. Corrigeer de totalen of begin expliciet een nieuwe basis; over een herstart kan geen rendement worden berekend."
+
+msgid "Opening observation unavailable"
+msgstr "Beginwaarneming niet beschikbaar"
+
+msgid "Counter baseline"
+msgstr "Basis van de tellers"

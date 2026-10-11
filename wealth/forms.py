@@ -128,21 +128,43 @@ class SnapshotForm(forms.ModelForm):
 class ValuationForm(forms.Form):
     account_id = forms.IntegerField(widget=forms.HiddenInput)
     amount = money_field(_("Value (EUR)"))
-    basis = money_field(_("Tax basis / net contributions (EUR)"))
+    basis = money_field(_("Tax basis (EUR)"))
+    flow_mode = forms.ChoiceField(label=_("Flow entry"), choices=[("period", _("Period totals")), ("cumulative", _("Cumulative totals"))], required=False)
+    flow_start = forms.ChoiceField(label=_("Period starts at valuation"), required=False)
+    cumulative_start = forms.ChoiceField(label=_("Compare counters with valuation"), required=False)
+    no_flows = forms.BooleanField(label=_("No deposits or withdrawals"), required=False)
+    cumulative_inflow = money_field(_("Total deposited (EUR)"), minimum=0)
+    cumulative_outflow = money_field(_("Total withdrawn (EUR)"), minimum=0)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["flow_start"].choices = [("", _("No opening valuation"))]
+        self.fields["cumulative_start"].choices = [("", _("Start a new baseline on this date"))]
+        mode = self.data.get(self.add_prefix("flow_mode"), "period") if self.is_bound else self.initial.get("flow_mode", "period")
+        inactive = ("flow_start", "no_flows", "inflow", "outflow") if mode == "cumulative" else ("cumulative_start", "cumulative_inflow", "cumulative_outflow")
+        for key in inactive:
+            self.fields[key].disabled = True
+
     inflow = money_field(_("Deposits since previous valuation (EUR)"), minimum=0)
     outflow = money_field(_("Withdrawals since previous valuation (EUR)"), minimum=0)
     interest = money_field(_("Interest received or accrued (EUR)"))
 
     def clean(self):
         data = super().clean()
-        if (data.get("inflow") is None) != (data.get("outflow") is None):
+        data["flow_mode"] = data.get("flow_mode") or "period"
+        if data["flow_mode"] == "period" and data.get("no_flows"):
+            if any(data.get(key) not in (None, Decimal(0)) for key in ("inflow", "outflow")):
+                raise forms.ValidationError(_("Clear the flow amounts before confirming no deposits or withdrawals."))
+            data["inflow"] = data["outflow"] = Decimal(0)
+        keys = ("cumulative_inflow", "cumulative_outflow") if data["flow_mode"] == "cumulative" else ("inflow", "outflow")
+        if (data.get(keys[0]) is None) != (data.get(keys[1]) is None):
             raise forms.ValidationError(
                 _(
                     "Enter both deposits and withdrawals, including zero, or leave both blank."
                 )
             )
         if data.get("amount") is None and any(
-            data.get(x) is not None for x in ("basis", "inflow", "outflow", "interest")
+            data.get(x) is not None for x in ("basis", *keys, "interest")
         ):
             raise forms.ValidationError(
                 _("Enter a value before entering contributions or a tax basis.")

@@ -107,6 +107,15 @@ class Valuation(models.Model):
         null=True, blank=True, validators=[MinValueValidator(0)]
     )
     interest_minor = models.BigIntegerField(null=True, blank=True)
+    flow_mode = models.CharField(max_length=12, default="period", choices=[
+        ("period", _("Period totals")), ("cumulative", _("Cumulative totals")),
+    ])
+    flow_start_date = models.DateField(null=True, blank=True)
+    flow_end_date = models.DateField(null=True, blank=True)
+    cumulative_inflow_minor = models.BigIntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    cumulative_outflow_minor = models.BigIntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    cumulative_start_date = models.DateField(null=True, blank=True)
+    cumulative_baseline_date = models.DateField(null=True, blank=True)
 
     class Meta:
         constraints = [

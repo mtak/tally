@@ -38,3 +38,20 @@
 - Automated quote adapters, with source approval and immutable valuation history.
 - Versioned classification/ownership changes if historical reinterpretation is needed.
 - More flexible imports and a full portable JSON export.
+
+## Investment flow entry (#3)
+
+- Both period totals and cumulative deposit/withdrawal counters are supported.
+- Period totals store explicit opening and closing valuation dates. Backdated
+  observations do not reinterpret recorded totals; the opening date can be changed
+  explicitly after reviewing the amounts.
+- Cumulative tracking begins with an explicitly selected baseline observation and
+  counters. Counters may start above zero; there is no implied lifetime profit.
+  Later observations compare counters within the same baseline. A decrease requires
+  correcting the entry or explicitly starting a new baseline, with no return across
+  that reset. Missing or incompatible endpoints produce no claimed return.
+- Switching modes retains the inactive inputs and their opening dates; only the
+  selected mode participates in calculations. The CSV export includes both input
+  sets, mode and endpoint/baseline dates.
+- Confirmed zero flows use a dedicated shortcut. Blank flows remain unknown.
+- Tax basis remains independent of performance counters and imported adjustments.

@@ -137,6 +137,8 @@ def test_account_return_uses_flows_not_trades(account, snap):
         account=account,
         snapshot=s,
         amount_minor=11800000,
+        flow_start_date=snap.date,
+        flow_end_date=s.date,
         inflow_minor=1200000,
         outflow_minor=200000,
     )
@@ -151,7 +153,8 @@ def test_negative_capital_has_no_percentage(account, snap):
     Valuation.objects.create(account=account, snapshot=snap, amount_minor=0)
     s = Snapshot.objects.create(date=date(2025, 8, 1), complete=True)
     v = Valuation.objects.create(
-        account=account, snapshot=s, amount_minor=0, inflow_minor=0, outflow_minor=100
+        account=account, snapshot=s, amount_minor=0, inflow_minor=0, outflow_minor=100,
+        flow_start_date=snap.date, flow_end_date=s.date,
     )
     assert performance(v)["percent"] is None
 
@@ -309,6 +312,8 @@ def test_movement_bridge_reconciles_and_ignores_internal_flows(owner, snap):
         account=broker,
         snapshot=later,
         amount_minor=17000,
+        flow_start_date=snap.date,
+        flow_end_date=later.date,
         inflow_minor=5000,
         outflow_minor=0,
     )

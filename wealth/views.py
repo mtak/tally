@@ -20,6 +20,7 @@ from .forms import (
     ImportForm,
     minor,
 )
+from django.utils import formats
 from .services import report, performance, movement
 from .importer import parse_overview, import_overview
 
@@ -158,6 +159,17 @@ def snapshot_add(request):
     )
 
 
+def _counter_at(observations, selected_date):
+    return next((
+        item for item in observations
+        if item.snapshot.date.isoformat() == selected_date
+        and item.flow_mode == "cumulative"
+        and item.cumulative_baseline_date is not None
+        and item.cumulative_inflow_minor is not None
+        and item.cumulative_outflow_minor is not None
+    ), None)
+
+
 @login_required
 def snapshot_edit(request, pk):
     s = get_object_or_404(Snapshot, pk=pk)
@@ -168,29 +180,57 @@ def snapshot_edit(request, pk):
     )
     existing = {v.account_id: v for v in s.valuations.all()}
     prior = {}
+    history = {}
     for v in (
         Valuation.objects.filter(snapshot__complete=True, snapshot__date__lt=s.date)
         .select_related("snapshot")
         .order_by("snapshot__date")
     ):
         prior[v.account_id] = v
+        history.setdefault(v.account_id, []).append(v)
     initial = []
     for a in accounts:
         v = existing.get(a.pk)
-        row = {"account_id": a.pk}
+        row = {"account_id": a.pk, "flow_mode": prior[a.pk].flow_mode if a.pk in prior else "period"}
+        if a.pk in prior:
+            row["flow_start"] = prior[a.pk].snapshot.date.isoformat()
+            cumulative = [item for item in history[a.pk]
+                          if _counter_at([item], item.snapshot.date.isoformat())]
+            if cumulative:
+                row["cumulative_start"] = cumulative[-1].snapshot.date.isoformat()
         if v:
+            row["flow_mode"] = v.flow_mode
+            row["flow_start"] = v.flow_start_date.isoformat() if v.flow_start_date else ""
+            row["cumulative_start"] = v.cumulative_start_date.isoformat() if v.cumulative_start_date else ""
+
             for field, key in [
                 ("amount_minor", "amount"),
                 ("basis_minor", "basis"),
                 ("inflow_minor", "inflow"),
                 ("outflow_minor", "outflow"),
                 ("interest_minor", "interest"),
+                ("cumulative_inflow_minor", "cumulative_inflow"),
+                ("cumulative_outflow_minor", "cumulative_outflow"),
             ]:
                 amount = getattr(v, field)
                 row[key] = None if amount is None else Decimal(amount) / 100
         initial.append(row)
     FormSet = formset_factory(ValuationForm, extra=0, max_num=500, validate_max=True)
     formset = FormSet(request.POST or None, initial=initial)
+    for form, account in zip(formset, accounts):
+        observations = history.get(account.pk, [])
+        for item in observations:
+            day = item.snapshot.date.isoformat()
+            choice = (day, formats.date_format(item.snapshot.date, "SHORT_DATE_FORMAT"))
+            form.fields["flow_start"].choices.append(choice)
+            if _counter_at([item], day):
+                form.fields["cumulative_start"].choices.append(choice)
+        # Keep recorded endpoints selectable when their opening observation is no
+        # longer published. Calculations then explicitly remain unavailable.
+        for key in ("flow_start", "cumulative_start"):
+            recorded = form.initial.get(key)
+            if recorded and recorded not in {value for value, label in form.fields[key].choices}:
+                form.fields[key].choices.append((recorded, recorded + " — " + str(_("Opening observation unavailable"))))
     if request.method == "POST" and formset.is_valid():
         ids = [f.cleaned_data.get("account_id") for f in formset]
         if len(ids) != len(set(ids)) or set(ids) != {a.pk for a in accounts}:
@@ -199,7 +239,22 @@ def snapshot_edit(request, pk):
         for form, a in zip(formset, accounts):
             if form.cleaned_data["account_id"] != a.pk:
                 return HttpResponseBadRequest("Invalid order")
-            value = form.cleaned_data.get("amount")
+            data = form.cleaned_data
+            value = data.get("amount")
+            if a.kind == "broker" and value is not None:
+                if data["flow_mode"] == "period":
+                    if data.get("inflow") is not None and history.get(a.pk) and not data.get("flow_start"):
+                        form.add_error("flow_start", _("Choose an opening valuation, or leave flows unknown for the first observation."))
+                        valid = False
+                else:
+                    if data.get("cumulative_inflow") is None:
+                        form.add_error("cumulative_inflow", _("Enter both cumulative counters, including zero."))
+                        valid = False
+                    elif data.get("cumulative_start"):
+                        opening = _counter_at(history.get(a.pk, []), data["cumulative_start"])
+                        if opening and (minor(data["cumulative_inflow"]) < opening.cumulative_inflow_minor or minor(data["cumulative_outflow"]) < opening.cumulative_outflow_minor):
+                            form.add_error("cumulative_start", _("Counters decreased. Correct the totals or explicitly start a new baseline; no return can be calculated across a reset."))
+                            valid = False
             if value is not None and (
                 (a.kind == "mortgage" and value > 0)
                 or (a.kind != "mortgage" and value < 0)
@@ -240,14 +295,35 @@ def snapshot_edit(request, pk):
                     if d["amount"] is None:
                         s.valuations.filter(account_id=d["account_id"]).delete()
                     else:
+                        old = existing.get(d["account_id"])
+                        broker = next(a for a in accounts if a.pk == d["account_id"]).kind == "broker"
+                        flow_defaults = {}
+                        if broker:
+                            flow_defaults = {"flow_mode": d["flow_mode"], "flow_end_date": s.date}
+                            if d["flow_mode"] == "period":
+                                flow_defaults.update(
+                                    inflow_minor=minor(d["inflow"]),
+                                    outflow_minor=minor(d["outflow"]),
+                                    flow_start_date=d["flow_start"] or None,
+                                )
+                            else:
+                                opening = _counter_at(history.get(d["account_id"], []), d["cumulative_start"])
+                                baseline = opening.cumulative_baseline_date if opening else s.date
+                                if old and d["cumulative_start"] and old.cumulative_start_date and old.cumulative_start_date.isoformat() == d["cumulative_start"]:
+                                    baseline = old.cumulative_baseline_date
+                                flow_defaults.update(
+                                    cumulative_inflow_minor=minor(d["cumulative_inflow"]),
+                                    cumulative_outflow_minor=minor(d["cumulative_outflow"]),
+                                    cumulative_start_date=d["cumulative_start"] or None,
+                                    cumulative_baseline_date=baseline,
+                                )
                         Valuation.objects.update_or_create(
                             snapshot=s,
                             account_id=d["account_id"],
                             defaults={
                                 "amount_minor": minor(d["amount"]),
                                 "basis_minor": minor(d["basis"]),
-                                "inflow_minor": minor(d["inflow"]),
-                                "outflow_minor": minor(d["outflow"]),
+                                **flow_defaults,
                                 "interest_minor": minor(d["interest"]),
                             },
                         )
@@ -350,6 +426,9 @@ def export(request):
             "deposits_eur",
             "withdrawals_eur",
             "ownership",
+            "flow_mode", "flow_start_date", "flow_end_date",
+            "cumulative_deposits_eur", "cumulative_withdrawals_eur",
+            "cumulative_start_date", "cumulative_baseline_date",
         ]
     )
 
@@ -373,6 +452,10 @@ def export(request):
                 "EUR",
                 *vals,
                 "0.5" if v.account.joint else "1",
+                v.flow_mode, v.flow_start_date or "", v.flow_end_date or "",
+                "" if v.cumulative_inflow_minor is None else str(Decimal(v.cumulative_inflow_minor) / 100),
+                "" if v.cumulative_outflow_minor is None else str(Decimal(v.cumulative_outflow_minor) / 100),
+                v.cumulative_start_date or "", v.cumulative_baseline_date or "",
             ]
         )
     return response
