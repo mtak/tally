@@ -3,6 +3,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
+TALLY_INSTANCE_NAME = os.getenv("TALLY_INSTANCE_NAME", "").strip()
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY", "development-only-change-me" if DEBUG else ""
 )
@@ -57,6 +58,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
+                "config.context_processors.instance_name",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ]

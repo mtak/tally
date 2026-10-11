@@ -1,5 +1,5 @@
 {% load static i18n %}{% get_current_language as language %}
-<!doctype html><html lang="{{ language }}" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Tally{% endblock %}</title>
+<!doctype html><html lang="{{ language }}" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Tally{% endblock %}{% if tally_instance_name %} · {{ tally_instance_name }}{% endif %}</title>
 <script src="{% static 'theme.js' %}"></script>
 <link rel="stylesheet" href="{% static 'app.css' %}"><script src="{% static 'vendor/htmx.min.js' %}" defer></script><script src="{% static 'vendor/echarts.min.js' %}" defer></script><script src="{% static 'app.js' %}" defer></script></head>
 <body><div class="app-shell">
@@ -13,7 +13,7 @@
 <a href="{% url 'imports' %}"><span aria-hidden="true">↓</span>{% trans "Import history" %}</a></nav>
 <div class="sidebar-footer"><div class="local-badge"><span></span>{% trans "Your data. Your server." %}</div>
 <a href="{% url 'export' %}">{% trans "Export observations" %} ↗</a><small>Tally · v0.1</small></div></aside>
-<div class="workspace"><header class="topbar"><span class="workspace-label">{% trans "Personal wealth" %}</span><div class="top-actions">
+<div class="workspace"><header class="topbar"><span class="workspace-label{% if tally_instance_name %} instance-name{% endif %}">{% if tally_instance_name %}{{ tally_instance_name }}{% else %}{% trans "Personal wealth" %}{% endif %}</span><div class="top-actions">
 <form action="{% url 'set_language' %}" method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
 <label class="sr-only" for="language">{% trans "Language" %}</label><select id="language" name="language" data-auto-submit><option value="nl" {% if language == 'nl' %}selected{% endif %}>NL</option><option value="en" {% if language == 'en' %}selected{% endif %}>EN</option></select></form>
 <button type="button" class="icon-button" id="theme-toggle" aria-label="{% trans 'Toggle dark mode' %}" title="{% trans 'Toggle dark mode' %}">◐</button>
