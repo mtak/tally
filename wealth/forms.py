@@ -2,10 +2,37 @@ from decimal import Decimal, InvalidOperation
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import Account, Entity, Snapshot, Position, ASSETS
+from .preferences import whole_amount
+
+
+class MoneyField(forms.DecimalField):
+    whole_only = False
+    original = None
+
+    def clean(self, value):
+        result = super().clean(value)
+        if self.whole_only and result is not None:
+            if result != whole_amount(result):
+                raise forms.ValidationError(_("Enter a whole amount, or enable cents."))
+            if self.original is not None and result == whole_amount(self.original):
+                return Decimal(self.original)
+        return result
+
+
+class MoneyFormMixin:
+    def __init__(self, *args, show_cents=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if isinstance(field, MoneyField) and not show_cents:
+                field.whole_only = True
+                field.original = self.initial.get(name, field.initial)
+                if field.original is not None:
+                    self.initial[name] = whole_amount(field.original)
+                field.widget.attrs["inputmode"] = "numeric"
 
 
 def money_field(label, required=False, minimum=None):
-    return forms.DecimalField(
+    return MoneyField(
         label=label,
         required=required,
         max_digits=16,
@@ -125,7 +152,7 @@ class SnapshotForm(forms.ModelForm):
         return obj
 
 
-class ValuationForm(forms.Form):
+class ValuationForm(MoneyFormMixin, forms.Form):
     account_id = forms.IntegerField(widget=forms.HiddenInput)
     amount = money_field(_("Value (EUR)"))
     basis = money_field(_("Tax basis (EUR)"))
@@ -172,7 +199,7 @@ class ValuationForm(forms.Form):
         return data
 
 
-class PositionForm(forms.ModelForm):
+class PositionForm(MoneyFormMixin, forms.ModelForm):
     value = money_field(_("Position value (EUR)"), required=True, minimum=0)
     quantity = forms.DecimalField(
         label=_("Quantity"),
@@ -182,7 +209,7 @@ class PositionForm(forms.ModelForm):
         min_value=0,
         localize=True,
     )
-    price = forms.DecimalField(
+    price = MoneyField(
         label=_("Price in original currency"),
         required=False,
         max_digits=24,

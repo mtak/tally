@@ -103,6 +103,8 @@ and other cloud providers need discussion. No external data service is configure
 - tests/test_tally.py: fictional calculation, import, validation and view tests.
 
 Store money as integer cents and calculate with Decimal (half-up rounding).
+Money display/input defaults to whole amounts. The top-bar preference enables cents
+and is saved per browser/instance. Unchanged rounded fields preserve stored precision.
 Optional exact quantities/prices use decimal strings, not SQLite REAL arithmetic.
 Keep migrations in Git and calculation rules explicitly tested.
 

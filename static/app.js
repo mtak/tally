@@ -7,6 +7,7 @@
     try { localStorage.setItem("tally-theme", theme); } catch {}
     draw();
   });
+  const digits = document.documentElement.dataset.showCents === "true" ? 2 : 0;
   let charts = [];
   function draw() {
     charts.forEach(c => c.dispose()); charts = [];
@@ -17,7 +18,7 @@
     const style = getComputedStyle(document.documentElement);
     const ink = style.getPropertyValue("--muted").trim(), line = style.getPropertyValue("--line").trim();
     const lang = document.documentElement.lang;
-    const number = new Intl.NumberFormat(lang, {style:"currency", currency:"EUR", maximumFractionDigits:0});
+    const number = new Intl.NumberFormat(lang, {style:"currency", currency:"EUR", minimumFractionDigits:digits,maximumFractionDigits:digits});
     const tooltipStyle = {backgroundColor:style.getPropertyValue("--surface").trim(), borderColor:line, textStyle:{color:ink}};
     const common = {animation:false,color:palette, textStyle:{fontFamily:"-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif", color:ink},
       aria:{enabled:false}, tooltip:{...tooltipStyle,trigger:"item", valueFormatter:v => number.format(v)},
@@ -54,7 +55,7 @@
     const data=JSON.parse(source.textContent);
     const style=getComputedStyle(document.documentElement), ink=style.getPropertyValue("--muted").trim();
     const line=style.getPropertyValue("--line").trim();
-    const money=new Intl.NumberFormat(document.documentElement.lang,{style:"currency",currency:"EUR",maximumFractionDigits:0});
+    const money=new Intl.NumberFormat(document.documentElement.lang,{style:"currency",currency:"EUR",minimumFractionDigits:digits,maximumFractionDigits:digits});
     const c=echarts.init(node);charts.push(c);
     c.setOption({animation:false,aria:{enabled:false},grid:{left:75,right:15,top:20,bottom:85},
       tooltip:{backgroundColor:style.getPropertyValue("--surface").trim(),borderColor:line,textStyle:{color:ink},trigger:"axis",formatter:params=>money.format(data.values[params[0].dataIndex])},

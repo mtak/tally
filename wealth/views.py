@@ -10,6 +10,8 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
+from django.utils.http import url_has_allowed_host_and_scheme
+from .preferences import cents_cookie_name
 from .models import Account, Entity, Snapshot, Valuation, Position, ASSETS
 from .forms import (
     AccountForm,
@@ -23,6 +25,19 @@ from .forms import (
 from django.utils import formats
 from .services import report, performance, movement, cumulative_result
 from .importer import parse_overview, import_overview
+
+
+@login_required
+@require_POST
+def money_preference(request):
+    next_url = request.POST.get("next", "/")
+    if not url_has_allowed_host_and_scheme(next_url, {request.get_host()}, require_https=request.is_secure()):
+        next_url = "/"
+    response = redirect(next_url)
+    response.set_cookie(cents_cookie_name(), "1" if request.POST.get("show_cents") == "1" else "0",
+                        max_age=365 * 24 * 60 * 60, httponly=True,
+                        secure=request.is_secure(), samesite="Lax")
+    return response
 
 
 @login_required
@@ -216,7 +231,7 @@ def snapshot_edit(request, pk):
                 row[key] = None if amount is None else Decimal(amount) / 100
         initial.append(row)
     FormSet = formset_factory(ValuationForm, extra=0, max_num=500, validate_max=True)
-    formset = FormSet(request.POST or None, initial=initial)
+    formset = FormSet(request.POST or None, initial=initial, form_kwargs={"show_cents": request.show_cents})
     for form, account in zip(formset, accounts):
         observations = history.get(account.pk, [])
         for item in observations:
@@ -362,8 +377,8 @@ def positions(request, pk, position_pk=None):
         if position_pk
         else None
     )
-    initial = {"value": Decimal(position.value_minor) / 100} if position else None
-    form = PositionForm(request.POST or None, instance=position, initial=initial)
+    initial = {"value": Decimal(position.value_minor) / 100, "price": position.price or None} if position else None
+    form = PositionForm(request.POST or None, instance=position, initial=initial, show_cents=request.show_cents)
     if request.method == "POST" and form.is_valid():
         obj = form.save(False)
         obj.valuation = v
