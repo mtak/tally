@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    init: true
+    environment:
+      TALLY_DATA_DIR: /data
+      TZ: Europe/Amsterdam
+    volumes:
+      - tally-data:/data
+      - tally-backups:/backups
+volumes:
+  tally-data:
+  tally-backups:

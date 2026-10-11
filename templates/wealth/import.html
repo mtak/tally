@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% load i18n %}{% block content %}
+<div class="page-heading"><div><div class="eyebrow">{% trans "BRING YOUR HISTORY" %}</div><h1>{% trans "Import history" %}</h1><p class="muted">{% trans "Import your Google Sheets Overview CSV. Existing dates are never overwritten." %}</p></div></div>
+<form method="post" enctype="multipart/form-data" class="card form-card">{% csrf_token %}{{ form.as_p }}<button class="button">{% trans "Preview / import" %}</button><p class="muted">{% trans "Leave the confirmation unchecked for a preview. To import, select the file again and check the confirmation." %}</p></form>
+{% if preview %}<section class="card"><h2>{% trans "Import preview" %}</h2><p>{{ preview.observations|length }} {% trans "valuations found" %}</p><ul>{% for warning in preview.warnings %}<li>{{ warning }}</li>{% endfor %}</ul></section>{% endif %}{% endblock %}

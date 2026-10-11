@@ -1,0 +1,674 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tally 0.1\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "YOUR WEALTH"
+msgstr "JE VERMOGEN"
+
+msgid "Main navigation"
+msgstr "Hoofdnavigatie"
+
+msgid "Overview"
+msgstr "Overzicht"
+
+msgid "Performance"
+msgstr "Rendement"
+
+msgid "Accounts"
+msgstr "Accounts"
+
+msgid "Valuations"
+msgstr "Meetmomenten"
+
+msgid "Import history"
+msgstr "Historie importeren"
+
+msgid "Your data. Your server."
+msgstr "Jouw gegevens. Jouw server."
+
+msgid "Export observations"
+msgstr "Waarden exporteren"
+
+msgid "Personal wealth"
+msgstr "Persoonlijk vermogen"
+
+msgid "Language"
+msgstr "Taal"
+
+msgid "Toggle dark mode"
+msgstr "Donkere modus wisselen"
+
+msgid "Sign out"
+msgstr "Uitloggen"
+
+msgid "Clarity, one valuation at a time."
+msgstr "Inzicht bij ieder meetmoment."
+
+msgid "Self-hosted"
+msgstr "Zelf gehost"
+
+msgid "WELCOME TO TALLY"
+msgstr "WELKOM BIJ TALLY"
+
+msgid "Your wealth, in perspective."
+msgstr "Je vermogen in perspectief."
+
+msgid "Sign in to your private workspace."
+msgstr "Log in op je persoonlijke omgeving."
+
+msgid "Sign in"
+msgstr "Inloggen"
+
+msgid "THE BUILDING BLOCKS"
+msgstr "DE ONDERDELEN"
+
+msgid "Accounts & assets"
+msgstr "Accounts en bezittingen"
+
+msgid "Set up once. Update values whenever it suits you."
+msgstr "Eenmalig instellen. Waarden bijwerken wanneer het jou uitkomt."
+
+msgid "Add owner"
+msgstr "Eigenaar toevoegen"
+
+msgid "Add account"
+msgstr "Account toevoegen"
+
+msgid "Add an owner first, such as yourself or your holding company."
+msgstr "Voeg eerst een eigenaar toe, zoals jezelf of je holding."
+
+msgid "Account"
+msgstr "Account"
+
+msgid "Owner"
+msgstr "Eigenaar"
+
+msgid "Asset class"
+msgstr "Activaklasse"
+
+msgid "Availability"
+msgstr "Beschikbaarheid"
+
+msgid "Maturity date"
+msgstr "Einddatum"
+
+msgid "Ownership"
+msgstr "Eigendom"
+
+msgid "Closed"
+msgstr "Gesloten"
+
+msgid "Pension"
+msgstr "Pensioen"
+
+msgid "Liquid"
+msgstr "Liquide"
+
+msgid "Illiquid"
+msgstr "Niet-liquide"
+
+msgid "No accounts yet."
+msgstr "Nog geen accounts."
+
+msgid "BEHIND THE NUMBERS"
+msgstr "ACHTER DE CIJFERS"
+
+msgid "Performance & assumptions"
+msgstr "Rendement en aannames"
+
+msgid "Separate investment results from money added or withdrawn."
+msgstr "Onderscheid beleggingsresultaat van stortingen en onttrekkingen."
+
+msgid "Valuation date"
+msgstr "Peildatum"
+
+msgid "Apply"
+msgstr "Toepassen"
+
+msgid "Investment account results"
+msgstr "Resultaat per beleggingsaccount"
+
+msgid "Result = closing value − opening value − deposits + withdrawals. Percentages estimate cash flows at the midpoint of the period and are not annualized."
+msgstr "Resultaat = eindwaarde − beginwaarde − stortingen + onttrekkingen. De percentages veronderstellen geldstromen halverwege de periode en zijn niet omgerekend naar een jaar."
+
+msgid "Period"
+msgstr "Periode"
+
+msgid "Result"
+msgstr "Resultaat"
+
+msgid "Estimated return"
+msgstr "Geschat rendement"
+
+msgid "Cash flows unknown"
+msgstr "Geldstromen onbekend"
+
+msgid "No investment accounts available."
+msgstr "Geen beleggingsaccounts beschikbaar."
+
+msgid "Liquidation scenario"
+msgstr "Liquidatiescenario"
+
+msgid "Personal assumptions, not an automatic tax assessment."
+msgstr "Persoonlijke aannames, geen automatische belastingaangifte."
+
+msgid "This valuation uses the imported historical tax adjustments."
+msgstr "Dit meetmoment gebruikt de geïmporteerde historische belastingcorrecties."
+
+msgid "AB on bank balances"
+msgstr "AB op banktegoeden"
+
+msgid "VPB on investment gains"
+msgstr "VPB op beleggingsresultaat"
+
+msgid "AB after VPB"
+msgstr "AB na VPB"
+
+msgid "Difference from historical source total"
+msgstr "Verschil met het historische brontotaal"
+
+msgid "A change in total wealth is not automatically investment return. Historical cash flows are unavailable; income, spending and other unexplained changes are not inferred."
+msgstr "Een verandering in totaalvermogen is niet automatisch beleggingsrendement. Historische geldstromen ontbreken; inkomsten, uitgaven en overige onverklaarde veranderingen worden niet afgeleid."
+
+msgid "THE BIG PICTURE"
+msgstr "HET TOTAALBEELD"
+
+msgid "Your wealth at a glance"
+msgstr "Je vermogen in één oogopslag"
+
+msgid "Everything you own. A clearer view of where you stand."
+msgstr "Alles wat je bezit. Een helder beeld van waar je staat."
+
+msgid "New valuation"
+msgstr "Nieuw meetmoment"
+
+msgid "Continue draft"
+msgstr "Concept hervatten"
+
+msgid "As of"
+msgstr "Peildatum"
+
+msgid "Home"
+msgstr "Woning"
+
+msgid "Included"
+msgstr "Meegerekend"
+
+msgid "Excluded"
+msgstr "Uitgesloten"
+
+msgid "Business valuation"
+msgstr "Zakelijke waardering"
+
+msgid "Net private equivalent"
+msgstr "Netto privé-equivalent"
+
+msgid "Before tax assumptions"
+msgstr "Vóór belastingaannames"
+
+msgid "NET PRIVATE EQUIVALENT"
+msgstr "NETTO PRIVÉ-EQUIVALENT"
+
+msgid "TOTAL WEALTH"
+msgstr "TOTAALVERMOGEN"
+
+msgid "since"
+msgstr "sinds"
+
+msgid "Your first recorded valuation"
+msgstr "Je eerste vastgelegde meetmoment"
+
+msgid "WHAT MAKES UP YOUR WEALTH"
+msgstr "OPBOUW VAN JE VERMOGEN"
+
+msgid "Private"
+msgstr "Privé"
+
+msgid "Home equity"
+msgstr "Woningoverwaarde"
+
+msgid "Business"
+msgstr "Zakelijk"
+
+msgid "Data coverage"
+msgstr "Volledigheid"
+
+msgid "missing"
+msgstr "ontbrekend"
+
+msgid "older valuations"
+msgstr "oudere waarden"
+
+msgid "No value available"
+msgstr "Geen waarde beschikbaar"
+
+msgid "These accounts are not included in the total."
+msgstr "Deze accounts zijn niet meegerekend in het totaal."
+
+msgid "Using the last known value"
+msgstr "Laatst bekende waarde gebruikt"
+
+msgid "Wealth over time"
+msgstr "Vermogen door de tijd"
+
+msgid "Latest available valuation per calendar year"
+msgstr "Laatst beschikbare meetmoment per kalenderjaar"
+
+msgid "Wealth by year and category"
+msgstr "Vermogen per jaar en categorie"
+
+msgid "Asset allocation"
+msgstr "Verdeling over activaklassen"
+
+msgid "Gross assets, before debts and tax assumptions"
+msgstr "Bruto bezittingen, vóór schulden en belastingaannames"
+
+msgid "Liquidity"
+msgstr "Liquiditeit"
+
+msgid "After debts, before tax assumptions"
+msgstr "Na schulden, vóór belastingaannames"
+
+msgid "Tax adjustment"
+msgstr "Belastingcorrectie"
+
+msgid "Underlying accounts"
+msgstr "Onderliggende accounts"
+
+msgid "Your ownership share, using the last known values"
+msgstr "Jouw eigendomsaandeel, op basis van de laatst bekende waarden"
+
+msgid "View valuation"
+msgstr "Meetmoment bekijken"
+
+msgid "Your value"
+msgstr "Jouw waarde"
+
+msgid "Start with your first valuation"
+msgstr "Begin met je eerste meetmoment"
+
+msgid "Add your accounts and record their values, or import your existing Overview CSV."
+msgstr "Voeg accounts en waarden toe, of importeer je bestaande Overview-CSV."
+
+msgid "Set up accounts"
+msgstr "Accounts instellen"
+
+msgid "Back"
+msgstr "Terug"
+
+msgid "Save"
+msgstr "Opslaan"
+
+msgid "Cancel"
+msgstr "Annuleren"
+
+msgid "BRING YOUR HISTORY"
+msgstr "NEEM JE HISTORIE MEE"
+
+msgid "Import your Google Sheets Overview CSV. Existing dates are never overwritten."
+msgstr "Importeer je Overview-CSV uit Google Sheets. Bestaande peildatums worden nooit overschreven."
+
+msgid "Preview / import"
+msgstr "Voorbeeld / importeren"
+
+msgid "Leave the confirmation unchecked for a preview. To import, select the file again and check the confirmation."
+msgstr "Laat de bevestiging uit voor een voorbeeld. Selecteer voor de import het bestand opnieuw en vink de bevestiging aan."
+
+msgid "Import preview"
+msgstr "Importvoorbeeld"
+
+msgid "valuations found"
+msgstr "meetmomenten gevonden"
+
+msgid "Valuation"
+msgstr "Meetmoment"
+
+msgid "Account value"
+msgstr "Accountwaarde"
+
+msgid "Unallocated difference"
+msgstr "Nog niet toegewezen verschil"
+
+msgid "Include cash as a separate position. Positive differences appear under Other; negative differences require correction."
+msgstr "Neem cash als aparte positie op. Positieve verschillen vallen onder Overig; negatieve verschillen moeten worden gecorrigeerd."
+
+msgid "Position"
+msgstr "Positie"
+
+msgid "Value"
+msgstr "Waarde"
+
+msgid "Remove"
+msgstr "Verwijderen"
+
+msgid "No positions recorded for this date."
+msgstr "Geen posities vastgelegd voor deze datum."
+
+msgid "Add position"
+msgstr "Positie toevoegen"
+
+msgid "ISIN, ticker, quantity and price are optional preparation for future market data. The EUR position value is authoritative."
+msgstr "ISIN, ticker, aantal en koers zijn optioneel voor toekomstige koersgegevens. De positiewaarde in EUR is leidend."
+
+msgid "Enter full account balances in EUR. Joint ownership is applied automatically."
+msgstr "Vul volledige saldi in EUR in. Gezamenlijk eigendom wordt automatisch verwerkt."
+
+msgid "Published"
+msgstr "Gepubliceerd"
+
+msgid "Draft"
+msgstr "Concept"
+
+msgid "Blank means no observation on this date. Older values keep their original date. Enter zero only when the balance is actually zero."
+msgstr "Leeg betekent geen waarneming op deze datum. Oudere waarden behouden hun oorspronkelijke datum. Vul alleen nul in als het saldo echt nul is."
+
+msgid "Historical tax adjustments are preserved. Editing balances does not recalculate these imported adjustments."
+msgstr "Historische belastingcorrecties blijven behouden. Gewijzigde saldi herberekenen deze geïmporteerde correcties niet."
+
+msgid "Previous value"
+msgstr "Vorige waarde"
+
+msgid "Value (EUR)"
+msgstr "Waarde (EUR)"
+
+msgid "Account details"
+msgstr "Accountdetails"
+
+msgid "Cash flows & tax basis"
+msgstr "Geldstromen en belastinggrondslag"
+
+msgid "Deposits"
+msgstr "Stortingen"
+
+msgid "Withdrawals"
+msgstr "Onttrekkingen"
+
+msgid "Tax basis / net contributions (EUR)"
+msgstr "Belastinggrondslag / netto inleg (EUR)"
+
+msgid "Flows cover the period since this account's previous valuation. Leave blank when unknown."
+msgstr "Geldstromen gelden sinds het vorige meetmoment van dit account. Laat leeg als ze onbekend zijn."
+
+msgid "Positions"
+msgstr "Posities"
+
+msgid "Add accounts before entering a valuation."
+msgstr "Voeg accounts toe voordat je waarden invult."
+
+msgid "Save before opening positions."
+msgstr "Sla op voordat je posities opent."
+
+msgid "Save draft"
+msgstr "Concept opslaan"
+
+msgid "Save & publish"
+msgstr "Opslaan en publiceren"
+
+msgid "YOUR RECORD"
+msgstr "JE HISTORIE"
+
+msgid "A history that works with your schedule."
+msgstr "Een historie die aansluit bij jouw ritme."
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Source"
+msgstr "Bron"
+
+msgid "Historical import"
+msgstr "Historische import"
+
+msgid "Manual"
+msgstr "Handmatig"
+
+msgid "Open"
+msgstr "Openen"
+
+msgid "No valuations yet."
+msgstr "Nog geen meetmomenten."
+
+msgid "Annual interest (%)"
+msgstr "Jaarlijkse rente (%)"
+
+msgid "Only a private bank account can be shared."
+msgstr "Alleen een privébankrekening kan gedeeld zijn."
+
+msgid "This date must be on or after the start date."
+msgstr "Deze datum moet op of na de startdatum liggen."
+
+msgid "Use a three-letter currency code."
+msgstr "Gebruik een valutacode van drie letters."
+
+msgid "AB assumption (%)"
+msgstr "AB-aanname (%)"
+
+msgid "VPB assumption (%)"
+msgstr "VPB-aanname (%)"
+
+msgid "Deposits since previous valuation (EUR)"
+msgstr "Stortingen sinds vorige waardering (EUR)"
+
+msgid "Withdrawals since previous valuation (EUR)"
+msgstr "Onttrekkingen sinds vorige waardering (EUR)"
+
+msgid "Enter both deposits and withdrawals, including zero, or leave both blank."
+msgstr "Vul zowel stortingen als onttrekkingen in, inclusief nul, of laat beide leeg."
+
+msgid "Enter a value before entering contributions or a tax basis."
+msgstr "Vul een waarde in voordat je geldstromen of een grondslag invoert."
+
+msgid "Position value (EUR)"
+msgstr "Positiewaarde (EUR)"
+
+msgid "Quantity"
+msgstr "Aantal"
+
+msgid "Price in original currency"
+msgstr "Koers in oorspronkelijke valuta"
+
+msgid "Overview CSV"
+msgstr "Overview-CSV"
+
+msgid "Import the historical observations"
+msgstr "De historische meetmomenten importeren"
+
+msgid "Maximum file size is 2 MB."
+msgstr "Het bestand mag maximaal 2 MB zijn."
+
+msgid "Invalid amount in the CSV."
+msgstr "Ongeldig bedrag in de CSV."
+
+msgid "Use a UTF-8 CSV export."
+msgstr "Gebruik een CSV-export in UTF-8."
+
+msgid "The Overview header was not found."
+msgstr "De kop van het Overview-overzicht ontbreekt."
+
+msgid "Corrected the confirmed date header to 2025-08-01."
+msgstr "De bevestigde datumkop is gecorrigeerd naar 01-08-2025."
+
+msgid "Invalid date header: "
+msgstr "Ongeldige datumkop: "
+
+msgid "Duplicate valuation date."
+msgstr "Dubbele peildatum."
+
+msgid "No historical totals found."
+msgstr "Geen historische totalen gevonden."
+
+msgid "Source total differs from the imported detail."
+msgstr "Het brontotaal wijkt af van de geïmporteerde detailwaarden."
+
+msgid "Source liquidity breakdown does not reconcile; it will be recalculated."
+msgstr "De liquiditeitsuitsplitsing in de bron sluit niet aan en wordt opnieuw berekend."
+
+msgid "CSV values are rounded to whole euros; small historical reconciliation differences can remain."
+msgstr "CSV-waarden zijn afgerond op hele euro’s; kleine verschillen met historische totalen kunnen blijven bestaan."
+
+msgid "Historical balances do not include cash flows or individual positions."
+msgstr "Historische saldi bevatten geen geldstromen of individuele posities."
+
+msgid "This file has already been imported."
+msgstr "Dit bestand is al geïmporteerd."
+
+msgid "Some dates already exist. Existing observations will not be overwritten."
+msgstr "Sommige datums bestaan al. Bestaande meetmomenten worden niet overschreven."
+
+msgid "Cash"
+msgstr "Contant"
+
+msgid "Term deposits"
+msgstr "Deposito’s"
+
+msgid "Equities"
+msgstr "Aandelen"
+
+msgid "Bonds"
+msgstr "Obligaties"
+
+msgid "Real estate"
+msgstr "Vastgoed"
+
+msgid "Loans"
+msgstr "Uitgeleend geld"
+
+msgid "Other"
+msgstr "Overig"
+
+msgid "Bank account"
+msgstr "Bankrekening"
+
+msgid "Investment account"
+msgstr "Beleggingsaccount"
+
+msgid "Interest-bearing claim"
+msgstr "Rentedragende vordering"
+
+msgid "Property"
+msgstr "Woning"
+
+msgid "Mortgage"
+msgstr "Hypotheek"
+
+msgid "Name"
+msgstr "Naam"
+
+msgid "Owner type"
+msgstr "Type eigenaar"
+
+msgid "Sole proprietorship"
+msgstr "Eenmanszaak"
+
+msgid "Company"
+msgstr "Vennootschap"
+
+msgid "Parent company"
+msgstr "Moedermaatschappij"
+
+msgid "Account type"
+msgstr "Accounttype"
+
+msgid "Joint account (50%)"
+msgstr "Gezamenlijke rekening (50%)"
+
+msgid "Currency"
+msgstr "Valuta"
+
+msgid "Closed on"
+msgstr "Gesloten op"
+
+msgid "Start date"
+msgstr "Startdatum"
+
+msgid "Notes"
+msgstr "Notities"
+
+msgid "Ticker"
+msgstr "Ticker"
+
+msgid "Exchange"
+msgstr "Beurs"
+
+msgid "Positions exceed the account value: "
+msgstr "Posities overschrijden de accountwaarde: "
+
+msgid "Missing tax basis: "
+msgstr "Belastinggrondslag ontbreekt: "
+
+msgid "Account saved."
+msgstr "Account opgeslagen."
+
+msgid "Edit account"
+msgstr "Account bewerken"
+
+msgid "Use a negative balance for a mortgage and a nonnegative balance for assets."
+msgstr "Gebruik een negatief saldo voor een hypotheek en een positief saldo of nul voor bezittingen."
+
+msgid "Remove the positions before clearing this value."
+msgstr "Verwijder de posities voordat je deze waarde wist."
+
+msgid "Valuation published."
+msgstr "Meetmoment gepubliceerd."
+
+msgid "Draft saved."
+msgstr "Concept opgeslagen."
+
+msgid "Historical observations imported: "
+msgstr "Historische meetmomenten geïmporteerd: "
+
+msgid "Interest received or accrued (EUR)"
+msgstr "Ontvangen of bijgeschreven rente (EUR)"
+
+msgid "Interest"
+msgstr "Rente"
+
+msgid "Investment results"
+msgstr "Beleggingsresultaat"
+
+msgid "Property revaluation"
+msgstr "Waardeverandering woning"
+
+msgid "Tax assumption change"
+msgstr "Verandering belastinglatentie"
+
+msgid "Other / unexplained"
+msgstr "Overige / onverklaarde verandering"
+
+msgid "Opening wealth"
+msgstr "Beginvermogen"
+
+msgid "Closing wealth"
+msgstr "Eindvermogen"
+
+msgid "What changed?"
+msgstr "Wat is er veranderd?"
+
+msgid "Change in wealth"
+msgstr "Verandering in vermogen"
+
+msgid "Only matching observation periods are attributed. The remainder includes net income/spending, missing flows and incomplete or changing coverage."
+msgstr "Alleen aansluitende meetperiodes worden verklaard. Het restant omvat netto inkomsten en uitgaven, ontbrekende geldstromen en onvolledige of gewijzigde dekking."
+
+msgid "Edit position"
+msgstr "Positie bewerken"
+
+msgid "Save position"
+msgstr "Positie opslaan"
+
+msgid "warnings"
+msgstr "waarschuwingen"
+
+msgid "Tax categories"
+msgstr "Fiscale indeling"
+
+msgid "Personal classification; not a tax return"
+msgstr "Persoonlijke indeling; geen belastingaangifte"
+
+msgid "Enter a tax basis before publishing this company account."
+msgstr "Vul een belastinggrondslag in voordat je dit zakelijke account publiceert."

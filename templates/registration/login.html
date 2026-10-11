@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% load i18n %}{% block content %}
+<div class="login-wrap"><div class="eyebrow">{% trans "WELCOME TO TALLY" %}</div><h1>{% trans "Your wealth, in perspective." %}</h1><p class="muted">{% trans "Sign in to your private workspace." %}</p>
+<form method="post" class="card form-card">{% csrf_token %}{{ form.as_p }}<input type="hidden" name="next" value="{{ next }}"><button class="button">{% trans "Sign in" %}</button></form></div>{% endblock %}

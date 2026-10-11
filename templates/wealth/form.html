@@ -1,0 +1,2 @@
+{% extends "base.html" %}{% load i18n %}{% block content %}<div class="page-heading"><div><a class="back-link" href="{% url back %}">← {% trans "Back" %}</a><h1>{{ title }}</h1></div></div>
+<form method="post" class="card form-card">{% csrf_token %}{{ form.as_p }}<div class="actions"><button class="button">{% trans "Save" %}</button><a href="{% url back %}" class="button secondary">{% trans "Cancel" %}</a></div></form>{% endblock %}
