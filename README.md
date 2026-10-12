@@ -188,7 +188,12 @@ The waterfall reconciles consecutive published valuations using matching-period 
 results, explicitly entered bank/claim interest, property revaluation and tax correction
 changes. Remaining income/spending, missing flows, mortgage principal movements and
 changes in coverage stay in Other / unexplained. Interest should be entered once, on
-the earning account, even when paid into another tracked account.
+the earning account, even when paid into another tracked account. Expand each change
+category to inspect account contributions, opening/closing values and observation dates.
+Unexplained contributions show missing flows and changes in account coverage, sorted
+by magnitude; offsetting transfers remain visible even when the category totals zero.
+Snapshot-wide tax corrections are broken down by correction type rather than inventing
+an allocation to individual accounts.
 
 ## Local development with real history
 

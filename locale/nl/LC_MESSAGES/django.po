@@ -882,3 +882,57 @@ msgstr "Tally berekent vennootschapsbelasting (VPB) over de rekeningwaarde min d
 
 msgid "This field only affects the liquidation tax scenario. Enter net deposits separately for investment results; neither field updates the other. Blank means unknown; enter zero only if the tax basis is actually zero."
 msgstr "Dit veld heeft alleen invloed op het belastingbedrag in het liquidatiescenario. Vul de netto inleg apart in voor het beleggingsresultaat; de velden werken elkaar niet bij. Leeg betekent onbekend; vul alleen nul in als de belastinggrondslag werkelijk nul is."
+
+msgid "Account / correction"
+msgstr "Account / correctie"
+
+msgid "Opening value"
+msgstr "Beginwaarde"
+
+msgid "Closing value"
+msgstr "Eindwaarde"
+
+msgid "Contribution"
+msgstr "Bijdrage"
+
+msgid "No contributions in this period."
+msgstr "Geen bijdragen in deze periode."
+
+msgid "Expand a category to see its contributions, largest first. Values reflect your ownership share. A dash means the account is not included at that endpoint."
+msgstr "Klap een categorie uit om de bijdragen te zien, de grootste eerst. Waarden houden rekening met jouw eigendomsaandeel. Een streepje betekent dat het account op dat meetmoment niet is meegenomen."
+
+msgid "Balance change after recorded interest; income, spending or transfers."
+msgstr "Saldoverandering na opgegeven rente; inkomsten, uitgaven of overboekingen."
+
+msgid "Account newly included; no opening value in this comparison."
+msgstr "Account nieuw meegenomen; geen beginwaarde in deze vergelijking."
+
+msgid "Account no longer included; no closing value in this comparison."
+msgstr "Account niet meer meegenomen; geen eindwaarde in deze vergelijking."
+
+msgid "Observation dates do not match this period; older values are carried forward."
+msgstr "Meetdatums sluiten niet aan op deze periode; oudere waarden worden overgenomen."
+
+msgid "Value change minus change in net deposits."
+msgstr "Waardeverandering min verandering in netto-inleg."
+
+msgid "Net deposits or withdrawals; these are not investment results."
+msgstr "Netto stortingen of onttrekkingen; dit is geen beleggingsresultaat."
+
+msgid "Net deposits unknown at one or both observation dates."
+msgstr "Netto-inleg onbekend op een of beide meetdatums."
+
+msgid "Recorded interest for this period."
+msgstr "Opgegeven rente voor deze periode."
+
+msgid "No interest recorded; balance change may include income, spending, repayments or transfers."
+msgstr "Geen rente opgegeven; saldoverandering kan inkomsten, uitgaven, aflossingen of overboekingen omvatten."
+
+msgid "Change in estimated property value."
+msgstr "Verandering in geschatte woningwaarde."
+
+msgid "Mortgage balance change, including principal repayments."
+msgstr "Verandering in hypotheekschuld, inclusief aflossingen."
+
+msgid "Portfolio-level tax correction; not allocated to individual accounts."
+msgstr "Belastingcorrectie voor de hele portefeuille; niet per account toegerekend."

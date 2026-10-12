@@ -619,3 +619,83 @@ def test_published_draft_action_still_validates_company_tax_basis(logged, draft,
     assert response.status_code == 200
     assert "basis" in response.context["formset"][0].errors
     assert draft.valuations.get().amount_minor == 12345
+
+
+def test_movement_details_expose_offsetting_transfers(owner, snap):
+    from wealth.services import movement
+
+    cash = Account.objects.create(name="Cash", entity=owner)
+    broker = Account.objects.create(name="Broker", entity=owner, kind="broker")
+    Valuation.objects.create(account=cash, snapshot=snap, amount_minor=20000)
+    Valuation.objects.create(account=broker, snapshot=snap, amount_minor=10000, net_deposits_minor=10000)
+    later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
+    Valuation.objects.create(account=cash, snapshot=later, amount_minor=15000)
+    Valuation.objects.create(account=broker, snapshot=later, amount_minor=17000, net_deposits_minor=15000)
+    bridge = movement(later)
+    assert bridge["parts"][0]["details"][0]["amount"] == 2000
+    residual = bridge["parts"][-1]
+    assert residual["amount"] == 0
+    assert {r["label"]: r["amount"] for r in residual["details"]} == {"Cash": -5000, "Broker": 5000}
+    for part in bridge["parts"]:
+        assert sum(r["amount"] for r in part["details"]) == part["amount"]
+
+
+def test_movement_details_coverage_unknown_flows_joint_and_tax(owner, snap):
+    from wealth.services import movement
+
+    later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
+    closed = Account.objects.create(name="Closed", entity=owner, closed_on=later.date)
+    added = Account.objects.create(name="New", entity=owner, started_on=later.date)
+    broker = Account.objects.create(name="Unknown deposits", entity=owner, kind="broker")
+    stale = Account.objects.create(name="Carried", entity=owner)
+    joint = Account.objects.create(name="Joint", entity=owner, joint=True)
+    older = Snapshot.objects.create(date=date(2025, 12, 1), complete=True)
+    for account, snapshot, amount in [
+        (closed, snap, 10000), (added, later, 25000),
+        (broker, snap, 20000), (broker, later, 30000),
+        (stale, older, 2000), (stale, later, 4000),
+        (joint, snap, 10001), (joint, later, 10003),
+    ]:
+        Valuation.objects.create(account=account, snapshot=snapshot, amount_minor=amount)
+    TaxAdjustment.objects.create(snapshot=snap, kind="bank_ab", amount_minor=-1000)
+    TaxAdjustment.objects.create(snapshot=later, kind="bank_ab", amount_minor=-2000)
+    bridge = movement(later)
+    rows = {r["label"]: r for r in bridge["parts"][-1]["details"]}
+    assert rows["Closed"]["amount"] == -10000 and rows["Closed"]["closing"] is None
+    assert rows["New"]["amount"] == 25000 and rows["New"]["opening"] is None
+    assert rows["Unknown deposits"]["amount"] == 10000
+    assert rows["Carried"]["amount"] == 2000
+    assert rows["Carried"]["opening_date"] == older.date
+    assert rows["Joint"]["amount"] == 1
+    assert bridge["parts"][3]["amount"] == -1000
+    assert bridge["opening"] + sum(p["amount"] for p in bridge["parts"]) == bridge["closing"]
+    for part in bridge["parts"]:
+        assert sum(r["amount"] for r in part["details"]) == part["amount"]
+        assert [abs(r["amount"]) for r in part["details"]] == sorted(
+            [abs(r["amount"]) for r in part["details"]], reverse=True
+        )
+
+
+def test_movement_details_attribute_home_interest_and_keep_mortgage_residual(owner, snap):
+    from wealth.services import movement
+
+    later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
+    home = Account.objects.create(name="Home", entity=owner, kind="property")
+    mortgage = Account.objects.create(name="Mortgage", entity=owner, kind="mortgage")
+    claim = Account.objects.create(name="Deposit", entity=owner, kind="claim")
+    for account, opening, closing, interest in [
+        (home, 40000000, 41000000, None),
+        (mortgage, -20000000, -19900000, None),
+        (claim, 1000000, 902000, 2000),
+    ]:
+        Valuation.objects.create(account=account, snapshot=snap, amount_minor=opening)
+        Valuation.objects.create(account=account, snapshot=later,
+                                 amount_minor=closing, interest_minor=interest)
+    bridge = movement(later)
+    assert [p["amount"] for p in bridge["parts"]] == [0, 2000, 1000000, 0, 0]
+    assert bridge["parts"][1]["details"][0]["account"] == claim
+    assert bridge["parts"][2]["details"][0]["account"] == home
+    assert {r["label"]: r["amount"] for r in bridge["parts"][-1]["details"]} == {
+        "Mortgage": 100000, "Deposit": -100000,
+    }
+    assert bridge["opening"] + sum(p["amount"] for p in bridge["parts"]) == bridge["closing"]

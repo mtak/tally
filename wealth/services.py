@@ -198,47 +198,94 @@ def movement(snapshot):
             "warnings": list(dict.fromkeys(before["warnings"] + after["warnings"])),
         }
     prior = {r["account"].pk: r for r in before["rows"]}
-    investments = 0
-    interest = 0
-    property_change = 0
-    for row in after["rows"]:
-        account = row["account"]
-        v = row["valuation"]
-        old = prior.get(account.pk)
-        # Only attribute when both observations and the flow interval match this bridge.
-        if (
-            not old
-            or v.snapshot.date != snapshot.date
-            or old["valuation"].snapshot.date != previous.date
-        ):
-            continue
-        if (
-            account.kind == "broker"
-            and row["performance"]
-            and row["performance"]["since"] == previous.date
-        ):
-            investments += owned(account, row["performance"]["result"])
-        elif account.kind in ("bank", "claim") and v.interest_minor is not None:
-            interest += owned(account, v.interest_minor)
+    current = {r["account"].pk: r for r in after["rows"]}
+    details = {key: [] for key in ("investments", "interest", "property", "tax", "residual")}
+    for account_id in prior.keys() | current.keys():
+        old = prior.get(account_id)
+        row = current.get(account_id)
+        account = (row or old)["account"]
+        opening = old["amount"] if old else 0
+        closing = row["amount"] if row else 0
+        delta = closing - opening
+        item = {
+            "account": account,
+            "label": account.name,
+            "opening": opening if old else None,
+            "closing": closing if row else None,
+            "opening_date": old["valuation"].snapshot.date if old else None,
+            "closing_date": row["valuation"].snapshot.date if row else None,
+        }
+        matched = (
+            old and row
+            and old["valuation"].snapshot.date == previous.date
+            and row["valuation"].snapshot.date == snapshot.date
+        )
+        attributed = 0
+        reason = _("Balance change after recorded interest; income, spending or transfers.")
+        if not old:
+            reason = _("Account newly included; no opening value in this comparison.")
+        elif not row:
+            reason = _("Account no longer included; no closing value in this comparison.")
+        elif not matched:
+            reason = _("Observation dates do not match this period; older values are carried forward.")
+        elif account.kind == "broker":
+            perf = row["performance"]
+            if perf and perf["since"] == previous.date:
+                attributed = owned(account, perf["result"])
+                details["investments"].append({**item, "amount": attributed,
+                    "reason": _("Value change minus change in net deposits.")})
+                reason = _("Net deposits or withdrawals; these are not investment results.")
+            else:
+                reason = _("Net deposits unknown at one or both observation dates.")
+        elif account.kind in ("bank", "claim"):
+            interest = row["valuation"].interest_minor
+            if interest is not None:
+                attributed = owned(account, interest)
+                details["interest"].append({**item, "amount": attributed,
+                    "reason": _("Recorded interest for this period.")})
+            else:
+                reason = _("No interest recorded; balance change may include income, spending, repayments or transfers.")
         elif account.kind == "property":
-            property_change += row["amount"] - old["amount"]
-    tax_change = after["tax_total"] - before["tax_total"]
-    change = after["total"] - before["total"]
-    residual = change - investments - interest - property_change - tax_change
-    parts = [
-        (_("Investment results"), investments),
-        (_("Interest"), interest),
-        (_("Property revaluation"), property_change),
-        (_("Tax assumption change"), tax_change),
-        (_("Other / unexplained"), residual),
-    ]
-    labels = [p[0] for p in parts]
-    values = [p[1] for p in parts]
+            attributed = delta
+            details["property"].append({**item, "amount": attributed,
+                "reason": _("Change in estimated property value.")})
+        elif account.kind == "mortgage":
+            reason = _("Mortgage balance change, including principal repayments.")
+        remainder = delta - attributed
+        if remainder or not old or not row:
+            details["residual"].append({**item, "amount": remainder, "reason": reason})
+
+    # Tax adjustments are snapshot-wide, especially imported corrections. Do not
+    # invent an account allocation that cannot be recovered from the stored data.
+    for key, label in [
+        ("bank_ab", _("AB on bank balances")),
+        ("broker_vpb", _("VPB on investment gains")),
+        ("broker_ab", _("AB after VPB")),
+    ]:
+        opening = before["tax"][key]
+        closing = after["tax"][key]
+        details["tax"].append({
+            "label": label, "opening": opening, "closing": closing,
+            "amount": closing - opening,
+            "reason": _("Portfolio-level tax correction; not allocated to individual accounts."),
+        })
+    parts = []
+    for key, label in [
+        ("investments", _("Investment results")),
+        ("interest", _("Interest")),
+        ("property", _("Property revaluation")),
+        ("tax", _("Tax assumption change")),
+        ("residual", _("Other / unexplained")),
+    ]:
+        rows = sorted(details[key], key=lambda item: (-abs(item["amount"]), item["label"]))
+        parts.append({"label": label, "amount": sum(r["amount"] for r in rows), "details": rows})
+    labels = [p["label"] for p in parts]
+    values = [p["amount"] for p in parts]
     return {
         "before": previous,
         "after": snapshot,
         "opening": before["total"],
         "closing": after["total"],
-        "parts": [{"label": label, "amount": amount} for label, amount in parts],
+        "parts": parts,
         "chart": {"labels": labels, "values": [v / 100 for v in values]},
     }
