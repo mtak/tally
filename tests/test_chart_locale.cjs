@@ -36,3 +36,31 @@ for (const lang of ['en','nl']) {
   assert.ok(tooltip.includes(lang==='nl'?'1.235':'1,235'));
 }
 console.log('Chart locale callbacks and HTMX redraw checks passed.');
+// Decimal percentages arrive as strings; chart values convert only for plotting.
+nodes['asset-mix-chart'] = {id:'asset-mix-chart'};
+nodes['chart-data'] = {textContent:JSON.stringify({years:['2026'],series:[],assets:[],liquidity:[],mix:{
+  dates:['2026-08-11'],carried_label:'Carried forward',unavailable_label:'Unavailable',missing_label:'Missing',missing:[['Example missing']],
+  series:[{name:'Cash',data:[{value:'12.34',amount:123456,carried_dates:['2024-12-17']}]}]
+}})};
+for (const lang of ['en','nl']) {
+  root.lang = lang;
+  for (const cents of ['true','false']) {
+    root.dataset.showCents = cents;
+    handlers['htmx:afterSwap']();
+    const mix = options['asset-mix-chart'];
+    assert.equal(mix.series[0].data[0].value, 12.34);
+    assert.equal(mix.yAxis.max, 100);
+    const tip = mix.tooltip.formatter([{dataIndex:0}]);
+    assert.ok(tip.includes(lang==='nl'?'12,34%':'12.34%'));
+    assert.ok(tip.includes(lang==='nl'?(cents==='true'?'1.234,56':'1.235'):(cents==='true'?'1,234.56':'1,235')));
+    assert.ok(tip.includes(lang==='nl'?'11-8-2026':'8/11/2026'));
+    assert.ok(tip.includes(lang==='nl'?'17-12-2024':'12/17/2024'));
+    assert.ok(tip.includes('Carried forward') && tip.includes('Example missing'));
+  }
+}
+const empty = JSON.parse(nodes['chart-data'].textContent);
+empty.mix.series[0].data[0].value = null;
+nodes['chart-data'].textContent = JSON.stringify(empty);
+handlers['htmx:afterSwap']();
+assert.equal(options['asset-mix-chart'].series[0].data[0].value, null);
+assert.ok(options['asset-mix-chart'].tooltip.formatter([{dataIndex:0}]).includes('Unavailable'));

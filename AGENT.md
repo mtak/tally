@@ -201,3 +201,11 @@ Check current CI rather than treating this historical result as current verifica
   Gross reporting remains available. Publishing checks carried values and imported
   snapshots; historical overrides are preserved. Coverage warnings appear on the
   dashboard, analysis and editor; incomplete net comparisons are unavailable.
+
+- Issue #46: dashboard asset-mix history uses the same latest published valuation
+  per calendar year as wealth history. Positive gross asset-class totals and
+  ownership shares match the allocation pie, exclude mortgage/tax, and honor home
+  and pension filters. Exact-cents percentages stay available with incomplete net
+  tax; zero gross totals are unavailable. Tooltips and the accessible table expose
+  actual valuation dates, carried dates and missing observations. Current account
+  classifications still apply to historical reports.

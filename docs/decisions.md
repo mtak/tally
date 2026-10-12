@@ -38,6 +38,20 @@
 - Versioned classification/ownership changes if historical reinterpretation is needed.
 - More flexible imports and a full portable JSON export.
 
+## Historical asset mix (#46)
+
+- Use the latest published valuation in each calendar year up to the selected
+  valuation, matching wealth history. Do not fill years without valuations.
+- Percentages use exact ownership-adjusted cents and the positive asset-class
+  totals used in the gross allocation pie. Mortgages and liquidation tax are
+  excluded; home and pension follow the dashboard filters. An empty denominator
+  leaves the distribution unavailable, even when there is debt.
+- Keep gross mix available when net liquidation tax is incomplete. Show actual
+  valuation dates, carried observation dates and missing observations in the
+  accessible table and chart tooltips; round only at presentation.
+- Current account classifications also reinterpret historical mix. This feature
+  does not introduce classification versioning.
+
 ## Investment entry (#13, supersedes #3)
 
 - Each dated investment observation needs only account value and signed cumulative

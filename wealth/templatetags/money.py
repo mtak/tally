@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django import template
 from wealth.numbers import format_decimal
 from wealth.preferences import show_cents, whole_amount
@@ -21,4 +21,5 @@ def money(value, force_cents=False):
 def percent(value):
     if value is None:
         return "—"
-    return format_decimal(value, 2) + "%"
+    displayed = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return format_decimal(displayed, 2) + "%"

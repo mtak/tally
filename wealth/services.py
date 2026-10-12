@@ -180,6 +180,35 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
     }
 
 
+def asset_mix(summary):
+    """Gross allocation, matching the positive category totals in the asset pie.
+
+    Retain exact cents and Decimal percentages until presentation. Debts and
+    liquidation corrections never contribute to this denominator.
+    """
+    amounts = {key: max(summary["assets"].get(key, 0), 0) for key, _ in ASSETS}
+    total = sum(amounts.values())
+    return {
+        "snapshot": summary["snapshot"],
+        "total": total,
+        "missing": summary["missing"],
+        "categories": [
+            {
+                "key": key,
+                "name": str(label),
+                "amount": amounts[key],
+                "percentage": Decimal(amounts[key]) * 100 / total if total else None,
+                "observations": [
+                    row for row in summary["rows"]
+                    if row["account"].kind != "mortgage"
+                    and row["account"].asset_class == key
+                ],
+            }
+            for key, label in ASSETS
+        ],
+    }
+
+
 def movement(snapshot):
     previous = (
         Snapshot.objects.filter(complete=True, date__lt=snapshot.date)

@@ -936,3 +936,33 @@ msgstr "Verandering in hypotheekschuld, inclusief aflossingen."
 
 msgid "Portfolio-level tax correction; not allocated to individual accounts."
 msgstr "Belastingcorrectie voor de hele portefeuille; niet per account toegerekend."
+
+msgid "Asset mix over time"
+msgstr "Activamix door de tijd"
+
+msgid "Your ownership share; home and pension follow the selected filters."
+msgstr "Jouw eigendomsaandeel; woning en pensioen volgen de geselecteerde filters."
+
+msgid "Current account classifications also apply to historical reports."
+msgstr "Huidige rekeningclassificaties gelden ook voor historische rapporten."
+
+msgid "Asset mix by year in percentages; data in the table below"
+msgstr "Activamix per jaar in percentages; gegevens in de tabel hieronder"
+
+msgid "Show asset mix data"
+msgstr "Activamixgegevens tonen"
+
+msgid "Historical gross asset mix"
+msgstr "Historische bruto activamix"
+
+msgid "Observation dates"
+msgstr "Meetdatums"
+
+msgid "Carried forward"
+msgstr "Overgenomen"
+
+msgid "No gross assets available"
+msgstr "Geen bruto bezittingen beschikbaar"
+
+msgid "Missing observations"
+msgstr "Ontbrekende waarnemingen"

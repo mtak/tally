@@ -21,7 +21,7 @@ from .forms import (
     ImportForm,
     minor,
 )
-from .services import report, movement, cumulative_result, broker_tax_covered
+from .services import report, movement, cumulative_result, broker_tax_covered, asset_mix
 from .importer import parse_overview, import_overview
 from . import editor
 
@@ -56,16 +56,43 @@ def dashboard(request):
     chart = {}
     previous = None
     change = None
+    mix = []
     if current:
         history = [report(s, **flags) for s in snapshots if s.date <= selected.date]
         annual = {}
         for r in history:
             annual[r["snapshot"].date.year] = r
+        mix = [asset_mix(r) for r in annual.values()]
         if len(history) > 1:
             previous = history[-2]
             if current["total"] is not None and previous["total"] is not None:
                 change = current["total"] - previous["total"]
         chart = {
+            "mix": {
+                "dates": [m["snapshot"].date.isoformat() for m in mix],
+                "carried_label": _("Carried forward"),
+                "unavailable_label": _("No gross assets available"),
+                "missing_label": _("Missing observations"),
+                "missing": [m["missing"] for m in mix],
+                "series": [
+                    {
+                        "name": str(label),
+                        "data": [
+                            {
+                                "value": m["categories"][index]["percentage"],
+                                "amount": m["categories"][index]["amount"],
+                                "carried_dates": sorted({
+                                    row["valuation"].snapshot.date.isoformat()
+                                    for row in m["categories"][index]["observations"]
+                                    if row["stale"]
+                                }),
+                            }
+                            for m in mix
+                        ],
+                    }
+                    for index, (key, label) in enumerate(ASSETS)
+                ],
+            },
             "years": [str(y) for y in annual],
             "series": [
                 {
@@ -104,6 +131,7 @@ def dashboard(request):
             "selected": selected,
             "flags": flags,
             "chart": chart,
+            "asset_mix": mix,
             "previous": previous,
             "change": change,
             "drafts": Snapshot.objects.filter(complete=False),

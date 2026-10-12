@@ -13,7 +13,8 @@
     return {
       money: new Intl.NumberFormat(locale, {style:"currency", currency:"EUR", minimumFractionDigits:digits, maximumFractionDigits:digits}),
       decimal: new Intl.NumberFormat(locale, {maximumFractionDigits:2}),
-      compact: new Intl.NumberFormat(locale, {notation:"compact", maximumFractionDigits:1})
+      compact: new Intl.NumberFormat(locale, {notation:"compact", maximumFractionDigits:1}),
+      date: value => new Intl.DateTimeFormat(locale).format(new Date(value + "T00:00:00"))
     };
   }
   let charts = [];
@@ -39,6 +40,31 @@
         yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>formats.compact.format(v)},
           splitLine:{lineStyle:{color:line,type:"dashed"}}},
         series:data.series.map(s=>({...s,type:"bar",stack:"total",barMaxWidth:48,emphasis:{focus:"series"}}))});
+    }
+    const mixNode = document.getElementById("asset-mix-chart");
+    if (mixNode && data.mix) {
+      const mix = data.mix, chart = echarts.init(mixNode); charts.push(chart);
+      chart.setOption({...common,
+        legend:{...common.legend,type:"scroll"},
+        tooltip:{...tooltipStyle,trigger:"axis",renderMode:"richText",confine:true,formatter:params=>{
+          const index = params[0]?.dataIndex;
+          if (index === undefined) return "";
+          const lines = [formats.date(mix.dates[index])];
+          for (const series of mix.series) {
+            const point = series.data[index];
+            if (point.value === null) continue;
+            lines.push(series.name + ": " + formats.decimal.format(Number(point.value)) + "% · " + number.format(point.amount / 100));
+            if (point.carried_dates.length) lines.push(mix.carried_label + ": " + point.carried_dates.map(formats.date).join(", "));
+          }
+          if (mix.series.every(s=>s.data[index].value === null)) lines.push(mix.unavailable_label);
+          if (mix.missing[index].length) lines.push(mix.missing_label + ": " + mix.missing[index].join(", "));
+          return lines.join("\n");
+        }},
+        grid:{left:55,right:15,top:18,bottom:62},
+        xAxis:{type:"category",data:data.years,axisLine:{show:false},axisTick:{show:false},axisLabel:{color:ink}},
+        yAxis:{type:"value",min:0,max:100,axisLabel:{color:ink,formatter:v=>formats.decimal.format(v)+"%"},splitLine:{lineStyle:{color:line,type:"dashed"}}},
+        series:mix.series.map(s=>({...s,type:"bar",stack:"mix",barMaxWidth:48,emphasis:{focus:"series"},
+          data:s.data.map(point=>({...point,value:point.value === null ? null : Number(point.value)}))}))});
     }
     for (const [id,values] of [["assets-chart",data.assets],["liquidity-chart",data.liquidity]]) {
       const node=document.getElementById(id);if(!node)continue;
