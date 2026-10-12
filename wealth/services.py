@@ -43,6 +43,32 @@ def performance(valuation):
     }
 
 
+def investment_history(account, through):
+    """Full, gross account observations; never synthesize carried or draft points."""
+    rows = [
+        {"date": v.snapshot.date, "amount": v.amount_minor,
+         "net_deposits": v.net_deposits_minor, "cumulative_result": cumulative_result(v)}
+        for v in Valuation.objects.filter(
+            account=account, snapshot__complete=True, snapshot__date__lte=through,
+        ).select_related("snapshot").order_by("snapshot__date")
+    ]
+    return {
+        "rows": rows,
+        "chart": {
+            "dates": [row["date"].isoformat() for row in rows],
+            "unknown_label": _("Net deposits unknown"),
+            "series": [
+                {"name": label, "data": [row[key] for row in rows]}
+                for key, label in (
+                    ("amount", _("Account value")),
+                    ("net_deposits", _("Net deposits since opening (EUR)")),
+                    ("cumulative_result", _("Result since opening")),
+                )
+            ],
+        },
+    }
+
+
 def broker_tax_covered(basis, overrides):
     """Snapshot-wide historical deductions can cover unknown broker bases."""
     return basis is not None or {"broker_vpb", "broker_ab"} <= overrides.keys()

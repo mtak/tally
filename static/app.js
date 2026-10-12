@@ -22,6 +22,7 @@
     charts.forEach(c => c.dispose()); charts = [];
     const source = document.getElementById("chart-data");
     if (!window.echarts) return;
+    drawInvestment();
     if (!source) { drawMovement(); return; }
     const data = JSON.parse(source.textContent);
     const style = getComputedStyle(document.documentElement);
@@ -80,6 +81,34 @@
         label:{show:false},emphasis:{label:{show:true,fontSize:16,fontWeight:600,formatter:params=>formats.decimal.format(params.percent)+"%"}},
         data:values}]});
     }
+  }
+
+  function drawInvestment() {
+    const source = document.getElementById("investment-data"), node = document.getElementById("investment-chart");
+    if (!source || !node) return;
+    const data = JSON.parse(source.textContent), formats = numberFormats();
+    const style = getComputedStyle(document.documentElement), ink = style.getPropertyValue("--muted").trim();
+    const line = style.getPropertyValue("--line").trim();
+    // UTC timestamps keep calendar spacing stable across daylight-saving changes.
+    const timestamps = data.dates.map(date=>Date.parse(date + "T00:00:00Z"));
+    const dateLabel = value=>formats.date(new Date(value).toISOString().slice(0, 10));
+    const chart = echarts.init(node); charts.push(chart);
+    chart.setOption({animation:false,color:palette,aria:{enabled:false},
+      legend:{bottom:0,type:"scroll",textStyle:{color:ink,fontSize:11}},
+      grid:{left:70,right:20,top:20,bottom:75},
+      tooltip:{trigger:"axis",renderMode:"richText",confine:true,
+        backgroundColor:style.getPropertyValue("--surface").trim(),borderColor:line,textStyle:{color:ink},
+        formatter:params=>{
+          const index = params[0]?.dataIndex;
+          if (index === undefined) return "";
+          return [formats.date(data.dates[index]), ...data.series.map(series=>series.name + ": " +
+            (series.data[index] === null ? data.unknown_label : formats.money.format(series.data[index] / 100)))].join("\n");
+        }},
+      xAxis:{type:"time",axisLabel:{color:ink,formatter:dateLabel,hideOverlap:true},axisLine:{lineStyle:{color:line}},axisTick:{show:false}},
+      yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>formats.compact.format(v)},splitLine:{lineStyle:{color:line,type:"dashed"}}},
+      series:data.series.map(series=>({name:series.name,type:"line",smooth:false,connectNulls:false,
+        showSymbol:true,showAllSymbol:true,symbolSize:7,
+        data:series.data.map((amount,index)=>[timestamps[index],amount === null ? null : amount / 100])}))});
   }
 
   function drawMovement() {

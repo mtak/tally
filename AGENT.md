@@ -215,3 +215,10 @@ Check current CI rather than treating this historical result as current verifica
   Carried/unknown-deposit rows remain inspectable even with zero contribution.
   Unknown causes stay neutral; tax changes are labeled correction changes.
   Reconciliation, tax coverage and observation-period attribution are unchanged.
+
+- Issue #47: analysis includes gross investment-account history with an account
+  selector (including closed accounts), true calendar spacing and a matching
+  accessible table. Only actual published observations through the selected date
+  appear. Missing inception net deposits break deposits/result lines; zero and
+  negative deposits remain valid. Full account results exclude ownership scaling
+  and liquidation corrections; historical adjustments remain unchanged.

@@ -69,3 +69,33 @@ nodes['chart-data'].textContent = JSON.stringify(empty);
 handlers['htmx:afterSwap']();
 assert.equal(options['asset-mix-chart'].series[0].data[0].value, null);
 assert.ok(options['asset-mix-chart'].tooltip.formatter([{dataIndex:0}]).includes('Unavailable'));
+// Account history uses a true time axis, gross cents, and gaps for unknown deposits.
+delete nodes['chart-data'];
+nodes['investment-chart'] = {id:'investment-chart'};
+nodes['investment-data'] = {textContent:JSON.stringify({dates:['2026-01-03','2026-02-19','2026-04-01','2026-07-11'],unknown_label:'Unknown',series:[
+  {name:'Value',data:[11800000,10800000,10800001,1800001]},
+  {name:'Deposits',data:[10000000,9000000,null,0]},
+  {name:'Result',data:[1800000,1800000,null,1800001]}
+]})};
+for (const lang of ['en','nl']) {
+  root.lang = lang;
+  for (const cents of ['true','false']) {
+    root.dataset.showCents = cents;
+    handlers['htmx:afterSwap']();
+    const chart = options['investment-chart'];
+    assert.equal(chart.xAxis.type,'time');
+    assert.equal(chart.series[2].data[0][1],18000);
+    assert.equal(chart.series[2].data[1][1],18000);
+    assert.equal(chart.series[2].data[2][1],null);
+    assert.equal(chart.series[1].data[3][1],0);
+    assert.equal(chart.series[2].connectNulls,false);
+    assert.equal(chart.series[2].smooth,false);
+    const tip = chart.tooltip.formatter([{dataIndex:3}]);
+    assert.ok(tip.includes(lang==='nl'?(cents==='true'?'18.000,01':'18.000'):(cents==='true'?'18,000.01':'18,000')));
+    assert.ok(tip.includes(lang==='nl'?'11-7-2026':'7/11/2026'));
+    assert.ok(chart.tooltip.formatter([{dataIndex:2}]).includes('Unknown'));
+    const intervals = chart.series[0].data.map(p=>p[0]);
+    assert.notEqual(intervals[1]-intervals[0],intervals[3]-intervals[2]);
+  }
+}
+console.log('Investment history dates, gaps and locale checks passed.');

@@ -990,3 +990,21 @@ msgstr "Alleen aansluitende meetperiodes worden verklaard. Ontbrekende netto-inl
 
 msgid "Unrecorded causes remain unexplained. Internal transfers do not increase total wealth; individual balance changes cannot identify transfers without a transfer record."
 msgstr "Niet vastgelegde oorzaken blijven onverklaard. Interne overboekingen vergroten het totaalvermogen niet; afzonderlijke saldoveranderingen kunnen zonder transferregistratie geen overboekingen aantonen."
+
+msgid "Investment account over time"
+msgstr "Beleggingsrekening door de tijd"
+
+msgid "Gross full-account values before business liquidation corrections. Result = account value − net deposits since opening."
+msgstr "Bruto waarden van de volledige rekening vóór zakelijke liquidatiecorrecties. Resultaat = rekeningwaarde − netto-inleg sinds opening."
+
+msgid "Only published observations through the selected date. Markers show recorded values; connecting lines do not represent measurements between dates. Missing net deposits interrupt the deposits and result lines."
+msgstr "Alleen gepubliceerde waarnemingen tot en met de geselecteerde datum. Markeringen tonen geregistreerde waarden; verbindingslijnen zijn geen metingen tussen datums. Ontbrekende netto-inleg onderbreekt de inleg- en resultaatlijnen."
+
+msgid "Account value, net deposits and result over time; data in the table below"
+msgstr "Rekeningwaarde, netto-inleg en resultaat door de tijd; gegevens in de tabel hieronder"
+
+msgid "Investment account history"
+msgstr "Historie van de beleggingsrekening"
+
+msgid "No published observations for this account through the selected date."
+msgstr "Geen gepubliceerde waarnemingen voor deze rekening tot en met de geselecteerde datum."

@@ -21,7 +21,7 @@ from .forms import (
     ImportForm,
     minor,
 )
-from .services import report, movement, cumulative_result, broker_tax_covered, asset_mix
+from .services import report, movement, cumulative_result, broker_tax_covered, asset_mix, investment_history
 from .importer import parse_overview, import_overview
 from . import editor
 
@@ -454,6 +454,12 @@ def analysis(request):
         completed[-1] if completed else None,
     )
     summary = report(selected) if selected else None
+    investment_accounts = list(Account.objects.filter(kind="broker").select_related("entity"))
+    selected_account = next(
+        (a for a in investment_accounts if str(a.pk) == request.GET.get("account")),
+        investment_accounts[0] if investment_accounts else None,
+    )
+    history = investment_history(selected_account, selected.date) if selected and selected_account else None
     results = []
     if summary:
         for row in summary["rows"]:
@@ -474,6 +480,9 @@ def analysis(request):
             "snapshots": completed,
             "selected": selected,
             "results": results,
+            "investment_accounts": investment_accounts,
+            "selected_account": selected_account,
+            "investment_history": history,
             "summary": summary,
             "movement": movement(selected) if selected else None,
         },

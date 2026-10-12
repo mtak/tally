@@ -136,3 +136,16 @@
 - Unknown causes remain unexplained. Tax correction changes use a neutral label;
   they do not imply that the assumed rates changed. Calculation and reconciliation
   rules, incomplete-tax comparisons and the mutation-only chart scale are retained.
+
+## Investment account history (#47)
+
+- Analysis offers an investment-account selector, including closed accounts, and
+  value, inception net deposits and total result on actual published observation
+  dates through the selected valuation. Do not synthesize carried observations.
+- A continuous time axis preserves irregular spacing. Markers identify observations;
+  straight connecting lines are visual guides, not measurements between dates.
+  Unknown net deposits break both the deposits and result series. Zero and negative
+  deposits are valid; the first known observation already has a total result.
+- Show full gross account amounts, before ownership shares and liquidation tax,
+  alongside a matching accessible table. Honor language and cents preferences.
+  Historical adjustments are never changed by this read-only view.
