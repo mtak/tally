@@ -97,6 +97,13 @@
       series:[{type:"bar",barMaxWidth:50,data:data.values.map(value=>({
         value,itemStyle:{color:value>=0?"#307d6e":"#bd8f9d"}
       }))}]});
+    c.on("click", params => {
+      const details = document.getElementById(data.detail_ids?.[params.dataIndex]);
+      if (!details) return;
+      details.open = true;
+      details.querySelector("summary").focus();
+      details.scrollIntoView({behavior:"smooth", block:"nearest"});
+    });
   }
   document.addEventListener("htmx:afterSwap",draw);
   window.addEventListener("resize",()=>charts.forEach(c=>c.resize()));

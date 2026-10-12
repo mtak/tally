@@ -209,3 +209,9 @@ Check current CI rather than treating this historical result as current verifica
   tax; zero gross totals are unavailable. Tooltips and the accessible table expose
   actual valuation dates, carried dates and missing observations. Current account
   classifications still apply to historical reports.
+
+- Issue #48: chart bars open and focus the matching category detail table. Tables
+  expose explanations separately and support keyboard scrolling on mobile.
+  Carried/unknown-deposit rows remain inspectable even with zero contribution.
+  Unknown causes stay neutral; tax changes are labeled correction changes.
+  Reconciliation, tax coverage and observation-period attribution are unchanged.

@@ -699,3 +699,41 @@ def test_movement_details_attribute_home_interest_and_keep_mortgage_residual(own
         "Mortgage": 100000, "Deposit": -100000,
     }
     assert bridge["opening"] + sum(p["amount"] for p in bridge["parts"]) == bridge["closing"]
+
+
+@pytest.mark.parametrize("language", ["en", "nl"])
+def test_movement_zero_unexplained_details_remain_inspectable(logged, owner, snap, language):
+    from wealth.services import movement
+    from django.conf import settings
+
+    logged.cookies[settings.LANGUAGE_COOKIE_NAME] = language
+
+    broker = Account.objects.create(name="Unknown deposits", entity=owner, kind="broker")
+    carried = Account.objects.create(name="Carried broker", entity=owner, kind="broker")
+    cash = Account.objects.create(name="Transfer source", entity=owner)
+    other = Account.objects.create(name="Transfer destination", entity=owner)
+    later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
+    Valuation.objects.create(account=carried, snapshot=snap, amount_minor=120045,
+                             net_deposits_minor=100000)
+    for snapshot, source, target in [(snap, 200000, 100000), (later, 150000, 150000)]:
+        Valuation.objects.create(account=broker, snapshot=snapshot, amount_minor=123456)
+        Valuation.objects.create(account=cash, snapshot=snapshot, amount_minor=source)
+        Valuation.objects.create(account=other, snapshot=snapshot, amount_minor=target)
+    with translation.override(language):
+        bridge = movement(later)
+        residual = bridge["parts"][-1]
+        rows = {r["label"]: r for r in residual["details"]}
+        assert bridge["opening"] == bridge["closing"]
+        assert residual["amount"] == 0
+        assert rows[broker.name]["amount"] == rows[carried.name]["amount"] == 0
+        assert rows[carried.name]["closing_date"] == snap.date
+        assert rows[broker.name]["reason"] != rows[carried.name]["reason"]
+        assert not bridge["parts"][0]["details"]
+        response = logged.get("/analysis/", {"at": later.pk})
+        html = response.content.decode()
+        for row in rows.values():
+            assert row["reason"] in html
+        for part in bridge["parts"]:
+            assert f'id="movement-{part["key"]}"' in html
+            assert sum(r["amount"] for r in part["details"]) == part["amount"]
+        assert ("Explanation" if language == "en" else "Toelichting") in html

@@ -966,3 +966,27 @@ msgstr "Geen bruto bezittingen beschikbaar"
 
 msgid "Missing observations"
 msgstr "Ontbrekende waarnemingen"
+
+msgid "Explanation"
+msgstr "Toelichting"
+
+msgid "Balance change after recorded interest; cause not recorded."
+msgstr "Saldoverandering na opgegeven rente; oorzaak niet vastgelegd."
+
+msgid "Investment observation period does not match this comparison; result remains unexplained."
+msgstr "De beleggingsmeetperiode sluit niet aan op deze vergelijking; het resultaat blijft onverklaard."
+
+msgid "No interest recorded; cause of balance change not recorded."
+msgstr "Geen rente opgegeven; oorzaak van de saldoverandering niet vastgelegd."
+
+msgid "Tax correction change"
+msgstr "Verandering belastingcorrecties"
+
+msgid "Select a bar or expand a category below to see its contributions, largest first. Values reflect your ownership share. A dash means the account is not included at that endpoint."
+msgstr "Selecteer een staaf of klap hieronder een categorie uit om de bijdragen te bekijken, grootste eerst. Waarden tonen jouw eigendomsaandeel. Een streepje betekent dat de rekening op dat meetmoment niet is meegenomen."
+
+msgid "Only matching observation periods are attributed. Missing net deposits, carried observations and changes in account coverage remain unexplained."
+msgstr "Alleen aansluitende meetperiodes worden verklaard. Ontbrekende netto-inleg, overgenomen waarnemingen en veranderingen in rekeningdekking blijven onverklaard."
+
+msgid "Unrecorded causes remain unexplained. Internal transfers do not increase total wealth; individual balance changes cannot identify transfers without a transfer record."
+msgstr "Niet vastgelegde oorzaken blijven onverklaard. Interne overboekingen vergroten het totaalvermogen niet; afzonderlijke saldoveranderingen kunnen zonder transferregistratie geen overboekingen aantonen."

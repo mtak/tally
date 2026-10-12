@@ -250,7 +250,7 @@ def movement(snapshot):
             and row["valuation"].snapshot.date == snapshot.date
         )
         attributed = 0
-        reason = _("Balance change after recorded interest; income, spending or transfers.")
+        reason = _("Balance change after recorded interest; cause not recorded.")
         if not old:
             reason = _("Account newly included; no opening value in this comparison.")
         elif not row:
@@ -264,8 +264,10 @@ def movement(snapshot):
                 details["investments"].append({**item, "amount": attributed,
                     "reason": _("Value change minus change in net deposits.")})
                 reason = _("Net deposits or withdrawals; these are not investment results.")
-            else:
+            elif old["valuation"].net_deposits_minor is None or row["valuation"].net_deposits_minor is None:
                 reason = _("Net deposits unknown at one or both observation dates.")
+            else:
+                reason = _("Investment observation period does not match this comparison; result remains unexplained.")
         elif account.kind in ("bank", "claim"):
             interest = row["valuation"].interest_minor
             if interest is not None:
@@ -273,7 +275,7 @@ def movement(snapshot):
                 details["interest"].append({**item, "amount": attributed,
                     "reason": _("Recorded interest for this period.")})
             else:
-                reason = _("No interest recorded; balance change may include income, spending, repayments or transfers.")
+                reason = _("No interest recorded; cause of balance change not recorded.")
         elif account.kind == "property":
             attributed = delta
             details["property"].append({**item, "amount": attributed,
@@ -281,7 +283,7 @@ def movement(snapshot):
         elif account.kind == "mortgage":
             reason = _("Mortgage balance change, including principal repayments.")
         remainder = delta - attributed
-        if remainder or not old or not row:
+        if remainder or not matched or (account.kind == "broker" and not row["performance"]):
             details["residual"].append({**item, "amount": remainder, "reason": reason})
 
     # Tax adjustments are snapshot-wide, especially imported corrections. Do not
@@ -303,11 +305,11 @@ def movement(snapshot):
         ("investments", _("Investment results")),
         ("interest", _("Interest")),
         ("property", _("Property revaluation")),
-        ("tax", _("Tax assumption change")),
+        ("tax", _("Tax correction change")),
         ("residual", _("Other / unexplained")),
     ]:
         rows = sorted(details[key], key=lambda item: (-abs(item["amount"]), item["label"]))
-        parts.append({"label": label, "amount": sum(r["amount"] for r in rows), "details": rows})
+        parts.append({"key": key, "label": label, "amount": sum(r["amount"] for r in rows), "details": rows})
     labels = [p["label"] for p in parts]
     values = [p["amount"] for p in parts]
     return {
@@ -316,5 +318,6 @@ def movement(snapshot):
         "opening": before["total"],
         "closing": after["total"],
         "parts": parts,
-        "chart": {"labels": labels, "values": [v / 100 for v in values]},
+        "chart": {"labels": labels, "values": [v / 100 for v in values],
+                  "detail_ids": ["movement-" + p["key"] for p in parts]},
     }

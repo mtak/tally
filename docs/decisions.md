@@ -124,3 +124,15 @@
 - Publishing and editing published valuations validate submitted observations or
   their effective carried-forward predecessors, including imported snapshots.
   Drafts can retain unknown basis. Overrides apply only to their own snapshot.
+
+## Inspectable change analysis (#48)
+
+- Chart bars open the corresponding category and focus its keyboard-operable
+  summary. Each category has a scrollable table of ownership-adjusted opening/
+  closing values, actual observation dates, contributions and explanations.
+- Keep zero contributions visible when observations are carried or net deposits
+  are unknown, so a zero category total does not hide incomplete attribution.
+  Offsetting changes remain separate rows; no transfer is inferred from balances.
+- Unknown causes remain unexplained. Tax correction changes use a neutral label;
+  they do not imply that the assumed rates changed. Calculation and reconciliation
+  rules, incomplete-tax comparisons and the mutation-only chart scale are retained.

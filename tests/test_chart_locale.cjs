@@ -4,11 +4,13 @@ const {runInNewContext} = require('node:vm');
 const assert = require('node:assert/strict');
 const code = readFileSync(require('node:path').join(__dirname, '../static/app.js'), 'utf8');
 const root = {lang:'en', dataset:{showCents:'true'}};
-const handlers = {}, options = {};
+const handlers = {}, options = {}, chartHandlers = {};
 const nodes = Object.fromEntries(['history-chart', 'assets-chart', 'liquidity-chart', 'movement-chart'].map(id=>[id,{id}]));
 nodes['chart-data'] = {textContent:JSON.stringify({years:['2026'],series:[],assets:[{value:1234.56}],liquidity:[{value:-1234.56}]})};
-nodes['movement-data'] = {textContent:JSON.stringify({labels:['Gain'],values:[-1234.56]})};
-const echarts = {init:node=>({setOption:option=>options[node.id]=option,dispose(){}})};
+nodes['movement-data'] = {textContent:JSON.stringify({labels:['Gain'],values:[-1234.56],detail_ids:['movement-investments']})};
+let focused = false, scrolled = false;
+nodes['movement-investments'] = {open:false,querySelector:()=>({focus:()=>focused=true}),scrollIntoView:()=>scrolled=true};
+const echarts = {init:node=>({setOption:option=>options[node.id]=option,on:(event,fn)=>chartHandlers[node.id+event]=fn,dispose(){}})};
 runInNewContext(code, {
   Intl, document:{documentElement:root,getElementById:id=>nodes[id],addEventListener:(event,fn)=>handlers[event]=fn},
   window:{echarts,addEventListener(){}}, echarts,
@@ -35,6 +37,9 @@ for (const lang of ['en','nl']) {
   assert.ok(tooltip.includes('-'));
   assert.ok(tooltip.includes(lang==='nl'?'1.235':'1,235'));
 }
+chartHandlers['movement-chartclick']({dataIndex:0});
+assert.ok(nodes['movement-investments'].open && focused && scrolled);
+chartHandlers['movement-chartclick']({dataIndex:99});
 console.log('Chart locale callbacks and HTMX redraw checks passed.');
 // Decimal percentages arrive as strings; chart values convert only for plotting.
 nodes['asset-mix-chart'] = {id:'asset-mix-chart'};
