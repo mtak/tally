@@ -43,6 +43,11 @@ def performance(valuation):
     }
 
 
+def broker_tax_covered(basis, overrides):
+    """Snapshot-wide historical deductions can cover unknown broker bases."""
+    return basis is not None or {"broker_vpb", "broker_ab"} <= overrides.keys()
+
+
 def report(snapshot, include_home=True, include_pension=True, net=True):
     accounts = list(
         Account.objects.select_related("entity")
@@ -67,6 +72,8 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
     bank_base = 0
     broker_vpb = 0
     broker_ab = 0
+    overrides = {t.kind: t.amount_minor for t in snapshot.tax_adjustments.all()}
+    unknown_broker_tax = False
     for account in accounts:
         is_home = account.kind in ("property", "mortgage")
         if (is_home and not include_home) or (account.pension and not include_pension):
@@ -107,7 +114,9 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
         if account.entity.kind == "company":
             if account.kind == "broker":
                 if v.basis_minor is None:
-                    warnings.append(_("Missing tax basis: ") + account.name)
+                    unknown_broker_tax = True
+                    if not broker_tax_covered(v.basis_minor, overrides):
+                        warnings.append(_("Missing tax basis: ") + account.name)
                 else:
                     correction = -rate(
                         amount - owned(account, v.basis_minor), snapshot.vpb_bps
@@ -128,23 +137,26 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
         )
     tax = {
         "bank_ab": -rate(bank_base, snapshot.ab_bps),
-        "broker_vpb": broker_vpb,
-        "broker_ab": broker_ab,
+        "broker_vpb": None if unknown_broker_tax else broker_vpb,
+        "broker_ab": None if unknown_broker_tax else broker_ab,
     }
-    overrides = {t.kind: t.amount_minor for t in snapshot.tax_adjustments.all()}
     tax.update(overrides)
-    tax_total = sum(tax.values()) if net else 0
-    groups["business"] += tax_total
+    tax_complete = all(value is not None for value in tax.values())
+    tax_total = (sum(tax.values()) if tax_complete else None) if net else 0
+    gross_total = sum(groups.values())
+    groups["business"] = groups["business"] + tax_total if tax_total is not None else None
     # Show tax deduction as a separate liquidity bridge, not an arbitrary allocation.
     gross_liquidity = liquidity.copy()
-    boxes["2"] += tax_total
-    total = sum(groups.values())
+    boxes["2"] = boxes["2"] + tax_total if tax_total is not None else None
+    total = gross_total + tax_total if tax_total is not None else None
     property_value = sum(r["amount"] for r in rows if r["account"].kind == "property")
     mortgage_debt = -sum(r["amount"] for r in rows if r["account"].kind == "mortgage")
     ltmv = Decimal(mortgage_debt) / property_value * 100 if property_value > 0 else None
     return {
         "snapshot": snapshot,
         "total": total,
+        "gross_total": gross_total,
+        "tax_complete": tax_complete,
         "groups": groups,
         "assets": dict(assets),
         "liquidity": gross_liquidity,
@@ -163,6 +175,7 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
         and include_home
         and include_pension
         and net
+        and total is not None
         else None,
     }
 
@@ -177,6 +190,13 @@ def movement(snapshot):
         return None
     before = report(previous)
     after = report(snapshot)
+    if before["total"] is None or after["total"] is None:
+        return {
+            "before": previous,
+            "after": snapshot,
+            "incomplete": True,
+            "warnings": list(dict.fromkeys(before["warnings"] + after["warnings"])),
+        }
     prior = {r["account"].pk: r for r in before["rows"]}
     investments = 0
     interest = 0

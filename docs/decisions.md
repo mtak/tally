@@ -96,3 +96,17 @@
   Reload the editor and re-enter reconciled changes. Deletion never recreates a
   valuation from an old form. Whole-amount precision preservation only runs for a
   matching saved state. This check does not introduce a full revision-history store.
+
+## Liquidation tax coverage (#21)
+
+- Unknown company-broker basis makes both calculated broker deductions unknown.
+  Snapshot-level broker VPB and AB overrides can supply those deductions, including
+  explicit zero; an unrelated bank override or only one broker override cannot
+  establish a complete scenario. Imported adjustments remain unchanged.
+- Incomplete scenarios retain gross account values, allocation and liquidity, but
+  show no net total, total tax, net business value or net Box 2 value. Net history
+  omits incomplete bars, and comparisons require complete tax at both endpoints.
+  Dashboard, analysis and valuation editors expose coverage warnings.
+- Publishing and editing published valuations validate submitted observations or
+  their effective carried-forward predecessors, including imported snapshots.
+  Drafts can retain unknown basis. Overrides apply only to their own snapshot.

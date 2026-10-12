@@ -2,6 +2,7 @@
 <div class="page-heading"><div><a class="back-link" href="{% url 'snapshots' %}">← {% trans "Valuations" %}</a><h1>{{ snapshot.date|date:"DATE_FORMAT" }}</h1><p class="muted">{% trans "Enter full account balances in EUR. Joint ownership is applied automatically." %}</p></div><span class="tag">{% if snapshot.complete %}{% trans "Published" %}{% else %}{% trans "Draft" %}{% endif %}</span></div>
 <div class="notice">{% trans "Blank means no observation on this date. Older values keep their original date. Enter zero only when the balance is actually zero." %}</div>
 {% if snapshot.imported %}<div class="notice">{% trans "Historical tax adjustments are preserved. Editing balances does not recalculate these imported adjustments." %}</div>{% endif %}
+{% include "wealth/coverage.html" %}
 {% if conflict %}<div class="notice" role="alert">
 {% if deleted %}{% trans "This valuation was deleted while you were editing. Your submitted inputs are shown below and have not been saved." %}
 {% else %}{% trans "This valuation or its accounts changed while you were editing. Your submitted inputs are shown below and have not been saved. Compare them with the latest saved values before re-entering your changes." %}

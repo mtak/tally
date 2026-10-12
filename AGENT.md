@@ -195,3 +195,9 @@ Check current CI rather than treating this historical result as current verifica
   values for reconciliation. Reload and re-enter changes; never refresh the token
   on a rejected or invalid bound form. SQLite IMMEDIATE transactions serialize the
   check with saves, publication and deletion. No schema change is required.
+
+- Issue #21: missing company-broker tax basis leaves broker deductions and net
+  totals unknown unless both snapshot-level broker tax overrides are recorded.
+  Gross reporting remains available. Publishing checks carried values and imported
+  snapshots; historical overrides are preserved. Coverage warnings appear on the
+  dashboard, analysis and editor; incomplete net comparisons are unavailable.

@@ -21,7 +21,7 @@ from .forms import (
     ImportForm,
     minor,
 )
-from .services import report, movement, cumulative_result
+from .services import report, movement, cumulative_result, broker_tax_covered
 from .importer import parse_overview, import_overview
 from . import editor
 
@@ -63,13 +63,17 @@ def dashboard(request):
             annual[r["snapshot"].date.year] = r
         if len(history) > 1:
             previous = history[-2]
-            change = current["total"] - previous["total"]
+            if current["total"] is not None and previous["total"] is not None:
+                change = current["total"] - previous["total"]
         chart = {
             "years": [str(y) for y in annual],
             "series": [
                 {
                     "name": label,
-                    "data": [r["groups"][key] / 100 for r in annual.values()],
+                    "data": [
+                        r["groups"][key] / 100 if r["total"] is not None else None
+                        for r in annual.values()
+                    ],
                 }
                 for key, label in [
                     ("private", _("Private")),
@@ -251,6 +255,7 @@ def snapshot_edit(request, pk):
         if len(ids) != len(set(ids)) or set(ids) != {a.pk for a in accounts}:
             return HttpResponseBadRequest("Invalid accounts")
         valid = True
+        overrides = {t.kind: t.amount_minor for t in s.tax_adjustments.all()}
         for form, a in zip(formset, accounts):
             if form.cleaned_data["account_id"] != a.pk:
                 return HttpResponseBadRequest("Invalid order")
@@ -269,15 +274,19 @@ def snapshot_edit(request, pk):
                 valid = False
             if (
                 (s.complete or action == "complete")
-                and not s.imported
                 and a.entity.kind == "company"
                 and a.kind == "broker"
-                and value is not None
-                and form.cleaned_data.get("basis") is None
+                and (value is not None or a.pk in prior)
+                and not broker_tax_covered(
+                    data.get("basis") if value is not None else prior[a.pk].basis_minor,
+                    overrides,
+                )
             ):
                 form.add_error(
                     "basis",
-                    _("Enter a tax basis before publishing this company account."),
+                    _("Enter a tax basis before publishing this company account.")
+                    if value is not None
+                    else _("The carried-forward company account has no tax basis. Enter its value and tax basis before publishing."),
                 )
                 valid = False
             if (
@@ -331,6 +340,7 @@ def snapshot_edit(request, pk):
         request,
         "wealth/snapshot_edit.html",
         {"snapshot": s, "formset": formset, "entries": entries,
+         "summary": report(s) if not deleted else None,
          "editor_version": token, "conflict": conflict, "deleted": deleted},
         status=409 if conflict else 200,
     )

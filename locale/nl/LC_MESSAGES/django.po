@@ -847,3 +847,23 @@ msgstr "Laatst opgeslagen waarden"
 
 msgid "No saved observation"
 msgstr "Geen opgeslagen waarde"
+
+#: templates/wealth/analysis.html:5 templates/wealth/dashboard.html:12
+msgid "Change unavailable: incomplete liquidation scenario."
+msgstr "Verandering niet beschikbaar: onvolledig liquidatiescenario."
+
+#: templates/wealth/coverage.html:3
+msgid ""
+"Incomplete liquidation scenario. Net wealth and total tax are unavailable "
+"until a tax basis or both broker tax adjustments are recorded."
+msgstr "Onvolledig liquidatiescenario. Nettovermogen en totale belasting zijn niet beschikbaar totdat een belastinggrondslag of beide belastingcorrecties voor beleggingen zijn vastgelegd."
+
+#: templates/wealth/dashboard.html:19
+msgid "Incomplete net valuations are omitted."
+msgstr "Onvolledige nettowaarderingen worden weggelaten."
+
+#: wealth/views.py:270
+msgid ""
+"The carried-forward company account has no tax basis. Enter its value and "
+"tax basis before publishing."
+msgstr "De overgenomen bedrijfsrekening heeft geen belastinggrondslag. Vul de waarde en belastinggrondslag in voordat je publiceert."

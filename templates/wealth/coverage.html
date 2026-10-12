@@ -1,0 +1,7 @@
+{% load i18n money %}
+{% if summary %}
+{% if not summary.tax_complete %}<div class="notice">{% trans "Incomplete liquidation scenario. Net wealth and total tax are unavailable until a tax basis or both broker tax adjustments are recorded." %} {% trans "Before tax assumptions" %}: {{ summary.gross_total|money }}.</div>{% endif %}
+{% if summary.missing or summary.stale or summary.warnings %}<details class="data-quality" {% if summary.warnings %}open{% endif %}><summary>{% trans "Data coverage" %}: {{ summary.missing|length }} {% trans "missing" %}, {{ summary.stale|length }} {% trans "older valuations" %}, {{ summary.warnings|length }} {% trans "warnings" %}</summary>
+{% if summary.missing %}<p>{% trans "No value available" %}: {{ summary.missing|join:", " }}. {% trans "These accounts are not included in the total." %}</p>{% endif %}
+{% if summary.stale %}<p>{% trans "Using the last known value" %}: {{ summary.stale|join:", " }}</p>{% endif %}{% for warning in summary.warnings %}<p>{{ warning }}</p>{% endfor %}</details>{% endif %}
+{% endif %}
