@@ -867,3 +867,18 @@ msgid ""
 "The carried-forward company account has no tax basis. Enter its value and "
 "tax basis before publishing."
 msgstr "De overgenomen bedrijfsrekening heeft geen belastinggrondslag. Vul de waarde en belastinggrondslag in voordat je publiceert."
+
+msgid "Tax basis: what to enter?"
+msgstr "Belastinggrondslag: wat vul je in?"
+
+msgid "Enter the fiscal book value of this entire company investment account on the valuation date, including its cash balance, in EUR. Use the company's accounting records; this can differ from the current market value."
+msgstr "Vul de fiscale boekwaarde van deze volledige zakelijke beleggingsrekening op de datum van het meetmoment in, inclusief het kassaldo, in EUR. Gebruik hiervoor de administratie van de onderneming; dit bedrag kan afwijken van de actuele marktwaarde."
+
+msgid "In the simplified scenario, you can use net deposits since opening (deposits minus withdrawals) if the difference from the account value represents investment gains that have not yet been taxed. If gains have already been taxed or the fiscal book value has been adjusted, use the updated fiscal book value instead."
+msgstr "In het vereenvoudigde scenario kun je de netto inleg sinds opening (stortingen min onttrekkingen) gebruiken als het verschil met de rekeningwaarde bestaat uit nog niet belaste beleggingswinst. Is winst al belast of is de fiscale boekwaarde aangepast? Gebruik dan de bijgewerkte fiscale boekwaarde."
+
+msgid "Tally calculates VPB on account value minus tax basis, then AB on the value remaining after VPB, using this valuation's assumed rates. For example: an account value of EUR 120,000 and a tax basis of EUR 100,000 gives EUR 20,000 of gains for the VPB calculation. A loss gives a positive VPB correction in this scenario."
+msgstr "Tally berekent vennootschapsbelasting (VPB) over de rekeningwaarde min de belastinggrondslag, en daarna aanmerkelijkbelangheffing (AB) over de waarde na VPB. Hiervoor gelden de ingestelde percentages van dit meetmoment. Voorbeeld: een rekeningwaarde van EUR 120.000 en een belastinggrondslag van EUR 100.000 geeft EUR 20.000 winst voor de VPB-berekening. Bij verlies geeft dit scenario een positieve VPB-correctie."
+
+msgid "This field only affects the liquidation tax scenario. Enter net deposits separately for investment results; neither field updates the other. Blank means unknown; enter zero only if the tax basis is actually zero."
+msgstr "Dit veld heeft alleen invloed op het belastingbedrag in het liquidatiescenario. Vul de netto inleg apart in voor het beleggingsresultaat; de velden werken elkaar niet bij. Leeg betekent onbekend; vul alleen nul in als de belastinggrondslag werkelijk nul is."
