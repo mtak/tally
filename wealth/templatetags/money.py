@@ -7,11 +7,11 @@ register = template.Library()
 
 
 @register.filter
-def money(value):
+def money(value, force_cents=False):
     if value is None:
         return "—"
     amount = Decimal(value) / 100
-    digits = 2 if show_cents.get() else 0
+    digits = 2 if force_cents or show_cents.get() else 0
     if not digits:
         amount = whole_amount(amount)
     return "€ " + format_decimal(amount, digits)

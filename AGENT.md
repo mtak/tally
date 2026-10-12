@@ -189,3 +189,9 @@ Check current CI rather than treating this historical result as current verifica
 - Issue #19: ordinary editor saves cannot demote published valuations. Missing or
   unknown actions are rejected without mutation; stale draft submissions preserve
   publication and its validation. Published editors expose Save only.
+
+- Issue #20: editor submissions require the signed editor_version rendered by GET.
+  Stale submissions return HTTP 409, preserve entered values and offer latest saved
+  values for reconciliation. Reload and re-enter changes; never refresh the token
+  on a rejected or invalid bound form. SQLite IMMEDIATE transactions serialize the
+  check with saves, publication and deletion. No schema change is required.

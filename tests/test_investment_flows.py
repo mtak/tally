@@ -26,6 +26,7 @@ def setup():
 
 def submit(client, account, snapshot, amount="118000", net="100000", **extra):
     return client.post(f"/valuations/{snapshot.pk}/", {
+        "editor_version": client.get(f"/valuations/{snapshot.pk}/").context["editor_version"],
         "form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "1",
         "form-0-account_id": str(account.pk), "form-0-amount": amount,
         "form-0-net_deposits": net, "action": "complete", **extra,

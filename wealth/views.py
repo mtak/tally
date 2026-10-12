@@ -23,6 +23,7 @@ from .forms import (
 )
 from .services import report, movement, cumulative_result
 from .importer import parse_overview, import_overview
+from . import editor
 
 
 @login_required
@@ -186,8 +187,22 @@ def snapshot_delete(request, pk):
 
 
 @login_required
+@transaction.atomic
 def snapshot_edit(request, pk):
-    s = get_object_or_404(Snapshot, pk=pk)
+    # SQLite IMMEDIATE transactions serialize this check with all other writers.
+    token = request.POST.get("editor_version", "")
+    submitted = editor.read_token(token) if request.method == "POST" else None
+    s = Snapshot.objects.filter(pk=pk).first()
+    deleted = s is None
+    if deleted:
+        if not submitted or submitted.get("pk") != pk:
+            return get_object_or_404(Snapshot, pk=pk)
+        s = Snapshot(pk=pk, date=date.fromisoformat(submitted["date"]))
+    digest = None if deleted else editor.version(s)
+    conflict = request.method == "POST" and (
+        not submitted or submitted.get("pk") != pk
+        or submitted.get("version") != digest or deleted
+    )
     action = request.POST.get("action")
     if request.method == "POST" and action not in {"draft", "complete"}:
         return HttpResponseBadRequest(_("Invalid valuation action."))
@@ -196,6 +211,10 @@ def snapshot_edit(request, pk):
         .filter(Q(closed_on__isnull=True) | Q(closed_on__gt=s.date))
         .filter(Q(started_on__isnull=True) | Q(started_on__lte=s.date))
     )
+    if request.method != "POST":
+        token = editor.make_token(s, digest, accounts)
+    elif conflict and submitted and submitted.get("pk") == pk:
+        accounts = editor.original_accounts(submitted)
     existing = {v.account_id: v for v in s.valuations.all()}
     prior = {}
     for v in (
@@ -227,7 +246,7 @@ def snapshot_edit(request, pk):
             form.fields["basis"].disabled = True
         if account.kind not in ("bank", "claim"):
             form.fields["interest"].disabled = True
-    if request.method == "POST" and formset.is_valid():
+    if request.method == "POST" and not conflict and formset.is_valid():
         ids = [f.cleaned_data.get("account_id") for f in formset]
         if len(ids) != len(set(ids)) or set(ids) != {a.pk for a in accounts}:
             return HttpResponseBadRequest("Invalid accounts")
@@ -311,7 +330,9 @@ def snapshot_edit(request, pk):
     return render(
         request,
         "wealth/snapshot_edit.html",
-        {"snapshot": s, "formset": formset, "entries": entries, "summary": report(s)},
+        {"snapshot": s, "formset": formset, "entries": entries,
+         "editor_version": token, "conflict": conflict, "deleted": deleted},
+        status=409 if conflict else 200,
     )
 
 

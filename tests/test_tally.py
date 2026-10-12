@@ -255,6 +255,7 @@ def test_snapshot_save_rejects_negative_assets(logged, account, snap):
         "form-0-amount": "-100",
         "action": "complete",
     }
+    body["editor_version"] = logged.get(f"/valuations/{snap.pk}/").context["editor_version"]
     response = logged.post(f"/valuations/{snap.pk}/", body)
     assert response.status_code == 200 and not Valuation.objects.exists()
 
@@ -267,6 +268,7 @@ def test_snapshot_saves_zero_and_publishes(logged, account, snap):
         "form-0-amount": "0",
         "action": "complete",
     }
+    body["editor_version"] = logged.get(f"/valuations/{snap.pk}/").context["editor_version"]
     assert logged.post(f"/valuations/{snap.pk}/", body).status_code == 302
     assert Valuation.objects.get().amount_minor == 0
 
@@ -360,6 +362,7 @@ def test_company_account_requires_basis_when_publishing(logged, snap):
         "form-0-amount": "1000",
         "action": "complete",
     }
+    payload["editor_version"] = logged.get(f"/valuations/{snap.pk}/").context["editor_version"]
     response = logged.post(f"/valuations/{snap.pk}/", payload)
     assert response.status_code == 200
     assert not Valuation.objects.exists()
@@ -428,10 +431,12 @@ def test_rounded_valuation_save_preserves_cents(logged, account, snap):
     data = {"form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "1",
             "form-0-account_id": account.pk, "form-0-amount": "1235",
             "form-0-basis": "1200", "form-0-interest": "2", "action": "complete"}
+    data["editor_version"] = logged.get(path).context["editor_version"]
     assert logged.post(path, data).status_code == 302
     v.refresh_from_db()
     assert (v.amount_minor, v.basis_minor, v.interest_minor) == (123456, 120049, 155)
     data["form-0-amount"] = "1236"
+    data["editor_version"] = logged.get(path).context["editor_version"]
     assert logged.post(path, data).status_code == 302
     v.refresh_from_db()
     assert v.amount_minor == 123600
@@ -522,8 +527,9 @@ def test_draft_delete_rejects_other_methods(logged, draft, method):
 
 
 def snapshot_editor_body(client, snapshot, action):
-    formset = client.get(f"/valuations/{snapshot.pk}/").context["formset"]
-    body = {"form-TOTAL_FORMS": str(len(formset)),
+    response = client.get(f"/valuations/{snapshot.pk}/")
+    formset = response.context["formset"]
+    body = {"editor_version": response.context["editor_version"], "form-TOTAL_FORMS": str(len(formset)),
             "form-INITIAL_FORMS": str(len(formset))}
     for i, form in enumerate(formset):
         for field, value in form.initial.items():
@@ -553,10 +559,10 @@ def test_published_editor_cannot_reopen_history(logged, draft, imported, lang):
     # Replay an old draft form after publication, then try the delete endpoint.
     body["action"] = "draft"
     body["form-0-amount"] = "125"
-    assert logged.post(path, body).status_code == 302
+    assert logged.post(path, body).status_code == 409
     draft.refresh_from_db()
     assert draft.complete and draft.imported == imported
-    assert draft.valuations.get().amount_minor == 12500
+    assert draft.valuations.get().amount_minor == 12400
     assert logged.post(f"{path}delete/").status_code == 404
     assert draft.valuations.get().positions.get().value_minor == 12345
     assert draft.tax_adjustments.get().amount_minor == -100

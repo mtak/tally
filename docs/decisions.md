@@ -83,3 +83,16 @@
 - Only explicit draft/publish actions are accepted; missing or unknown actions
   cannot change observations or status. Published editors offer Save and no draft
   or delete action. Reopening history would require a separate agreed workflow.
+
+## Concurrent valuation editing (#20)
+
+- Valuation editors carry a signed digest of the saved snapshot, observations, tax
+  adjustments and account configuration. Verify it inside the SQLite IMMEDIATE
+  transaction before writing any submitted values. Blank rows are part of the state.
+- A stale, missing or invalid token returns a translated conflict response without
+  saving. Keep submitted inputs and the original row layout visible; show the latest
+  saved values with cents and offer a separate tab to reconcile against current data.
+- Keep a rejected form's token unchanged: retrying must never authorize an overwrite.
+  Reload the editor and re-enter reconciled changes. Deletion never recreates a
+  valuation from an old form. Whole-amount precision preservation only runs for a
+  matching saved state. This check does not introduce a full revision-history store.

@@ -84,11 +84,13 @@ def test_saved_draft_survives_language_switches(logged):
             data = {"form-TOTAL_FORMS": 1, "form-INITIAL_FORMS": 1,
                     "form-0-account_id": account.pk, "form-0-amount": expected,
                     "form-0-net_deposits": "-" + expected, "form-0-basis": "0", "action": "draft"}
+            data["editor_version"] = response.context["editor_version"]
             assert logged.post(path, data).status_code == 302
             valuation.refresh_from_db()
             assert (valuation.amount_minor, valuation.net_deposits_minor, valuation.basis_minor) == (123456, -123456, 0)
             snap.refresh_from_db()
             assert not snap.complete
+            data["editor_version"] = logged.get(path).context["editor_version"]
             data["form-0-amount"] = "12.34,56" if lang == "nl" else "12,34.56"
             assert logged.post(path, data).status_code == 200
             valuation.refresh_from_db()

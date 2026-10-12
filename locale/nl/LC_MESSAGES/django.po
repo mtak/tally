@@ -831,3 +831,19 @@ msgstr "Concept verwijderd."
 
 msgid "Invalid valuation action."
 msgstr "Ongeldige waarderingsactie."
+
+
+msgid "This valuation was deleted while you were editing. Your submitted inputs are shown below and have not been saved."
+msgstr "Dit meetmoment is verwijderd terwijl je het bewerkte. Je ingevoerde waarden staan hieronder en zijn niet opgeslagen."
+
+msgid "This valuation or its accounts changed while you were editing. Your submitted inputs are shown below and have not been saved. Compare them with the latest saved values before re-entering your changes."
+msgstr "Dit meetmoment of de accounts zijn gewijzigd terwijl je het bewerkte. Je ingevoerde waarden staan hieronder en zijn niet opgeslagen. Vergelijk ze met de laatst opgeslagen waarden voordat je je wijzigingen opnieuw invoert."
+
+msgid "Open latest saved valuation"
+msgstr "Laatst opgeslagen meetmoment openen"
+
+msgid "Latest saved values"
+msgstr "Laatst opgeslagen waarden"
+
+msgid "No saved observation"
+msgstr "Geen opgeslagen waarde"
