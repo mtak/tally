@@ -828,3 +828,6 @@ msgstr "Dit verwijdert het concept en alle bijbehorende waarnemingen, posities e
 
 msgid "Draft deleted."
 msgstr "Concept verwijderd."
+
+msgid "Invalid valuation action."
+msgstr "Ongeldige waarderingsactie."

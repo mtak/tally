@@ -188,6 +188,9 @@ def snapshot_delete(request, pk):
 @login_required
 def snapshot_edit(request, pk):
     s = get_object_or_404(Snapshot, pk=pk)
+    action = request.POST.get("action")
+    if request.method == "POST" and action not in {"draft", "complete"}:
+        return HttpResponseBadRequest(_("Invalid valuation action."))
     accounts = list(
         Account.objects.select_related("entity")
         .filter(Q(closed_on__isnull=True) | Q(closed_on__gt=s.date))
@@ -246,7 +249,7 @@ def snapshot_edit(request, pk):
                 )
                 valid = False
             if (
-                request.POST.get("action") == "complete"
+                (s.complete or action == "complete")
                 and not s.imported
                 and a.entity.kind == "company"
                 and a.kind == "broker"
@@ -286,8 +289,11 @@ def snapshot_edit(request, pk):
                                 "interest_minor": minor(d["interest"]),
                             },
                         )
-                s.complete = request.POST.get("action") == "complete"
-                s.save(update_fields=["complete"])
+                # Publishing is one-way in the ordinary editor. A stale draft
+                # submission must never demote history published in another tab.
+                if action == "complete":
+                    Snapshot.objects.filter(pk=s.pk).update(complete=True)
+                s.refresh_from_db(fields=["complete"])
             messages.success(
                 request, _("Valuation published.") if s.complete else _("Draft saved.")
             )

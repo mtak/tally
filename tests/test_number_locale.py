@@ -83,7 +83,7 @@ def test_saved_draft_survives_language_switches(logged):
             assert response.headers["Content-Language"] == lang
             data = {"form-TOTAL_FORMS": 1, "form-INITIAL_FORMS": 1,
                     "form-0-account_id": account.pk, "form-0-amount": expected,
-                    "form-0-net_deposits": "-" + expected, "form-0-basis": "0", "action": "save"}
+                    "form-0-net_deposits": "-" + expected, "form-0-basis": "0", "action": "draft"}
             assert logged.post(path, data).status_code == 302
             valuation.refresh_from_db()
             assert (valuation.amount_minor, valuation.net_deposits_minor, valuation.basis_minor) == (123456, -123456, 0)

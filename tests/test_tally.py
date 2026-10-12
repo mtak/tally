@@ -427,7 +427,7 @@ def test_rounded_valuation_save_preserves_cents(logged, account, snap):
     assert 'value="1,235"' in html
     data = {"form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "1",
             "form-0-account_id": account.pk, "form-0-amount": "1235",
-            "form-0-basis": "1200", "form-0-interest": "2", "action": "save"}
+            "form-0-basis": "1200", "form-0-interest": "2", "action": "complete"}
     assert logged.post(path, data).status_code == 302
     v.refresh_from_db()
     assert (v.amount_minor, v.basis_minor, v.interest_minor) == (123456, 120049, 155)
@@ -518,3 +518,98 @@ def test_draft_delete_requires_login_and_csrf(logged, draft):
 def test_draft_delete_rejects_other_methods(logged, draft, method):
     assert getattr(logged, method)(f"/valuations/{draft.pk}/delete/").status_code == 405
     assert Snapshot.objects.filter(pk=draft.pk).exists()
+
+
+
+def snapshot_editor_body(client, snapshot, action):
+    formset = client.get(f"/valuations/{snapshot.pk}/").context["formset"]
+    body = {"form-TOTAL_FORMS": str(len(formset)),
+            "form-INITIAL_FORMS": str(len(formset))}
+    for i, form in enumerate(formset):
+        for field, value in form.initial.items():
+            body[f"form-{i}-{field}"] = "" if value is None else str(value)
+    if action is not None:
+        body["action"] = action
+    return body
+
+
+@pytest.mark.parametrize("imported", [False, True])
+@pytest.mark.parametrize("lang", ["en", "nl"])
+def test_published_editor_cannot_reopen_history(logged, draft, imported, lang):
+    # Imported valuations use the same editor; include archived data in both paths.
+    draft.imported = imported
+    draft.save()
+    path = f"/valuations/{draft.pk}/"
+    body = snapshot_editor_body(logged, draft, "complete")
+    body["form-0-amount"] = "124"
+    assert logged.post(path, body).status_code == 302
+    draft.refresh_from_db()
+    assert draft.complete
+    logged.cookies["django_language"] = lang
+    html = logged.get(path).content.decode()
+    assert 'value="draft"' not in html
+    assert 'value="complete"' in html
+    assert ("Opslaan" if lang == "nl" else "Save") in html
+    # Replay an old draft form after publication, then try the delete endpoint.
+    body["action"] = "draft"
+    body["form-0-amount"] = "125"
+    assert logged.post(path, body).status_code == 302
+    draft.refresh_from_db()
+    assert draft.complete and draft.imported == imported
+    assert draft.valuations.get().amount_minor == 12500
+    assert logged.post(f"{path}delete/").status_code == 404
+    assert draft.valuations.get().positions.get().value_minor == 12345
+    assert draft.tax_adjustments.get().amount_minor == -100
+
+
+@pytest.mark.parametrize("complete", [False, True])
+@pytest.mark.parametrize("action", [None, "", "typo"])
+def test_snapshot_editor_rejects_invalid_actions_without_mutation(logged, draft, complete, action):
+    draft.complete = complete
+    draft.save()
+    body = snapshot_editor_body(logged, draft, action)
+    body["form-0-amount"] = "999"
+    assert logged.post(f"/valuations/{draft.pk}/", body).status_code == 400
+    draft.refresh_from_db()
+    assert draft.complete == complete
+    assert draft.valuations.get().amount_minor == 12345
+    assert draft.valuations.get().positions.get().value_minor == 12345
+    assert draft.tax_adjustments.get().amount_minor == -100
+
+
+def test_imported_published_history_survives_draft_save_and_delete(logged):
+    import_overview(parse_overview(fixture_csv()))
+    snapshot = Snapshot.objects.latest("date")
+    observation = snapshot.valuations.filter(account__kind="broker").first()
+    position = Position.objects.create(valuation=observation, name="Archived", value_minor=10000)
+    adjustments = list(snapshot.tax_adjustments.values())
+    body = snapshot_editor_body(logged, snapshot, "draft")
+    assert logged.post(f"/valuations/{snapshot.pk}/", body).status_code == 302
+    assert logged.post(f"/valuations/{snapshot.pk}/delete/").status_code == 404
+    snapshot.refresh_from_db()
+    assert snapshot.complete and snapshot.imported
+    assert Position.objects.filter(pk=position.pk).exists()
+    assert list(snapshot.tax_adjustments.values()) == adjustments
+
+
+def test_draft_save_stays_draft_and_remains_deletable(logged, draft):
+    body = snapshot_editor_body(logged, draft, "draft")
+    assert logged.post(f"/valuations/{draft.pk}/", body).status_code == 302
+    draft.refresh_from_db()
+    assert not draft.complete
+    assert logged.post(f"/valuations/{draft.pk}/delete/").status_code == 302
+
+
+def test_published_draft_action_still_validates_company_tax_basis(logged, draft, account):
+    account.kind = "broker"
+    account.save()
+    account.entity.kind = "company"
+    account.entity.save()
+    draft.complete = True
+    draft.save()
+    body = snapshot_editor_body(logged, draft, "draft")
+    body["form-0-amount"] = "999"
+    response = logged.post(f"/valuations/{draft.pk}/", body)
+    assert response.status_code == 200
+    assert "basis" in response.context["formset"][0].errors
+    assert draft.valuations.get().amount_minor == 12345

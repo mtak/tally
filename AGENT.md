@@ -185,3 +185,7 @@ Check current CI rather than treating this historical result as current verifica
 - Draft valuations can be deleted from the list or editor after a translated confirmation.
   Deletion requires an authenticated CSRF-protected POST and removes associated
   observations, archived positions and tax adjustments. Published valuations are protected.
+
+- Issue #19: ordinary editor saves cannot demote published valuations. Missing or
+  unknown actions are rejected without mutation; stale draft submissions preserve
+  publication and its validation. Published editors expose Save only.

@@ -75,3 +75,11 @@
   Stored cents, Decimal calculations, canonical exports, archived exact position
   values and the Overview importer's explicit Dutch source format stay independent
   of UI language. Whole-amount saves retain unchanged stored cents.
+
+## Published valuation protection (#19)
+
+- Ordinary valuation saves never reopen published history. Draft submissions from
+  stale forms also preserve published status and publishing validation.
+- Only explicit draft/publish actions are accepted; missing or unknown actions
+  cannot change observations or status. Published editors offer Save and no draft
+  or delete action. Reopening history would require a separate agreed workflow.
