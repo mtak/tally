@@ -23,6 +23,7 @@
     const source = document.getElementById("chart-data");
     if (!window.echarts) return;
     drawInvestment();
+    drawMaturities();
     if (!source) { drawMovement(); return; }
     const data = JSON.parse(source.textContent);
     const style = getComputedStyle(document.documentElement);
@@ -81,6 +82,58 @@
         label:{show:false},emphasis:{label:{show:true,fontSize:16,fontWeight:600,formatter:params=>formats.decimal.format(params.percent)+"%"}},
         data:values}]});
     }
+  }
+
+  function drawMaturities() {
+    const source = document.getElementById("maturity-data");
+    if (!source) return;
+    const data = JSON.parse(source.textContent), formats = numberFormats();
+    const style = getComputedStyle(document.documentElement), ink = style.getPropertyValue("--muted").trim();
+    const line = style.getPropertyValue("--line").trim();
+    const colors = {private:style.getPropertyValue("--private").trim(), business:style.getPropertyValue("--business").trim()};
+    const tooltip = {renderMode:"richText",confine:true,backgroundColor:style.getPropertyValue("--surface").trim(),
+      borderColor:line,textStyle:{color:ink}};
+    const quarterNode = document.getElementById("maturity-quarter-chart");
+    if (quarterNode) {
+      const chart = echarts.init(quarterNode); charts.push(chart);
+      chart.setOption({animation:false,aria:{enabled:false},
+        legend:{bottom:0,textStyle:{color:ink}},grid:{left:70,right:20,top:20,bottom:70},
+        tooltip:{...tooltip,trigger:"axis",valueFormatter:value=>formats.money.format(value)},
+        xAxis:{type:"category",data:data.quarters.map(q=>q.label),axisLabel:{color:ink},axisLine:{lineStyle:{color:line}},axisTick:{show:false}},
+        yAxis:{type:"value",axisLabel:{color:ink,formatter:value=>formats.compact.format(value)},splitLine:{lineStyle:{color:line,type:"dashed"}}},
+        series:Object.keys(data.groups).map(group=>({name:data.groups[group],type:"bar",stack:"release",barMaxWidth:50,
+          itemStyle:{color:colors[group]},data:data.quarters.map(q=>q[group]/100)}))});
+    }
+    const node = document.getElementById("maturity-timeline-chart");
+    const rows = data.rows.filter(row=>row.start || row.end);
+    if (!node || !rows.length) { if (node) node.hidden = true; return; }
+    node.style.height = Math.max(240, rows.length * 42 + 95) + "px";
+    const timestamp = date=>Date.parse(date + "T00:00:00Z");
+    const dateLabel = value=>formats.date(new Date(value).toISOString().slice(0,10));
+    const chart = echarts.init(node); charts.push(chart);
+    const dates = rows.flatMap(row=>[row.start,row.end].filter(Boolean).map(timestamp));
+    chart.setOption({animation:false,useUTC:true,aria:{enabled:false},grid:{left:135,right:25,top:20,bottom:65},
+      tooltip:{...tooltip,trigger:"item",formatter:params=>{
+        const row = rows[params.dataIndex], labels = data.labels;
+        return [row.name + " · " + row.owner, data.groups[row.group], row.status,
+          labels.balance + ": " + (row.amount === null ? labels.unknown : formats.money.format(row.amount/100)),
+          labels.observed + ": " + (row.observed ? formats.date(row.observed) : labels.unknown) + (row.stale ? " · " + labels.carried : ""),
+          labels.start + ": " + (row.start ? formats.date(row.start) : labels.unknown),
+          labels.end + ": " + (row.end ? formats.date(row.end) : labels.unknown)].join("\n");
+      }},
+      xAxis:{type:"time",min:Math.min(...dates)-86400000,max:Math.max(...dates)+86400000,
+        axisLabel:{color:ink,formatter:dateLabel,hideOverlap:true},axisLine:{lineStyle:{color:line}},splitLine:{lineStyle:{color:line,type:"dashed"}}},
+      yAxis:{type:"category",inverse:true,data:rows.map(row=>row.name),axisLabel:{color:ink,width:110,overflow:"truncate"},axisTick:{show:false},axisLine:{show:false}},
+      series:[{type:"custom",data:rows.map((row,index)=>[index,timestamp(row.start || row.end),timestamp(row.end || row.start)]),
+        renderItem:(params,api)=>{
+          const row = rows[params.dataIndex], start = api.coord([api.value(1),api.value(0)]), end = api.coord([api.value(2),api.value(0)]);
+          const color = colors[row.group];
+          const children = [];
+          if (row.start && row.end) children.push({type:"line",shape:{x1:start[0],y1:start[1],x2:end[0],y2:end[1]},style:{stroke:color,lineWidth:7}});
+          if (row.start) children.push({type:"circle",shape:{cx:start[0],cy:start[1],r:5},style:{fill:color}});
+          if (row.end) children.push({type:"circle",shape:{cx:end[0],cy:end[1],r:6},style:{fill:color,stroke:ink,lineWidth:1}});
+          return {type:"group",children};
+        }}]});
   }
 
   function drawInvestment() {

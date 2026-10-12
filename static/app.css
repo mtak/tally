@@ -10,3 +10,5 @@
 .asset-mix-details{margin-top:18px;font-size:12px}.asset-mix-details summary{cursor:pointer;color:var(--green);padding:8px 0}.asset-mix-details table{min-width:650px}.asset-mix-details tbody th{font-size:12px;color:var(--ink);font-weight:500;vertical-align:top}
 
 .investment-chart{height:340px}.analysis-filters{flex-wrap:wrap}.analysis-filters>div{flex-wrap:wrap;max-width:100%}.investment-history table{min-width:650px}
+
+.maturity-table table{min-width:800px}.maturity-table tbody th{font-size:12px;color:var(--ink);vertical-align:top;font-weight:500}.maturity-timeline{min-height:240px}

@@ -737,3 +737,106 @@ def test_movement_zero_unexplained_details_remain_inspectable(logged, owner, sna
             assert f'id="movement-{part["key"]}"' in html
             assert sum(r["amount"] for r in part["details"]) == part["amount"]
         assert ("Explanation" if language == "en" else "Toelichting") in html
+
+
+def test_maturities_aggregate_owned_gross_balances_without_interest(owner, snap):
+    from wealth.services import maturity_calendar
+    business = Entity.objects.create(name="Fictional company", kind="company")
+    for name, entity, amount, joint in [
+        ("Deposit one", owner, 1000000, False),
+        ("Loan two", owner, 1500000, False),
+        ("Shared test claim", owner, 10001, True),
+        ("Company deposit", business, 400000, False),
+    ]:
+        claim = Account.objects.create(name=name, entity=entity, kind="claim", joint=joint,
+            started_on=date(2025, 1, 1), matures_on=date(2026, 3, 31), rate_bps=500)
+        Valuation.objects.create(snapshot=snap, account=claim, amount_minor=amount, interest_minor=90000)
+    calendar = maturity_calendar(snap)
+    assert calendar["quarters"] == [{"label": "Q1 2026", "private": 2505001,
+                                     "business": 400000, "total": 2905001}]
+    assert sum(r["amount"] for r in calendar["rows"][:2]) == 2500000
+    assert calendar["chart"]["rows"][0]["observed"] == "2026-01-01"
+
+
+def test_maturities_unknown_overdue_zero_and_missing_stay_separate(owner, snap):
+    from wealth.services import maturity_calendar
+    cases = [
+        ("No end", None, 12300, "unknown"),
+        ("Overdue loan", date(2025, 12, 31), 20000, "overdue"),
+        ("Due today", snap.date, 30000, "scheduled"),
+        ("Empty claim", date(2025, 12, 31), 0, "nonpositive"),
+        ("Negative legacy claim", date(2026, 4, 1), -100, "nonpositive"),
+        ("Missing balance", date(2026, 6, 1), None, "missing"),
+        ("Both unknown", None, None, "missing"),
+    ]
+    for name, end, amount, status in cases:
+        claim = Account.objects.create(name=name, entity=owner, kind="claim", matures_on=end)
+        if amount is not None:
+            Valuation.objects.create(snapshot=snap, account=claim, amount_minor=amount)
+    calendar = maturity_calendar(snap)
+    assert [(r["account"].name, r["status"]) for r in calendar["rows"]] == [(c[0],c[3]) for c in cases]
+    assert calendar["quarters"][0]["total"] == 30000
+    assert next(r for r in calendar["rows"] if r["status"] == "unknown")["amount"] == 12300
+    assert calendar["rows"][-1]["amount"] is None
+
+
+def test_maturities_as_of_carries_published_values_and_excludes_replaced_claims(owner, snap):
+    from wealth.services import maturity_calendar
+    aggregate = Account.objects.create(name="Historical aggregate", entity=owner, kind="claim",
+        closed_on=date(2026, 2, 1), matures_on=date(2025, 8, 1))
+    replacement = Account.objects.create(name="Detailed deposit", entity=owner, kind="claim",
+        started_on=date(2026, 2, 1), matures_on=date(2025, 8, 1))
+    carried = Account.objects.create(name="Carried loan", entity=owner, kind="claim",
+        matures_on=date(2026, 5, 1))
+    Valuation.objects.create(snapshot=snap, account=aggregate, amount_minor=900000)
+    Valuation.objects.create(snapshot=snap, account=carried, amount_minor=100000)
+    draft = Snapshot.objects.create(date=date(2026, 1, 15))
+    Valuation.objects.create(snapshot=draft, account=carried, amount_minor=999999)
+    later = Snapshot.objects.create(date=date(2026, 2, 1), complete=True)
+    Valuation.objects.create(snapshot=later, account=replacement, amount_minor=900000)
+    future = Snapshot.objects.create(date=date(2026, 9, 1), complete=True)
+    Valuation.objects.create(snapshot=future, account=carried, amount_minor=0)
+    other = Account.objects.create(name="Non-claim", entity=owner, kind="bank", matures_on=date(2026, 5, 1))
+    Valuation.objects.create(snapshot=later, account=other, amount_minor=10000)
+    assert {r["account"].pk for r in maturity_calendar(snap)["rows"]} == {aggregate.pk, carried.pk}
+    result = maturity_calendar(later)
+    assert {r["account"].pk for r in result["rows"]} == {replacement.pk, carried.pk}
+    row = next(r for r in result["rows"] if r["account"] == carried)
+    assert row["stale"] and row["valuation"].snapshot == snap and row["amount"] == 100000
+    assert sum(q["total"] for q in result["quarters"]) == 1000000
+
+
+@pytest.mark.parametrize("language,title,amount,quarter", [
+    ("en", "Maturity calendar", "1,234.56", "Q2 2026"),
+    ("nl", "Vervalkalender", "1.234,56", "K2 2026"),
+])
+def test_maturity_view_localized_and_read_only(logged, owner, snap, language, title, amount, quarter):
+    from wealth.preferences import cents_cookie_name
+    claim = Account.objects.create(name="Fictional <claim>", entity=owner, kind="claim",
+        matures_on=date(2026, 6, 1))
+    Valuation.objects.create(snapshot=snap, account=claim, amount_minor=123456, interest_minor=321)
+    draft = Snapshot.objects.create(date=date(2026, 7, 1))
+    published = Snapshot.objects.create(date=date(2025, 8, 1), complete=True)
+    TaxAdjustment.objects.create(snapshot=snap, kind="bank_ab", amount_minor=-123)
+    before = (list(Valuation.objects.values()), list(TaxAdjustment.objects.values()), report(snap))
+    logged.cookies["django_language"] = language
+    logged.cookies[cents_cookie_name()] = "1"
+    response = logged.get("/maturities/", {"at": snap.pk})
+    assert response.status_code == 200
+    assert response.context["selected"] == snap
+    assert draft not in response.context["snapshots"]
+    html = response.content.decode()
+    assert title in html and amount in html and quarter in html
+    assert 'tabindex="0"' in html and 'scope="col"' in html
+    assert 'Fictional &lt;claim&gt;' in html and '\\u003Cclaim\\u003E' in html
+    assert logged.get("/maturities/", {"at": draft.pk}).context["selected"] == published
+    assert Client().get("/maturities/").status_code == 302
+    assert list(Valuation.objects.values()) == before[0]
+    assert list(TaxAdjustment.objects.values()) == before[1]
+    assert report(snap) == before[2]
+
+
+def test_maturity_calendar_empty_states(logged, owner):
+    assert b"Publish a valuation" in logged.get("/maturities/").content
+    Snapshot.objects.create(date=date(2026, 1, 1), complete=True)
+    assert b"No active deposits or loans" in logged.get("/maturities/").content

@@ -99,3 +99,37 @@ for (const lang of ['en','nl']) {
   }
 }
 console.log('Investment history dates, gaps and locale checks passed.');
+// Maturity terms use registered endpoints only; tooltip values retain cents/dates.
+nodes['maturity-quarter-chart'] = {id:'maturity-quarter-chart'};
+nodes['maturity-timeline-chart'] = {id:'maturity-timeline-chart',style:{}};
+nodes['maturity-data'] = {textContent:JSON.stringify({
+  quarters:[{label:'Q2 2026',private:2500000,business:123456}],groups:{private:'Private',business:'Business'},
+  labels:{balance:'Balance',observed:'Observed',start:'Start',end:'End',unknown:'Unknown',carried:'Carried'},
+  rows:[
+    {name:'Deposit',owner:'Demo',group:'private',amount:123456,observed:'2026-01-03',start:'2024-01-01',end:'2026-06-01',stale:true,status:'Scheduled'},
+    {name:'No start',owner:'Demo company',group:'business',amount:null,observed:null,start:null,end:'2025-08-01',stale:false,status:'Unknown balance'},
+    {name:'Undated',owner:'Demo',group:'private',amount:10000,observed:'2026-01-03',start:null,end:null,stale:false,status:'Unknown maturity'}
+  ]
+})};
+for (const lang of ['en','nl']) {
+  root.lang = lang;
+  for (const cents of ['true','false']) {
+    root.dataset.showCents = cents;
+    handlers['htmx:afterSwap']();
+    const quarter = options['maturity-quarter-chart'], term = options['maturity-timeline-chart'];
+    assert.equal(quarter.series[0].data[0],25000);
+    assert.equal(quarter.series[1].data[0],1234.56);
+    const amount = lang==='nl' ? (cents==='true'?'1.234,56':'1.235') : (cents==='true'?'1,234.56':'1,235');
+    assert.ok(quarter.tooltip.valueFormatter(1234.56).includes(amount));
+    assert.ok(term.tooltip.formatter({dataIndex:0}).includes(amount));
+    assert.ok(term.tooltip.formatter({dataIndex:0}).includes(lang==='nl'?'3-1-2026':'1/3/2026'));
+    assert.ok(term.tooltip.formatter({dataIndex:0}).includes('Carried'));
+    assert.ok(term.tooltip.formatter({dataIndex:1}).includes('Balance: Unknown'));
+    assert.equal(term.series[0].data.length,2);
+    assert.equal(term.xAxis.type,'time');
+    const render = index=>term.series[0].renderItem({dataIndex:index},{value:i=>term.series[0].data[index][i],coord:value=>value});
+    assert.equal(render(0).children.filter(child=>child.type==='line').length,1);
+    assert.equal(render(1).children.length,1); // Known end marker, no inferred start or interval.
+  }
+}
+console.log('Maturity calendar ownership totals, endpoint and locale callbacks passed.');

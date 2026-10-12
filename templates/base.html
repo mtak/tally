@@ -8,6 +8,7 @@
 <nav aria-label="{% trans 'Main navigation' %}">
 <a class="{% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard' %}"><span aria-hidden="true">◫</span>{% trans "Overview" %}</a>
 <a class="{% if '/analysis/' in request.path %}active{% endif %}" href="{% url 'analysis' %}"><span aria-hidden="true">↗</span>{% trans "Performance" %}</a>
+<a class="{% if '/maturities/' in request.path %}active{% endif %}" href="{% url 'maturities' %}"><span aria-hidden="true">◷</span>{% trans "Maturity calendar" %}</a>
 <a class="{% if '/accounts/' in request.path %}active{% endif %}" href="{% url 'accounts' %}"><span aria-hidden="true">▤</span>{% trans "Accounts" %}</a>
 <a class="{% if '/valuations/' in request.path %}active{% endif %}" href="{% url 'snapshots' %}"><span aria-hidden="true">◷</span>{% trans "Valuations" %}</a>
 <a href="{% url 'imports' %}"><span aria-hidden="true">↓</span>{% trans "Import history" %}</a></nav>

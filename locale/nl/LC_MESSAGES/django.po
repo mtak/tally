@@ -1008,3 +1008,113 @@ msgstr "Historie van de beleggingsrekening"
 
 msgid "No published observations for this account through the selected date."
 msgstr "Geen gepubliceerde waarnemingen voor deze rekening tot en met de geselecteerde datum."
+
+msgid "Maturity calendar"
+msgstr "Vervalkalender"
+
+msgid "PLANNING LIQUIDITY"
+msgstr "LIQUIDITEIT PLANNEN"
+
+msgid "Deposits and loans as of a published valuation."
+msgstr "Deposito’s en leningen op een gepubliceerde waarderingsdatum."
+
+msgid ""
+"Indicative release based on registered balances and maturity dates. Balances "
+"may include more than principal. No repayment schedule or additional "
+"interest is assumed. Business funds are not automatically available "
+"privately; amounts are before liquidation tax."
+msgstr "Indicatieve vrijval op basis van geregistreerde saldi en einddatums. Saldi kunnen meer dan alleen hoofdsom bevatten. Er wordt geen aflossingsschema of extra rente verondersteld. Zakelijk geld is niet automatisch privé beschikbaar; bedragen zijn vóór liquidatiebelasting."
+
+msgid "Expected release by quarter"
+msgstr "Verwachte vrijval per kwartaal"
+
+msgid ""
+"Positive balances with maturity on or after the selected valuation date, "
+"using your ownership share."
+msgstr "Positieve saldi met een einddatum op of na de geselecteerde waarderingsdatum, volgens jouw eigendomsaandeel."
+
+msgid ""
+"Indicative release by quarter, split into private and business; data in the "
+"table below"
+msgstr "Indicatieve vrijval per kwartaal, verdeeld in privé en zakelijk; gegevens in de onderstaande tabel"
+
+msgid "Quarterly maturities"
+msgstr "Vrijval per kwartaal"
+
+msgid "Quarter"
+msgstr "Kwartaal"
+
+msgid "Total"
+msgstr "Totaal"
+
+msgid "No positive balances with a known upcoming maturity."
+msgstr "Geen positieve saldi met een bekende toekomstige einddatum."
+
+msgid "Term per deposit or loan"
+msgstr "Looptijd per deposito of lening"
+
+msgid ""
+"Lines join registered start and maturity dates. A single marker means only "
+"one date is known; claims without either date appear only in the tables. No "
+"dates are inferred."
+msgstr "Lijnen verbinden geregistreerde start- en einddatums. Eén markering betekent dat slechts één datum bekend is; vorderingen zonder beide datums staan alleen in de tabellen. Er worden geen datums afgeleid."
+
+msgid ""
+"Registered terms per deposit or loan; dates and balances in the tables below"
+msgstr "Geregistreerde looptijden per deposito of lening; datums en saldi in de onderstaande tabellen"
+
+msgid ""
+"Maturity has passed as of the selected valuation, but a positive balance "
+"remains recorded. This does not prove that repayment was received."
+msgstr "De einddatum is verstreken op de geselecteerde waarderingsdatum, maar er staat nog een positief saldo geregistreerd. Dit bewijst niet dat een aflossing is ontvangen."
+
+msgid ""
+"These balances have no registered maturity and are excluded from quarterly "
+"release totals."
+msgstr "Deze saldi hebben geen geregistreerde einddatum en tellen niet mee in de vrijvaltotalen per kwartaal."
+
+msgid ""
+"No published balance is available through this valuation date. Release "
+"amounts remain unknown."
+msgstr "Er is geen gepubliceerd saldo beschikbaar tot en met deze waarderingsdatum. Vrijvalbedragen blijven onbekend."
+
+msgid ""
+"Zero or negative balances do not represent an expected release and are "
+"excluded from quarterly totals."
+msgstr "Nulsaldi of negatieve saldi vormen geen verwachte vrijval en tellen niet mee in de kwartaaltotalen."
+
+msgid "Private / business"
+msgstr "Privé / zakelijk"
+
+msgid "Your balance"
+msgstr "Jouw saldo"
+
+msgid "Observation date"
+msgstr "Waarnemingsdatum"
+
+msgid "Unknown"
+msgstr "Onbekend"
+
+msgid "No active deposits or loans on this date."
+msgstr "Geen actieve deposito’s of leningen op deze datum."
+
+msgid "Publish a valuation to view the maturity calendar."
+msgstr "Publiceer een waardering om de vervalkalender te bekijken."
+
+msgid "Q%(quarter)s %(year)s"
+msgstr "K%(quarter)s %(year)s"
+
+msgid "Scheduled maturities"
+msgstr "Geplande vrijval"
+
+msgid "Past maturity — needs attention"
+msgstr "Einddatum verstreken — aandacht nodig"
+
+msgid "Maturity date unknown"
+msgstr "Einddatum onbekend"
+
+msgid "Balance unknown"
+msgstr "Saldo onbekend"
+
+msgid "No positive balance"
+msgstr "Geen positief saldo"

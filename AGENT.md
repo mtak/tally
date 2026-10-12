@@ -222,3 +222,11 @@ Check current CI rather than treating this historical result as current verifica
   appear. Missing inception net deposits break deposits/result lines; zero and
   negative deposits remain valid. Full account results exclude ownership scaling
   and liquidation corrections; historical adjustments remain unchanged.
+
+- Issue #45: Maturity calendar selects a published valuation and uses active claim
+  accounts with their last published ownership-adjusted balances. Upcoming quarterly
+  gross totals separate private/business funds. Tables preserve carried observation
+  dates and expose overdue, unknown maturity, missing balance and nonpositive cases.
+  The timeline uses registered start/end dates only. No repayments or extra interest
+  are inferred and existing liquidity/tax/valuation calculations are unchanged.
+  Current account date metadata also applies to historical calendar views.

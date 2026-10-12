@@ -74,12 +74,80 @@ def broker_tax_covered(basis, overrides):
     return basis is not None or {"broker_vpb", "broker_ab"} <= overrides.keys()
 
 
-def report(snapshot, include_home=True, include_pension=True, net=True):
-    accounts = list(
+def active_accounts(snapshot):
+    """Accounts in scope on this valuation date, including aggregate closures."""
+    return (
         Account.objects.select_related("entity")
         .filter(Q(closed_on__isnull=True) | Q(closed_on__gt=snapshot.date))
         .filter(Q(started_on__isnull=True) | Q(started_on__lte=snapshot.date))
     )
+
+
+def maturity_calendar(snapshot):
+    """Indicative gross release of positive claim balances; no repayment inference."""
+    accounts = list(active_accounts(snapshot).filter(kind="claim"))
+    latest = {
+        v.account_id: v for v in Valuation.objects.filter(
+            account__in=accounts, snapshot__complete=True,
+            snapshot__date__lte=snapshot.date,
+        ).select_related("snapshot").order_by("snapshot__date")
+    }
+    sections = {key: [] for key in ("scheduled", "overdue", "unknown", "missing", "nonpositive")}
+    quarters = defaultdict(lambda: {"private": 0, "business": 0})
+    rows = []
+    for account in accounts:
+        valuation = latest.get(account.pk)
+        amount = owned(account, valuation.amount_minor) if valuation else None
+        group = "private" if account.entity.kind == "private" else "business"
+        end = account.matures_on
+        status = (
+            "missing" if amount is None else
+            "nonpositive" if amount <= 0 else
+            "unknown" if end is None else
+            "overdue" if end < snapshot.date else "scheduled"
+        )
+        row = {"account": account, "amount": amount, "valuation": valuation,
+               "stale": bool(valuation and valuation.snapshot.date != snapshot.date),
+               "group": group, "status": status}
+        rows.append(row)
+        sections[status].append(row)
+        if status == "scheduled":
+            quarters[(end.year, (end.month - 1) // 3 + 1)][group] += amount
+    quarterly = [
+        {"label": _("Q%(quarter)s %(year)s") % {"quarter": quarter, "year": year},
+         **values, "total": sum(values.values())}
+        for (year, quarter), values in sorted(quarters.items())
+    ]
+    labels = {"private": _("Private"), "business": _("Business")}
+    statuses = {
+        "scheduled": _("Scheduled maturities"), "overdue": _("Past maturity — needs attention"),
+        "unknown": _("Maturity date unknown"), "missing": _("Balance unknown"),
+        "nonpositive": _("No positive balance"),
+    }
+    return {
+        "rows": rows, "quarters": quarterly,
+        "sections": [{"key": key, "label": statuses[key], "rows": items}
+                     for key, items in sections.items() if items],
+        "chart": {
+            "quarters": quarterly, "groups": labels,
+            "labels": {"balance": _("Your balance"), "observed": _("Observation date"),
+                       "start": _("Start date"), "end": _("Maturity date"),
+                       "unknown": _("Unknown"), "carried": _("Carried forward")},
+            "rows": [
+                {"name": r["account"].name, "owner": r["account"].entity.name,
+                 "group": r["group"], "amount": r["amount"], "stale": r["stale"],
+                 "status": str(statuses[r["status"]]),
+                 "observed": r["valuation"].snapshot.date.isoformat() if r["valuation"] else None,
+                 "start": r["account"].started_on.isoformat() if r["account"].started_on else None,
+                 "end": r["account"].matures_on.isoformat() if r["account"].matures_on else None}
+                for r in rows
+            ],
+        },
+    }
+
+
+def report(snapshot, include_home=True, include_pension=True, net=True):
+    accounts = list(active_accounts(snapshot))
     available = (
         Valuation.objects.filter(snapshot__date__lte=snapshot.date)
         .filter(Q(snapshot__complete=True) | Q(snapshot=snapshot))

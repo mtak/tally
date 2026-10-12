@@ -149,3 +149,22 @@
 - Show full gross account amounts, before ownership shares and liquidation tax,
   alongside a matching accessible table. Honor language and cents preferences.
   Historical adjustments are never changed by this read-only view.
+
+## Claim maturity calendar (#45)
+
+- Select a published valuation and include active claim accounts using the same
+  start/closure rules as wealth reporting. Carry only the last published balance
+  through that date and retain its observation date. Closing a historical aggregate
+  excludes it when its detailed replacements become active.
+- Indicative quarterly release uses positive ownership-adjusted gross balances with
+  maturity on/after the selected valuation. Private and business amounts are separate;
+  business funds are before liquidation tax and are not automatically private funds.
+- Past maturities with positive balances require attention, not an inferred repayment.
+  Unknown maturities, missing balances and nonpositive balances stay visible in
+  separate tables and do not contribute to upcoming quarterly totals.
+- The term chart uses only registered start/end dates, with a single marker when just
+  one date is known. Undated claims remain in the accessible tables. No principal-only
+  balance, repayment schedule or additional interest is inferred. The view never
+  changes observations, interest, repayments, tax corrections or liquidity reporting.
+- Current account metadata applies to historical calendar views, as with existing
+  classification reporting; there is no historical agreement-version store.

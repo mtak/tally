@@ -18,3 +18,11 @@ verification data was deleted and is never committed.
 Docker image build and development startup are checked locally. Production Compose
 configuration is validated, but deployment to the actual Traefik server requires the
 user's hostname/network/certificate configuration and has not been performed.
+
+Issue #45 verification uses fictional claims: same-quarter EUR 10,000 + EUR 15,000,
+ownership rounding, business separation, due-on-valuation and overdue dates, missing
+maturities/balances, nonpositive balances, published carry-forward, start/closure dates
+and replacement aggregates. Read-only localized view tests protect stored observations,
+interest and tax adjustments and unchanged report output. Browser checks cover English
+and Dutch, whole amounts/cents, valuation selection, both charts, dark/light themes,
+and a 390px mobile viewport with keyboard-scrollable tables and no page overflow.

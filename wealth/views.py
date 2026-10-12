@@ -21,7 +21,7 @@ from .forms import (
     ImportForm,
     minor,
 )
-from .services import report, movement, cumulative_result, broker_tax_covered, asset_mix, investment_history
+from .services import report, movement, cumulative_result, broker_tax_covered, asset_mix, investment_history, maturity_calendar
 from .importer import parse_overview, import_overview
 from . import editor
 
@@ -137,6 +137,17 @@ def dashboard(request):
             "drafts": Snapshot.objects.filter(complete=False),
         },
     )
+
+
+@login_required
+def maturities(request):
+    snapshots = list(Snapshot.objects.filter(complete=True))
+    selected = next((s for s in snapshots if str(s.pk) == request.GET.get("at")),
+                    snapshots[-1] if snapshots else None)
+    return render(request, "wealth/maturities.html", {
+        "snapshots": snapshots, "selected": selected,
+        "calendar": maturity_calendar(selected) if selected else None,
+    })
 
 
 @login_required

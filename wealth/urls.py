@@ -15,4 +15,5 @@ urlpatterns = [
     path("import/", views.imports, name="imports"),
     path("export/", views.export, name="export"),
     path("analysis/", views.analysis, name="analysis"),
+    path("maturities/", views.maturities, name="maturities"),
 ]
