@@ -13,8 +13,8 @@ from tests.test_tally import logged
 
 
 @pytest.mark.parametrize("lang, inputs", [
-    ("nl", ["1.234,56", "1234,56", "-1.234,56", "0", "123.456.789,01", "1.234"]),
-    ("en", ["1,234.56", "1234.56", "-1,234.56", "0", "123,456,789.01", "1,234"]),
+    ("nl", ["1.234,56", "1234,56", "-1.234,56", "0", "123.456.789,01", "1234"]),
+    ("en", ["1,234.56", "1234.56", "-1,234.56", "0", "123,456,789.01", "1234"]),
 ])
 def test_locale_parser(lang, inputs):
     expected = ["1234.56", "1234.56", "-1234.56", "0", "123456789.01", "1234"]
@@ -24,12 +24,12 @@ def test_locale_parser(lang, inputs):
             assert field.clean(text) == Decimal(value)
         assert field.clean(Decimal("1234.567890123")) == Decimal("1234.567890123")
         assert field.widget.format_value(Decimal("1234.567890123")) == (
-            "1.234,567890123" if lang == "nl" else "1,234.567890123")
+            "1234,567890123" if lang == "nl" else "1234.567890123")
 
 
 @pytest.mark.parametrize("lang, inputs", [
-    ("nl", ["1,234.56", "1234.56", "12.34,56", "1.23.456", "1,,2", "1,2,3", "1.234,5.6"]),
-    ("en", ["1.234,56", "1234,56", "12,34.56", "1,23,456", "1..2", "1.2.3", "1,234.5,6"]),
+    ("nl", ["12.34,56", "1.23.456", "1,,2", "1,2,3", "1.234,5.6"]),
+    ("en", ["12,34.56", "1,23,456", "1..2", "1.2.3", "1,234.5,6"]),
 ])
 def test_invalid_numbers_are_not_partially_parsed(lang, inputs):
     with translation.override(lang):
@@ -50,7 +50,7 @@ def test_percent_forms_and_money_precision(lang):
         assert percent(Decimal("26.9")) == "26" + decimal + "90%"
         whole = "1.235" if lang == "nl" else "1,235"
         original = Decimal("1234.56")
-        form = ValuationForm({"account_id": 1, "amount": whole}, initial={"amount": original})
+        form = ValuationForm({"account_id": 1, "amount": "1235"}, initial={"amount": original})
         assert form.is_valid(), form.errors
         assert form.cleaned_data["amount"] == original
         token = show_cents.set(False)
@@ -76,8 +76,8 @@ def test_saved_draft_survives_language_switches(logged):
         logged.cookies[cents_cookie_name()] = "1" if cents else "0"
         for lang in ["nl", "en", "nl"]:
             logged.post("/language/setlang/", {"language": lang, "next": path})
-            expected = (("1.234,56" if lang == "nl" else "1,234.56") if cents
-                        else ("1.235" if lang == "nl" else "1,235"))
+            expected = (("1234,56" if lang == "nl" else "1234.56") if cents
+                        else "1235")
             response = logged.get(path, HTTP_HX_REQUEST="true")
             assert f'value="{expected}"' in response.content.decode()
             assert response.headers["Content-Language"] == lang
@@ -105,3 +105,54 @@ def test_overview_source_format_is_independent_of_ui_language(lang):
         parsed = parse_overview(fixture_csv())
     with translation.override("nl"):
         assert parsed["observations"] == parse_overview(fixture_csv())["observations"]
+
+
+@pytest.mark.parametrize("lang", ["nl", "en"])
+@pytest.mark.parametrize("value, expected", [
+    ("12,34", "12.34"), ("12.34", "12.34"), ("-0,25", "-0.25"),
+    ("-0.25", "-0.25"), ("0,00", "0"), ("0.00", "0"),
+    ("1,234.56", "1234.56"), ("1.234,56", "1234.56"),
+    ("1,234,567", "1234567"), ("1.234.567", "1234567"),
+])
+def test_both_decimal_conventions(lang, value, expected):
+    with translation.override(lang):
+        form = ValuationForm({"account_id": 1, "amount": value}, show_cents=True)
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["amount"] == Decimal(expected)
+        if 0 <= Decimal(expected) <= 100:
+            assert AccountForm.base_fields["interest_rate"].clean(value) == Decimal(expected)
+            assert SnapshotForm.base_fields["ab_rate"].clean(value) == Decimal(expected)
+        assert 'type="text"' in str(form["amount"])
+        assert 'pattern=' not in str(form["amount"])
+
+
+@pytest.mark.parametrize("lang", ["nl", "en"])
+@pytest.mark.parametrize("value", ["1,234", "1.234", "-12,345", "123.456"])
+def test_ambiguous_numbers_require_explicit_input(lang, value):
+    with translation.override(lang):
+        with pytest.raises(forms.ValidationError) as error:
+            LocalizedDecimalField().clean(value)
+        assert error.value.error_list[0].code == "ambiguous"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("lang", ["nl", "en"])
+@pytest.mark.parametrize("separator", [",", "."])
+def test_alternate_decimals_save_and_reload(logged, lang, separator):
+    from datetime import date
+    logged.cookies["django_language"] = lang
+    logged.cookies[cents_cookie_name()] = "1"
+    owner = Entity.objects.create(name="Fictional owner", kind="private")
+    account = Account.objects.create(name="Fictional account", entity=owner)
+    snapshot = Snapshot.objects.create(date=date(2026, 4, 5))
+    path = f"/valuations/{snapshot.pk}/"
+    response = logged.get(path)
+    data = {"editor_version": response.context["editor_version"], "action": "draft",
+            "form-TOTAL_FORMS": 1, "form-INITIAL_FORMS": 1,
+            "form-0-account_id": account.pk, "form-0-amount": "12"+separator+"34",
+            "form-0-interest": "-0"+separator+"25"}
+    assert logged.post(path, data).status_code == 302
+    value = Valuation.objects.get(account=account)
+    assert (value.amount_minor, value.interest_minor) == (1234, -25)
+    page = logged.get(path).content.decode()
+    assert ('value="12,34"' if lang == "nl" else 'value="12.34"') in page

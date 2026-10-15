@@ -94,9 +94,14 @@
 ## Locale boundaries (#14)
 
 - UI numbers follow the selected language: Dutch `1.234,56`, English `1,234.56`.
-  Inputs accept ungrouped numbers or valid groups of three and reject malformed or
-  foreign separator combinations. A single valid grouping separator is interpreted
-  as grouping in that locale; use the locale decimal separator for fractions.
+  Numeric inputs accept either comma or period as the decimal separator in either
+  language (#56). A single separator followed by three digits with one to three
+  leading digits is rejected as ambiguous (for example `1,234` and `1.234`). Enter
+  `1234` or `1234.00` for thousands. Explicit grouped decimal forms (`1,234.56` or
+  `1.234,56`) and multiple valid groups are accepted. Malformed groups are rejected.
+  Input values omit thousands grouping and keep the locale decimal separator;
+  overview amounts retain locale grouping. Whole-amount mode still requires whole
+  values and preserves stored cents when an unchanged rounded input is saved.
 - Reuse Django locale formats and Intl.NumberFormat; no additional dependency.
   Stored cents, Decimal calculations, canonical exports, archived exact position
   values and the Overview importer's explicit Dutch source format stay independent
@@ -180,3 +185,16 @@
   changes observations, interest, repayments, tax corrections or liquidity reporting.
 - Current account metadata applies to historical calendar views, as with existing
   classification reporting; there is no historical agreement-version store.
+
+
+## Account entry and ordering (#57, #58)
+
+- All account start, maturity and closure inputs use fixed `dd-mm-yyyy` in both
+  languages, independent of browser/OS locale. Text entry works without JavaScript;
+  a local calendar uses the same format with translated month names and controls.
+  Dates remain canonical date values in storage. Valuation dates are unchanged.
+- Account overviews and selectors use case-insensitive name ordering and primary key
+  as a stable tie-breaker. Existing calendar/change categories stay grouped, with
+  account names ordered within each category. Tax corrections keep their own order.
+  Renames take effect on the next load. Rejected stale editors retain the original
+  submitted row layout to protect account-to-value reconciliation.

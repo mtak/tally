@@ -237,3 +237,10 @@ Check current CI rather than treating this historical result as current verifica
   The timeline uses registered start/end dates only. No repayments or extra interest
   are inferred and existing liquidity/tax/valuation calculations are unchanged.
   Current account date metadata also applies to historical calendar views.
+
+- Issues #56–58: numeric UI inputs accept either decimal separator; ambiguous single
+  three-digit separator groups are rejected. Input values omit thousands grouping,
+  while reports retain locale grouping. Account dates use dd-mm-yyyy with a local
+  calendar in both languages. Account overviews/selectors and change-detail groups
+  sort by case-insensitive name with primary-key ties. Stale editors preserve the
+  submitted row layout. See docs/decisions.md for details.

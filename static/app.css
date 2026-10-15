@@ -12,3 +12,5 @@
 .investment-chart{height:340px}.analysis-filters{flex-wrap:wrap}.analysis-filters>div{flex-wrap:wrap;max-width:100%}.investment-history table{min-width:650px}
 
 .maturity-table table{min-width:800px}.maturity-table tbody th{font-size:12px;color:var(--ink);vertical-align:top;font-weight:500}.maturity-timeline{min-height:240px}
+
+.date-field{position:relative;display:inline-flex;align-items:center;gap:6px;max-width:100%}.date-field input{min-width:0}.date-toggle,.date-calendar button{background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:6px 10px}.date-calendar{position:absolute;top:100%;left:0;z-index:10;width:290px;max-width:85vw;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;box-shadow:0 6px 20px #0004}.date-calendar-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.date-month{text-align:center}.date-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}.date-days button{padding:5px 0}.date-days [aria-current=date]{background:var(--green);color:var(--bg)}.date-field [hidden]{display:none}

@@ -427,7 +427,7 @@ def test_rounded_valuation_save_preserves_cents(logged, account, snap):
                                 basis_minor=120049, interest_minor=155)
     path = f"/valuations/{snap.pk}/"
     html = logged.get(path).content.decode()
-    assert 'value="1,235"' in html
+    assert 'value="1235"' in html
     data = {"form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "1",
             "form-0-account_id": account.pk, "form-0-amount": "1235",
             "form-0-basis": "1200", "form-0-interest": "2", "action": "complete"}
@@ -671,9 +671,10 @@ def test_movement_details_coverage_unknown_flows_joint_and_tax(owner, snap):
     assert bridge["opening"] + sum(p["amount"] for p in bridge["parts"]) == bridge["closing"]
     for part in bridge["parts"]:
         assert sum(r["amount"] for r in part["details"]) == part["amount"]
-        assert [abs(r["amount"]) for r in part["details"]] == sorted(
-            [abs(r["amount"]) for r in part["details"]], reverse=True
-        )
+        if part["key"] != "tax":
+            assert [r["label"].lower() for r in part["details"]] == sorted(
+                r["label"].lower() for r in part["details"]
+            )
 
 
 def test_movement_details_attribute_home_interest_and_keep_mortgage_residual(owner, snap):
@@ -754,7 +755,7 @@ def test_maturities_aggregate_owned_gross_balances_without_interest(owner, snap)
     calendar = maturity_calendar(snap)
     assert calendar["quarters"] == [{"label": "Q1 2026", "private": 2505001,
                                      "business": 400000, "total": 2905001}]
-    assert sum(r["amount"] for r in calendar["rows"][:2]) == 2500000
+    assert sum(r["amount"] for r in calendar["rows"] if r["account"].name in {"Deposit one", "Loan two"}) == 2500000
     assert calendar["chart"]["rows"][0]["observed"] == "2026-01-01"
 
 
@@ -774,10 +775,10 @@ def test_maturities_unknown_overdue_zero_and_missing_stay_separate(owner, snap):
         if amount is not None:
             Valuation.objects.create(snapshot=snap, account=claim, amount_minor=amount)
     calendar = maturity_calendar(snap)
-    assert [(r["account"].name, r["status"]) for r in calendar["rows"]] == [(c[0],c[3]) for c in cases]
+    assert [(r["account"].name, r["status"]) for r in calendar["rows"]] == sorted([(c[0],c[3]) for c in cases], key=lambda item: item[0].lower())
     assert calendar["quarters"][0]["total"] == 30000
     assert next(r for r in calendar["rows"] if r["status"] == "unknown")["amount"] == 12300
-    assert calendar["rows"][-1]["amount"] is None
+    assert next(r for r in calendar["rows"] if r["account"].name == "Both unknown")["amount"] is None
 
 
 def test_maturities_as_of_carries_published_values_and_excludes_replaced_claims(owner, snap):
