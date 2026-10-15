@@ -9,7 +9,9 @@
   /home/user/.codex/.chatgpt-projects/[local project id]
 - Reuse this checkout and inspect git status before editing. Preserve user changes.
 - Read README.md, docs/decisions.md, and relevant code before changing behavior.
-- Production instructions are in DEPLOYMENT.md. Do not assume production is deployed.
+- Generic production instructions are in DEPLOYMENT.md. Site-specific deployment
+  scripts, configuration and operational records belong in a separate private
+  infrastructure repository, not this application repository.
 - Follow repository contribution guidance. Ask only
   for missing information that materially affects the work. New external services
   and public-data providers must be discussed before integrating them.
@@ -90,7 +92,7 @@ and other cloud providers need discussion. No external data service is configure
 
 - Python / Django 5.2 LTS, SQLite, Django templates + HTMX, Apache ECharts.
 - Docker Compose: compose.yaml plus compose.dev.yaml or compose.prod.yaml.
-- Local development: localhost:8000; production: user's existing Traefik frontend.
+- Local development: localhost:8000; production: a trusted HTTPS reverse proxy.
 - SQLite lives on a local persistent volume. Do not put the active DB on R2 or NFS.
 - config/: settings, URLs and WSGI. Production requires DJANGO_SECRET_KEY.
 - wealth/models.py: owners, accounts, dated observations, positions, tax corrections.
@@ -156,7 +158,7 @@ Check current CI rather than treating this historical result as current verifica
 
 ## Known boundaries and next work
 
-- Production host/network/certificate settings still need to come from the user.
+- Production host/network/certificate settings belong to the operator's infrastructure.
 - Public market-data updates are a later feature. Choose a provider with the user;
   preserve historical observations and label price source/time.
 - No per-trade performance, ETF look-through, bank sync or automated tax filing.
@@ -172,7 +174,7 @@ Check current CI rather than treating this historical result as current verifica
 - Further decisions are recorded in docs/decisions.md. Update this handoff when a
   substantive decision or operational assumption changes.
 
-## Local instances prepared for review
+## Local development instances
 
 - Demo: Compose project tally-dev, http://localhost:8000, fictional data.
 - Real-data development: project tally-local, http://localhost:8001, using ignored
