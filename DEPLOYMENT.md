@@ -35,6 +35,7 @@ Do not overwrite an existing .env when updating an installation. Set:
 | DJANGO_SECRET_KEY | A unique, stable random secret |
 | TALLY_HOST | Bare hostname, e.g. tally.example.com (no scheme/path) |
 | TALLY_INSTANCE_NAME | Optional display name, e.g. Example portfolio; blank keeps the default appearance |
+| TALLY_AUTH_ENABLED | `1` (default): require Django portfolio login; `0`: rely entirely on upstream authentication; other values fail startup |
 | TRAEFIK_NETWORK | Existing external Docker network, e.g. traefik |
 | TRAEFIK_ENTRYPOINT | Existing HTTPS entrypoint, e.g. websecure |
 
@@ -64,6 +65,58 @@ no additional labels are necessary. Otherwise create `compose.prod.local.yaml`:
 
 Use your actual resolver/middleware names. This local override is ignored by Git.
 Do not configure a new resolver here: it must already exist in Traefik.
+
+### Optional: upstream authentication
+
+Leave `TALLY_AUTH_ENABLED=1` unless an existing gateway authenticates every request.
+With `0`, everyone reaching Tally can access and modify the entire shared portfolio,
+including imports and exports. Tally neither validates identity/JWT headers nor
+creates Django users from them. This setting alone provides no authentication.
+
+Before setting `0`, secure the whole hostname and every path (including `/admin/`,
+`/import/` and `/export/`). Block direct application access: keep host ports
+unpublished, restrict container-network access to trusted infrastructure, and remove
+alternate hostnames, routers and origin routes that bypass the gateway. Keep HTTPS,
+allowed-host/origin settings, proxy header trust and CSRF protection in place.
+`TALLY_TRUST_PROXY` only trusts the HTTPS scheme header; it does not authenticate users.
+
+**Cloudflare Zero Trust:** configure a self-hosted Access application for the whole
+hostname with an Allow policy restricted to your intended users. Avoid Bypass
+policies. Protect the origin as well: use an existing Cloudflare Tunnel with Access
+token validation, or enforce Access JWT validation at your trusted origin proxy.
+Prevent direct public origin access, including access through Traefik that skips
+Access. Cloudflare's [self-hosted application guide](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/)
+describes application policies and origin token validation. Tally provisions none
+of these services.
+
+**Traefik authentication:** attach your existing authentication middleware to the
+entire `tally` router in `compose.prod.local.yaml`, using your actual middleware name:
+
+    services:
+      app:
+        labels:
+          traefik.http.routers.tally.middlewares: existing-auth@file
+
+For delegated authentication, [Traefik ForwardAuth](https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/forwardauth/)
+only forwards requests when the authentication service permits them. Check that
+the middleware is attached to every route to Tally, denies unauthenticated traffic
+and fails closed when its authentication service is unavailable. Configure the
+service in your existing infrastructure; this repository does not provision it.
+
+Verify these boundaries with application authentication still enabled, then set
+`TALLY_AUTH_ENABLED=0` in `.env` and recreate the app with `dc up -d` (using the
+function defined below). A restart alone does not reload environment variables.
+In a fresh browser session, verify gateway denial before sign-in and portfolio
+access after sign-in, including a form save, import and export. Verify direct
+origin/bypass routes are unreachable. Invalid/missing CSRF tokens must still fail.
+
+Portfolio login redirects to `/`; the portfolio sign-out control is hidden.
+POST `/logout/` redirects to `/` without ending Django or upstream sessions;
+GET `/logout/` returns 405. Use your gateway's own sign-out to end upstream access.
+`/admin/` retains separate Django staff authentication and permissions; use
+`/admin/login/` and the admin's own logout. Create a superuser only if you need admin
+access. Disabling portfolio login never grants staff or superuser status.
+To restore portfolio login, set `TALLY_AUTH_ENABLED=1` and recreate the app.
 
 ## 3. Define the production command
 
@@ -96,6 +149,10 @@ WhiteNoise serves bundled static assets; no external CDN or separate webserver i
 ## 4. Create your login and check HTTPS
 
 After migrations finish and Gunicorn is listening:
+
+With the default `TALLY_AUTH_ENABLED=1`, create a Django login below. With `0`,
+check gateway authentication at `/` instead; creating a user is optional for admin
+access, and `/login/` redirects to `/` rather than displaying a login form.
 
     dc exec app python manage.py createsuperuser
 

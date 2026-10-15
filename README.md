@@ -78,6 +78,27 @@ One instance represents one portfolio: every authenticated user in that instance
 access the portfolio. Separate logins are NOT data isolation. Use separate Compose
 projects and volumes for separate portfolios.
 
+### Upstream authentication
+
+`TALLY_AUTH_ENABLED` accepts `1` (default, Django login required) or `0` (portfolio
+access without Django login). Other values fail startup. Compose passes it from
+the environment file in both development and production; recreate the container
+after changes. Without Docker, export the variable and restart Django.
+
+Use `0` only behind an authenticating proxy with direct application access blocked.
+Every visitor admitted by that proxy can read, edit, import and export the entire
+shared portfolio. Tally does not validate proxy identity headers or provision users.
+CSRF, allowed hosts, HTTPS cookies and other request checks remain active.
+The amount-precision control remains available. Portfolio sign-out/user controls
+are hidden; `/login/` redirects to the dashboard and POST `/logout/` redirects there
+without ending any session. GET `/logout/` remains disallowed. End the upstream
+session using your access gateway's own sign-out mechanism.
+
+`/admin/` always requires a separate active Django staff login and normal permissions;
+use `/admin/login/` and the admin's own logout. No staff/superuser access is granted
+by disabling portfolio authentication. See [the production guide](DEPLOYMENT.md#optional-upstream-authentication)
+for Cloudflare Zero Trust and Traefik authentication guidance.
+
 ## Instance names
 
 Set `TALLY_INSTANCE_NAME="Example portfolio"` in the instance's environment file to

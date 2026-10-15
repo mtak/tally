@@ -182,6 +182,13 @@ Check current CI rather than treating this historical result as current verifica
 - Development uses fictional data. Never seed
   this database or reset its volume. Inspect current state before importing again.
 - No production-server deployment is implied by this local real-data instance.
+- Issue #54: `TALLY_AUTH_ENABLED=1` (default) requires portfolio login; `0` delegates
+  access control entirely to an authenticating proxy with direct access blocked.
+  Other values fail startup. Portfolio routes keep CSRF and existing validation;
+  no proxy identities or users are created. Login redirects to dashboard; POST logout
+  redirects without ending sessions and GET remains disallowed. Hide portfolio
+  user/sign-out controls, retain precision preferences. Admin still requires its own
+  active staff login/permissions; use admin login/logout. See DEPLOYMENT.md for setup.
 - Draft valuations can be deleted from the list or editor after a translated confirmation.
   Deletion requires an authenticated CSRF-protected POST and removes associated
   observations, archived positions and tax adjustments. Published valuations are protected.

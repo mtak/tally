@@ -1,9 +1,14 @@
 import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 TALLY_INSTANCE_NAME = os.getenv("TALLY_INSTANCE_NAME", "").strip()
+_auth_enabled = os.getenv("TALLY_AUTH_ENABLED", "1")
+if _auth_enabled not in {"0", "1"}:
+    raise ImproperlyConfigured("TALLY_AUTH_ENABLED must be 1 (enabled) or 0 (disabled).")
+TALLY_AUTH_ENABLED = _auth_enabled == "1"
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY", "development-only-change-me" if DEBUG else ""
 )
@@ -60,6 +65,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.request",
                 "config.context_processors.instance_name",
+                "config.context_processors.authentication",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ]

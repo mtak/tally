@@ -38,6 +38,18 @@
 - Versioned classification/ownership changes if historical reinterpretation is needed.
 - More flexible imports and a full portable JSON export.
 
+## Upstream authentication (#54)
+
+- `TALLY_AUTH_ENABLED` accepts only `1` (default) and `0`. Disabled mode bypasses
+  only portfolio login checks and keeps all request/CSRF checks and shared-portfolio
+  semantics. No identity headers, synthetic users or staff privileges are introduced.
+- Login redirects to the dashboard; POST portfolio logout is a redirect without
+  session changes, GET remains disallowed. Hide portfolio user/sign-out controls
+  while preserving amount precision. Upstream logout belongs to the access gateway.
+- Django admin always uses its own staff login, permissions and logout. Operators
+  must secure every route upstream and prevent origin/proxy bypass before disabling
+  portfolio authentication. Compose defaults to enabled in all environments.
+
 ## Historical asset mix (#46)
 
 - Use the latest published valuation in each calendar year up to the selected

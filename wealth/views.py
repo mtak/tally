@@ -2,7 +2,7 @@ import csv
 from decimal import Decimal
 from datetime import date
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from .auth import portfolio_access_required
 from django.db import transaction
 from django.db.models import Q
 from django.forms import formset_factory
@@ -26,7 +26,7 @@ from .importer import parse_overview, import_overview
 from . import editor
 
 
-@login_required
+@portfolio_access_required
 @require_POST
 def money_preference(request):
     next_url = request.POST.get("next", "/")
@@ -39,7 +39,7 @@ def money_preference(request):
     return response
 
 
-@login_required
+@portfolio_access_required
 def dashboard(request):
     snapshots = list(Snapshot.objects.filter(complete=True))
     selected = None
@@ -139,7 +139,7 @@ def dashboard(request):
     )
 
 
-@login_required
+@portfolio_access_required
 def maturities(request):
     snapshots = list(Snapshot.objects.filter(complete=True))
     selected = next((s for s in snapshots if str(s.pk) == request.GET.get("at")),
@@ -150,7 +150,7 @@ def maturities(request):
     })
 
 
-@login_required
+@portfolio_access_required
 def accounts(request):
     return render(
         request,
@@ -162,7 +162,7 @@ def accounts(request):
     )
 
 
-@login_required
+@portfolio_access_required
 def account_edit(request, pk=None):
     obj = get_object_or_404(Account, pk=pk) if pk else None
     form = AccountForm(request.POST or None, instance=obj)
@@ -181,7 +181,7 @@ def account_edit(request, pk=None):
     )
 
 
-@login_required
+@portfolio_access_required
 def entity_add(request):
     form = EntityForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -194,7 +194,7 @@ def entity_add(request):
     )
 
 
-@login_required
+@portfolio_access_required
 def snapshots(request):
     return render(
         request,
@@ -203,7 +203,7 @@ def snapshots(request):
     )
 
 
-@login_required
+@portfolio_access_required
 def snapshot_add(request):
     form = SnapshotForm(request.POST or None, initial={"date": date.today()})
     if request.method == "POST" and form.is_valid():
@@ -216,7 +216,7 @@ def snapshot_add(request):
     )
 
 
-@login_required
+@portfolio_access_required
 @require_http_methods(["GET", "POST"])
 def snapshot_delete(request, pk):
     # Recheck draft status at submission, in the same transaction as deletion.
@@ -229,7 +229,7 @@ def snapshot_delete(request, pk):
     return render(request, "wealth/snapshot_delete.html", {"snapshot": snapshot})
 
 
-@login_required
+@portfolio_access_required
 @transaction.atomic
 def snapshot_edit(request, pk):
     # SQLite IMMEDIATE transactions serialize this check with all other writers.
@@ -385,7 +385,7 @@ def snapshot_edit(request, pk):
     )
 
 
-@login_required
+@portfolio_access_required
 def imports(request):
     form = ImportForm(request.POST or None, request.FILES or None)
     preview = None
@@ -403,7 +403,7 @@ def imports(request):
     return render(request, "wealth/import.html", {"form": form, "preview": preview})
 
 
-@login_required
+@portfolio_access_required
 def export(request):
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="tally-valuations.csv"'
@@ -457,7 +457,7 @@ def export(request):
     return response
 
 
-@login_required
+@portfolio_access_required
 def analysis(request):
     completed = list(Snapshot.objects.filter(complete=True))
     selected = next(
