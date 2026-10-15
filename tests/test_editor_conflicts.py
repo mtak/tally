@@ -11,8 +11,9 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def editors():
     owner = Entity.objects.create(name="Fictional company", kind="company")
-    broker = Account.objects.create(name="Fictional broker", entity=owner, kind="broker")
-    bank = Account.objects.create(name="Fictional bank", entity=owner, kind="bank")
+    # Keep broker at row 0 and bank at row 1 under alphabetical ordering.
+    broker = Account.objects.create(name="Fictional A broker", entity=owner, kind="broker")
+    bank = Account.objects.create(name="Fictional B bank", entity=owner, kind="bank")
     snapshot = Snapshot.objects.create(date=date(2026, 1, 1))
     Valuation.objects.create(snapshot=snapshot, account=broker, amount_minor=10049,
                             net_deposits_minor=8049, basis_minor=9049)

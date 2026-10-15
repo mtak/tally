@@ -1118,3 +1118,21 @@ msgstr "Saldo onbekend"
 
 msgid "No positive balance"
 msgstr "Geen positief saldo"
+
+msgid "Use dd-mm-yyyy, for example 05-04-2026."
+msgstr "Gebruik dd-mm-jjjj, bijvoorbeeld 05-04-2026."
+
+msgid "Ambiguous number. Remove thousands separators, or use two decimal places."
+msgstr "Onduidelijk getal. Verwijder scheidingstekens voor duizendtallen of gebruik twee decimalen."
+
+msgid "Choose date"
+msgstr "Datum kiezen"
+
+msgid "Previous month"
+msgstr "Vorige maand"
+
+msgid "Next month"
+msgstr "Volgende maand"
+
+msgid "Select a bar or expand a category below to see its contributions, ordered by account name. Values reflect your ownership share. A dash means the account is not included at that endpoint."
+msgstr "Selecteer een balk of open hieronder een categorie om de bijdragen op rekeningnaam te bekijken. Bedragen tonen jouw eigendomsaandeel. Een streepje betekent dat de rekening op dat moment niet is opgenomen."

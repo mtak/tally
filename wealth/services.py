@@ -402,7 +402,9 @@ def movement(snapshot):
         ("tax", _("Tax correction change")),
         ("residual", _("Other / unexplained")),
     ]:
-        rows = sorted(details[key], key=lambda item: (-abs(item["amount"]), item["label"]))
+        rows = details[key]
+        if key != "tax":
+            rows = sorted(rows, key=lambda item: (item["label"].lower(), item["account"].pk))
         parts.append({"key": key, "label": label, "amount": sum(r["amount"] for r in rows), "details": rows})
     labels = [p["label"] for p in parts]
     values = [p["amount"] for p in parts]

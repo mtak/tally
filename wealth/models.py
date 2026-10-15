@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 
@@ -65,7 +66,7 @@ class Account(models.Model):
     notes = models.TextField(_("Notes"), blank=True)
 
     class Meta:
-        ordering = ["entity_id", "id"]
+        ordering = [Lower("name"), "pk"]
 
     def __str__(self):
         return self.name

@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import Account, Entity, Snapshot, ASSETS
 from .preferences import whole_amount
 from .numbers import LocalizedDecimalField
+from .widgets import EuropeanDateInput
 
 
 class MoneyField(LocalizedDecimalField):
@@ -81,12 +82,15 @@ class AccountForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            k: forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
+            k: EuropeanDateInput()
             for k in ["started_on", "matures_on", "closed_on"]
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        for name in ("started_on", "matures_on", "closed_on"):
+            self.fields[name].input_formats = ["%d-%m-%Y"]
+            self.fields[name].help_text = _("Use dd-mm-yyyy, for example 05-04-2026.")
         if self.instance.pk:
             self.fields["interest_rate"].initial = Decimal(self.instance.rate_bps) / 100
 
