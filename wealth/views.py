@@ -5,7 +5,7 @@ from decimal import Decimal
 from datetime import date
 from django.contrib import messages
 from django.core import signing
-from .auth import portfolio_access_required
+from .auth import import_history_enabled, portfolio_access_required
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -517,6 +517,7 @@ def snapshot_edit(request, pk):
     )
 
 
+@import_history_enabled
 @portfolio_access_required
 def imports(request):
     form = ImportForm(request.POST or None, request.FILES or None)

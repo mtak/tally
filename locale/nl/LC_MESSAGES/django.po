@@ -295,6 +295,9 @@ msgstr "Begin met je eerste meetmoment"
 msgid "Add your accounts and record their values, or import your existing Overview CSV."
 msgstr "Voeg accounts en waarden toe, of importeer je bestaande Overview-CSV."
 
+msgid "Add your accounts and record their values."
+msgstr "Voeg accounts en waarden toe."
+
 msgid "Set up accounts"
 msgstr "Accounts instellen"
 

@@ -115,6 +115,11 @@ use `/admin/login/` and the admin's own logout. No staff/superuser access is gra
 by disabling portfolio authentication. See [the production guide](DEPLOYMENT.md#optional-upstream-authentication)
 for Cloudflare Zero Trust and Traefik authentication guidance.
 
+Set `TALLY_IMPORT_HISTORY_ENABLED=0` in the instance environment to disable historical
+CSV import. This hides the Import history navigation and empty-dashboard action, and
+direct requests to `/import/` return 404. The `import_overview` management command is
+also disabled. The default is `1`; recreate the app after changing the setting.
+
 ## Instance names
 
 Set `TALLY_INSTANCE_NAME="Example portfolio"` in the instance's environment file to

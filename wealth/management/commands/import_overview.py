@@ -1,4 +1,5 @@
 from pathlib import Path
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from wealth.importer import parse_overview, preflight_overview, import_overview
 
@@ -11,6 +12,8 @@ class Command(BaseCommand):
         parser.add_argument("--apply", action="store_true")
 
     def handle(self, *args, **options):
+        if not settings.TALLY_IMPORT_HISTORY_ENABLED:
+            raise CommandError("Import history is disabled by TALLY_IMPORT_HISTORY_ENABLED.")
         try:
             p = preflight_overview(parse_overview(Path(options["path"]).read_bytes()))
             for row in p["recognized"]:

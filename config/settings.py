@@ -17,6 +17,12 @@ _auth_enabled = os.getenv("TALLY_AUTH_ENABLED", "1")
 if _auth_enabled not in {"0", "1"}:
     raise ImproperlyConfigured("TALLY_AUTH_ENABLED must be 1 (enabled) or 0 (disabled).")
 TALLY_AUTH_ENABLED = _auth_enabled == "1"
+_import_history_enabled = os.getenv("TALLY_IMPORT_HISTORY_ENABLED", "1")
+if _import_history_enabled not in {"0", "1"}:
+    raise ImproperlyConfigured(
+        "TALLY_IMPORT_HISTORY_ENABLED must be 1 (enabled) or 0 (disabled)."
+    )
+TALLY_IMPORT_HISTORY_ENABLED = _import_history_enabled == "1"
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY", "development-only-change-me" if DEBUG else ""
 )
@@ -74,6 +80,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "config.context_processors.instance_name",
                 "config.context_processors.authentication",
+                "config.context_processors.import_history",
                 "config.context_processors.release",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",

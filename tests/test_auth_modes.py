@@ -61,6 +61,24 @@ def test_default_mode_rejects_anonymous_writes_and_identity_headers(settings, po
     assert not get_user_model().objects.exists()
 
 
+def test_import_history_can_be_disabled(settings, portfolio):
+    assert settings.TALLY_IMPORT_HISTORY_ENABLED is True
+    settings.TALLY_AUTH_ENABLED = False
+    settings.TALLY_IMPORT_HISTORY_ENABLED = False
+    client = Client()
+
+    dashboard = client.get("/")
+    assert dashboard.status_code == 200
+    assert b"Import history" not in dashboard.content
+    assert client.get("/import/").status_code == 404
+    assert client.post("/import/", {}).status_code == 404
+
+    user = get_user_model().objects.create_user(username="fictional", password="test-only")
+    client.force_login(user)
+    assert client.get("/import/").status_code == 404
+    assert client.post("/import/", {}).status_code == 404
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 def test_writes_and_csrf_in_both_modes(settings, portfolio, enabled):
     settings.TALLY_AUTH_ENABLED = enabled
