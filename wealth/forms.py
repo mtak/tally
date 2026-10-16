@@ -81,6 +81,9 @@ class AccountForm(forms.ModelForm):
             "closed_on",
             "notes",
         ]
+        help_texts = {
+            "asset_class": _("For Credit card, use Bank account as the account type and Liquid availability. Enter outstanding debt as a negative balance, zero when settled, and a positive balance only for money owed to you by the card provider."),
+        }
         widgets = {
             k: EuropeanDateInput()
             for k in ["started_on", "matures_on", "closed_on"]

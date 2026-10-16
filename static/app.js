@@ -1,5 +1,10 @@
 (() => {
   const palette = ["#307d6e", "#9cae9a", "#d7a761", "#8799c5", "#bd8f9d", "#90bfc2", "#b7b9a8"];
+  // HTMX updates dashboard filters without replacing the language/precision forms.
+  document.addEventListener("submit", e => {
+    const next = e.target.querySelector('input[name="next"]');
+    if (next) next.value = window.location.pathname + window.location.search;
+  });
   document.addEventListener("change", e => { if (e.target.matches("[data-auto-submit]")) e.target.form.requestSubmit(); });
   document.getElementById("theme-toggle")?.addEventListener("click", () => {
     const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
@@ -35,13 +40,29 @@
       legend:{bottom:0, icon:"roundRect", itemWidth:10, itemHeight:10, textStyle:{color:ink,fontSize:11}}};
     const history = document.getElementById("history-chart");
     if (history) {
+      // Keep each full EUR label readable, including cents, on narrow screens.
+      history.style.minWidth = Math.max(360, data.years.length * 170 + 100) + "px";
       const chart=echarts.init(history);charts.push(chart);
-      chart.setOption({...common, tooltip:{...tooltipStyle,trigger:"axis",valueFormatter:v=>number.format(v)},
-        grid:{left:70,right:15,top:18,bottom:62},
+      const totals = data.totals || [];
+      const totalText = index => totals[index] == null ? "" : number.format(totals[index] / 100);
+      // Anchor above the positive stack, even when a negative category lowers net wealth.
+      const labelPoints = totals.map((total,index) => total === null ? null : [index,
+        data.series.reduce((sum,series)=>sum + Math.max(0, series.data[index] || 0), 0)]);
+      chart.setOption({...common, legend:{...common.legend,selectedMode:false,data:data.series.map(series=>series.name)},
+        tooltip:{...tooltipStyle,trigger:"axis",renderMode:"richText",confine:true,valueFormatter:v=>number.format(v),formatter:params=>{
+          const index = params[0]?.dataIndex;
+          if (index === undefined || totals[index] == null) return "";
+          return [formats.date(data.dates[index]), ...data.series.map(series=>series.name + ": " + number.format(series.data[index])),
+            data.total_label + ": " + totalText(index)].join("\n");
+        }},
+        grid:{left:70,right:30,top:45,bottom:62},
         xAxis:{type:"category",data:data.years,axisLine:{show:false},axisTick:{show:false},axisLabel:{color:ink,margin:16}},
         yAxis:{type:"value",axisLabel:{color:ink,formatter:v=>formats.compact.format(v)},
           splitLine:{lineStyle:{color:line,type:"dashed"}}},
-        series:data.series.map(s=>({...s,type:"bar",stack:"total",barMaxWidth:48,emphasis:{focus:"series"}}))});
+        series:[...data.series.map(s=>({...s,type:"bar",stack:"total",barMaxWidth:48,emphasis:{focus:"series"}})),
+          {name:data.total_label,type:"scatter",silent:true,symbolSize:0,tooltip:{show:false},data:labelPoints,
+            label:{show:true,position:"top",distance:10,color:style.getPropertyValue("--ink").trim(),fontSize:12,fontWeight:600,
+              formatter:params=>totalText(params.dataIndex)}}]});
     }
     const mixNode = document.getElementById("asset-mix-chart");
     if (mixNode && data.mix) {

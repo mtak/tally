@@ -58,6 +58,9 @@ def dashboard(request):
     previous = None
     change = None
     mix = []
+    annual = {}
+    allocation = []
+    liquidity = []
     if current:
         history = [report(s, **flags) for s in snapshots if s.date <= selected.date]
         annual = {}
@@ -68,7 +71,18 @@ def dashboard(request):
             previous = history[-2]
             if current["total"] is not None and previous["total"] is not None:
                 change = current["total"] - previous["total"]
+        allocation = [
+            {"name": str(dict(ASSETS).get(key, key)), "amount": amount}
+            for key, amount in current["assets"].items() if amount > 0
+        ]
+        liquidity = [
+            {"name": label, "amount": current["liquidity"][key]}
+            for key, label in (("liquid", _("Liquid")), ("illiquid", _("Illiquid")))
+        ]
         chart = {
+            "dates": [r["snapshot"].date.isoformat() for r in annual.values()],
+            "totals": [r["total"] for r in annual.values()],
+            "total_label": _("Total wealth"),
             "mix": {
                 "dates": [m["snapshot"].date.isoformat() for m in mix],
                 "carried_label": _("Carried forward"),
@@ -110,18 +124,8 @@ def dashboard(request):
                     ("pension", _("Pension")),
                 ]
             ],
-            "assets": [
-                {"name": str(dict(ASSETS).get(k, k)), "value": v / 100}
-                for k, v in current["assets"].items()
-                if v > 0
-            ],
-            "liquidity": [
-                {"name": _("Liquid"), "value": current["liquidity"]["liquid"] / 100},
-                {
-                    "name": _("Illiquid"),
-                    "value": current["liquidity"]["illiquid"] / 100,
-                },
-            ],
+            "assets": [{"name": row["name"], "value": row["amount"] / 100} for row in allocation],
+            "liquidity": [{"name": row["name"], "value": row["amount"] / 100} for row in liquidity],
         }
     return render(
         request,
@@ -133,6 +137,9 @@ def dashboard(request):
             "flags": flags,
             "chart": chart,
             "asset_mix": mix,
+            "wealth_history": list(annual.values()),
+            "allocation": allocation,
+            "liquidity": liquidity,
             "previous": previous,
             "change": change,
             "drafts": Snapshot.objects.filter(complete=False),
@@ -335,7 +342,7 @@ def snapshot_edit(request, pk):
             value = data.get("amount")
             if value is not None and (
                 (a.kind == "mortgage" and value > 0)
-                or (a.kind != "mortgage" and value < 0)
+                or (a.kind != "mortgage" and a.asset_class != "credit_card" and value < 0)
             ):
                 form.add_error(
                     "amount",

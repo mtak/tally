@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 ASSETS = [
     ("cash", _("Cash")),
+    ("credit_card", _("Credit card")),
     ("deposit", _("Term deposits")),
     ("equities", _("Equities")),
     ("bonds", _("Bonds")),

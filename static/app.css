@@ -17,3 +17,8 @@
 
 .mobile-release{display:none}
 @media(max-width:760px){.page-footer{flex-wrap:wrap;gap:12px}.mobile-release{display:block;width:100%}}
+
+.history-scroll{overflow-x:auto;padding-top:4px}.history-scroll:focus-visible,.chart-details .table-wrap:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.chart-details{margin-top:18px;font-size:12px}.chart-details summary{cursor:pointer;color:var(--green);padding:8px 0}.chart-details caption{text-align:left;color:var(--muted);padding:10px}.chart-details tbody th{font-size:12px;color:var(--ink);font-weight:500;vertical-align:top}.chart-details th[scope=row]{white-space:nowrap}
+
+.two-columns>.chart-card{min-width:0}

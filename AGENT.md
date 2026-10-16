@@ -267,3 +267,13 @@ Check current CI rather than treating this historical result as current verifica
   return a normal translated HTTP 400 page with saved rows and reload recovery;
   validate identities/order before binding rows to account labels. Valid stale
   layouts keep HTTP 409 and their signed original mapping and submitted values.
+
+- Issues #33/#61: dashboard annual wealth, allocation and liquidity have semantic
+  tables using the same report values as charts. Annual totals use exact report
+  cents and actual valuation dates; incomplete net years have no bar/total label.
+  Full EUR labels sit above positive stacks, with keyboard horizontal scrolling
+  on narrow screens. Home/pension/net, language and precision remain shared.
+- Issue #63: Credit card is an account-level asset class. Use Bank account and
+  Liquid availability; enter debt negative, settled zero, provider credit positive.
+  Existing signed wealth/liquidity and positive-category gross-allocation rules
+  apply unchanged; no separate card balance or automatic sign conversion exists.

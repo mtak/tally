@@ -1178,3 +1178,50 @@ msgstr "Ongeldige rekeningen. Laad het meetmoment opnieuw en probeer het opnieuw
 
 msgid "Invalid account order. Reload the valuation and try again."
 msgstr "Ongeldige rekeningvolgorde. Laad het meetmoment opnieuw en probeer het opnieuw."
+
+#: templates/wealth/chart_amounts.html:2
+#, python-format
+#| msgid "Show asset mix data"
+msgid "Show %(title)s data"
+msgstr "Gegevens voor %(title)s tonen"
+
+#: templates/wealth/chart_amounts.html:5
+msgid "Category"
+msgstr "Categorie"
+
+#: templates/wealth/dashboard.html:19
+msgid "Scroll horizontally to read every year and total."
+msgstr "Scrol horizontaal om elk jaar en totaal te lezen."
+
+#: templates/wealth/dashboard.html:20
+#| msgid "Asset mix by year in percentages; data in the table below"
+msgid "Wealth by year and category; values in the table below"
+msgstr "Vermogen per jaar en categorie; waarden in de onderstaande tabel"
+
+#: templates/wealth/dashboard.html:21
+#| msgid "Show asset mix data"
+msgid "Show wealth data"
+msgstr "Vermogensgegevens tonen"
+
+#: templates/wealth/dashboard.html:23 wealth/views.py:85
+#| msgid "Personal wealth"
+msgid "Total wealth"
+msgstr "Totaalvermogen"
+
+#: templates/wealth/snapshot_edit.html:17
+msgid ""
+"Credit card: enter debt as a negative balance, zero when settled, and a "
+"positive balance only for money owed to you by the card provider."
+msgstr "Creditcard: voer schuld in als een negatief saldo, nul als alles is afgelost en alleen een positief saldo als de creditcardaanbieder jou geld verschuldigd is."
+
+#: wealth/forms.py:85
+msgid ""
+"For Credit card, use Bank account as the account type and Liquid "
+"availability. Enter outstanding debt as a negative balance, zero when "
+"settled, and a positive balance only for money owed to you by the card "
+"provider."
+msgstr "Kies voor Creditcard het rekeningtype Bankrekening en beschikbaarheid Liquide. Voer openstaande schuld in als een negatief saldo, nul als alles is afgelost en alleen een positief saldo als de creditcardaanbieder jou geld verschuldigd is."
+
+#: wealth/models.py:8
+msgid "Credit card"
+msgstr "Creditcard"

@@ -14,7 +14,7 @@
 <div class="card table-wrap valuation-table"><table><thead><tr><th>{% trans "Account" %}</th><th class="number">{% trans "Previous value" %}</th><th>{% trans "Value (EUR)" %}</th><th>{% trans "Account details" %}</th>{% if conflict and not deleted %}<th>{% trans "Latest saved values" %}</th>{% endif %}</tr></thead><tbody>
 {% for entry in entries %}<tr><td><strong>{{ entry.account.name }}</strong><small>{{ entry.account.entity }}{% if entry.account.joint %} · 50%{% endif %}</small>{{ entry.form.account_id }}{{ entry.form.non_field_errors }}</td>
 <td class="number">{% if entry.previous %}{{ entry.previous.amount_minor|money }}<small>{{ entry.previous.snapshot.date|date:"SHORT_DATE_FORMAT" }}</small>{% else %}—{% endif %}</td><td><label class="sr-only" for="{{ entry.form.amount.id_for_label }}">{{ entry.account.name }} {% trans "Value (EUR)" %}</label>{{ entry.form.amount }}{{ entry.form.amount.errors }}</td>
-<td>{% if entry.account.kind == 'broker' %}
+<td>{% if entry.account.asset_class == "credit_card" %}<small>{% trans "Credit card: enter debt as a negative balance, zero when settled, and a positive balance only for money owed to you by the card provider." %}</small>{% endif %}{% if entry.account.kind == 'broker' %}
 <p><label for="{{ entry.form.net_deposits.id_for_label }}">{{ entry.form.net_deposits.label }}</label>{{ entry.form.net_deposits }}{{ entry.form.net_deposits.errors }}</p>
 <small>{% trans "All deposits minus all withdrawals since account opening. Blank means unknown. Include cash in the account value." %}</small>
 {% if entry.cumulative_result != None %}<p><strong>{% trans "Saved result since opening" %}: {{ entry.cumulative_result|money }}</strong></p>{% endif %}

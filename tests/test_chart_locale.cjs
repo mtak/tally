@@ -5,24 +5,38 @@ const assert = require('node:assert/strict');
 const code = readFileSync(require('node:path').join(__dirname, '../static/app.js'), 'utf8');
 const root = {lang:'en', dataset:{showCents:'true'}};
 const handlers = {}, options = {}, chartHandlers = {};
-const nodes = Object.fromEntries(['history-chart', 'assets-chart', 'liquidity-chart', 'movement-chart'].map(id=>[id,{id}]));
-nodes['chart-data'] = {textContent:JSON.stringify({years:['2026'],series:[],assets:[{value:1234.56}],liquidity:[{value:-1234.56}]})};
+const nodes = Object.fromEntries(['history-chart', 'assets-chart', 'liquidity-chart', 'movement-chart'].map(id=>[id,{id,style:{}}]));
+nodes['chart-data'] = {textContent:JSON.stringify({years:['2026','2027','2028'],dates:['2026-08-11','2027-03-02','2028-09-01'],totals:[123456,-123456,null],total_label:'Total wealth',series:[{name:'Private',data:[2000,-1234.56,null]},{name:'Home',data:[-765.44,0,null]}],assets:[{value:1234.56}],liquidity:[{value:-1234.56}]})};
 nodes['movement-data'] = {textContent:JSON.stringify({labels:['Gain'],values:[-1234.56],detail_ids:['movement-investments']})};
 let focused = false, scrolled = false;
 nodes['movement-investments'] = {open:false,querySelector:()=>({focus:()=>focused=true}),scrollIntoView:()=>scrolled=true};
 const echarts = {init:node=>({setOption:option=>options[node.id]=option,on:(event,fn)=>chartHandlers[node.id+event]=fn,dispose(){}})};
 runInNewContext(code, {
   Intl, document:{documentElement:root,getElementById:id=>nodes[id],addEventListener:(event,fn)=>handlers[event]=fn},
-  window:{echarts,addEventListener(){}}, echarts,
+  window:{echarts,addEventListener(){},location:{pathname:"/",search:"?home=0&pension=0&net=0"}}, echarts,
   getComputedStyle:()=>({getPropertyValue:()=> '#ffffff'})
 });
+const nextField = {value:'/'};
+handlers.submit({target:{querySelector:()=>nextField}});
+assert.equal(nextField.value, '/?home=0&pension=0&net=0');
 for (const lang of ['en','nl','en']) {
   root.lang = lang;
   for (const cents of ['true','false']) {
     root.dataset.showCents = cents;
     handlers['htmx:afterSwap']();
     const number = lang==='nl' ? (cents==='true'?'1.234,56':'1.235') : (cents==='true'?'1,234.56':'1,235');
-    assert.ok(options['history-chart'].tooltip.valueFormatter(1234.56).includes(number));
+    const history = options['history-chart'], labels = history.series.at(-1);
+    assert.ok(history.tooltip.valueFormatter(1234.56).includes(number));
+    assert.ok(labels.label.formatter({dataIndex:0}).includes(number));
+    assert.ok(labels.label.formatter({dataIndex:1}).includes('-'));
+    assert.equal(labels.label.formatter({dataIndex:2}), '');
+    assert.equal(labels.data[0][1], 2000); // Above the positive stack, not the net total.
+    assert.equal(labels.data[1][1], 0); // Fully negative stack.
+    assert.equal(labels.data[2], null);
+    assert.equal(history.legend.selectedMode, false);
+    assert.ok(history.tooltip.formatter([{dataIndex:0}]).includes(lang==='nl'?'11-8-2026':'8/11/2026'));
+    assert.equal(history.tooltip.formatter([{dataIndex:2}]), '');
+    assert.equal(nodes['history-chart'].style.minWidth, '610px');
     assert.equal(options['liquidity-chart'].xAxis.axisLabel.formatter(-1234.56), lang==='nl'?'-1.234,56':'-1,234.56');
     assert.equal(options['assets-chart'].series[0].emphasis.label.formatter({percent:12.34}), lang==='nl'?'12,34%':'12.34%');
     assert.ok(options['history-chart'].yAxis.axisLabel.formatter(1234).includes(lang==='nl'?'1,2':'1.2'));

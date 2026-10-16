@@ -1,0 +1,7 @@
+{% load i18n money %}
+<details class="chart-details"><summary id="{{ summary_id }}">{% blocktrans %}Show {{ title }} data{% endblocktrans %}</summary>
+<div class="table-wrap" tabindex="0" role="region" aria-label="{{ title }}"><table>
+<caption>{{ title }} · {{ selected.date|date:"SHORT_DATE_FORMAT" }} · EUR</caption>
+<thead><tr><th scope="col">{% trans "Category" %}</th><th scope="col" class="number">{% trans "Value (EUR)" %}</th></tr></thead>
+<tbody>{% for row in rows %}<tr><th scope="row">{{ row.name }}</th><td class="number">{{ row.amount|money }}</td></tr>{% empty %}<tr><td colspan="2">{% trans "No gross assets available" %}</td></tr>{% endfor %}</tbody>
+</table></div></details>

@@ -226,3 +226,16 @@
   are not paired with account labels. Valid stale layouts retain their signed row
   mapping, submitted inputs and HTTP 409 reconciliation behavior. Invalid actions
   also render in the editor with HTTP 400; no rejected request writes data.
+
+## Dashboard access and card classification (#33, #61, #63)
+
+- Annual wealth, gross allocation and liquidity expose semantic, keyboard-accessible
+  tables using existing report data. Wealth labels use the report total, anchored
+  above positive stacks even with negative categories. Horizontal chart scrolling
+  reserves room for full localized EUR labels on mobile. Incomplete net totals stay
+  unavailable. The category legend preserves the full stack to match its total.
+- Credit card is an asset class with signed balances, normally a liquid bank-type
+  account: negative means owed, zero settled, positive means provider credit. Reuse
+  existing signed wealth/liquidity and positive gross-category allocation rules.
+  No financial calculation or historical balance is rewritten. Observation CSV
+  retains signed values; it does not currently export asset classifications.
