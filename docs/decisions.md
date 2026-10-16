@@ -268,3 +268,27 @@
 - CI reuses one production image and a fictional file-backed database for startup,
   secure authenticated HTTP/static assets, backup and isolated restore verification.
   It creates and cleans up only its own resources and does not deploy the application.
+
+## Overview preflight (#26, #27)
+
+- One read-only preflight serves the web and command-line previews and is rerun
+  inside the atomic apply transaction. It rejects duplicate files/dates and
+  incompatible layouts or existing configuration before creating any records.
+- The supported Overview requires every mapped account label, including rows whose
+  historical cells are blank. Renamed/missing account rows are incompatible. Basis,
+  historical tax and source liquidity rows are optional; missing tax deductions
+  retain the agreed zero override. Blanks never create account observations and
+  explicit zero is an observation. Each date requires a source total and at least
+  one recognized balance. The confirmed final header correction is unchanged.
+- Preview lists recognized rows with CSV locations, ignored labels, missing required
+  and optional rows, and exact per-date source/detail/difference amounts. Differences
+  above EUR 2 block import until the source is corrected; ordinary confirmation
+  cannot override them. Source liquidity discrepancies remain warnings because
+  liquidity is recalculated from account inputs.
+- Reused accounts must match owner, type, asset class, liquidity, pension, ownership
+  share and EUR currency. Actual observations must be on/after start and strictly
+  before closure, matching reporting boundaries. Historical blank cells do not
+  require activity on that date. New consultancy defaults are checked too.
+- Safe start/closure dates, maturity, rate and notes remain untouched. Existing owner
+  types and company parent relationships must match the supported structure;
+  import never repairs or overwrites them. This remains an Overview-only importer.

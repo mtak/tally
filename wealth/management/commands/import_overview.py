@@ -1,6 +1,6 @@
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
-from wealth.importer import parse_overview, import_overview
+from wealth.importer import parse_overview, preflight_overview, import_overview
 
 
 class Command(BaseCommand):
@@ -12,7 +12,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            p = parse_overview(Path(options["path"]).read_bytes())
+            p = preflight_overview(parse_overview(Path(options["path"]).read_bytes()))
+            for row in p["recognized"]:
+                self.stdout.write(f"Recognized: {row['label']} (row {row['line']})")
+            for label in p["missing"]:
+                self.stdout.write(f"Missing: {label}")
+            for row in p["ignored"]:
+                self.stdout.write(f"Ignored: {row['label']} (row {row['line']})")
+            for obs in p["observations"]:
+                self.stdout.write(f"{obs['date']}: source={obs['source_total']} detail={obs['computed_total']} difference={obs['difference']} (EUR cents)")
+            if p["errors"]:
+                raise ValueError("\n".join(p["errors"]))
             for warning in p["warnings"]:
                 self.stdout.write(warning)
             if options["apply"]:

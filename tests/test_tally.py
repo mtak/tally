@@ -177,6 +177,9 @@ def fixture_csv():
         ["", "Liquide vermogen", "€ 100", ""],
         ["", "Niet-liquide vermogen", "€ 0", ""],
     ]
+    from wealth.importer import MAPPING
+    present = {row[1].strip() for row in rows if len(row) > 1}
+    rows.extend(["", m[0]] for m in MAPPING if m[0] not in present)
     f = io.StringIO()
     csv.writer(f).writerows(rows)
     return f.getvalue().encode()

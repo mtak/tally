@@ -60,6 +60,7 @@ def parse_overview(content):
     }
     seen = {}
     labels = {}
+    ignored = []
     header = totalrow = None
     for line, row in enumerate(rows, 1):
         structure = row[0].strip() if row else ""
@@ -81,6 +82,8 @@ def parse_overview(content):
             totalrow = row
         if label in consumed:
             labels[label] = row
+        elif label:
+            ignored.append({"label": label, "line": line})
     if not header:
         raise ValueError(_("The Overview header was not found."))
     columns = []
@@ -123,10 +126,6 @@ def parse_overview(content):
         computed = sum(v for v in amounts.values() if v is not None) + sum(
             taxvalues.values()
         )
-        if total is not None and abs(computed - total) > 200:
-            warnings.append(
-                str(when) + ": " + _("Source total differs from the imported detail.")
-            )
         liquid = value("Liquide vermogen", idx)
         illiquid = value("Niet-liquide vermogen", idx)
         if (
@@ -150,6 +149,9 @@ def parse_overview(content):
                 "basis": value("Example Brokerage Contributions", idx),
                 "net_deposits": value("Example Brokerage Contributions", idx),
                 "source_total": total,
+                "balance_count": sum(v is not None for v in amounts.values()),
+                "computed_total": computed,
+                "difference": computed - total if total is not None else None,
             }
         )
     warnings.append(
@@ -164,34 +166,86 @@ def parse_overview(content):
         "digest": hashlib.sha256(content).hexdigest(),
         "observations": observations,
         "warnings": warnings,
+        "recognized": [{"label": label, "line": seen[("label", label)]} for label in labels],
+        "missing": [m[0] for m in MAPPING if m[0] not in labels],
+        "optional_missing": sorted(consumed - {m[0] for m in MAPPING} - labels.keys()),
+        "ignored": ignored,
     }
+
+
+# Every mapped account row identifies the supported layout, even if all its
+# historical cells are blank. Basis, tax and liquidity rows are optional.
+CONSULTANCY_CLOSED_ON = date(2025, 1, 1)
+ENTITY_KINDS = [
+    ("Private", "private"), ("Consultancy", "sole"),
+    ("Holding", "company"), ("Operating Company", "company"),
+]
+
+
+def preflight_overview(parsed):
+    """Read-only compatibility result, refreshed inside the apply transaction."""
+    errors = []
+    if parsed["missing"]:
+        errors.append(_("Missing required Overview account rows: %(rows)s") % {
+            "rows": ", ".join(parsed["missing"])})
+    observations = parsed["observations"]
+    if not observations:
+        errors.append(_("No recognized account observations found."))
+    for obs in observations:
+        if not any(v is not None for v in obs["amounts"].values()):
+            errors.append(_("%(date)s: No recognized account observations found.") % {"date": obs["date"]})
+        if obs["source_total"] is None:
+            errors.append(_("%(date)s: Source total is missing.") % {"date": obs["date"]})
+        elif abs(obs["difference"]) > 200:
+            errors.append(_("%(date)s: Detail differs from the source total by more than EUR 2. Correct the Overview before importing.") % {"date": obs["date"]})
+    if ImportRecord.objects.filter(digest=parsed["digest"]).exists():
+        errors.append(_("This file has already been imported."))
+    if Snapshot.objects.filter(date__in=[o["date"] for o in observations]).exists():
+        errors.append(_("Some dates already exist. Existing observations will not be overwritten."))
+    entities = {e.name: e for e in Entity.objects.filter(name__in=[n for n, _ in ENTITY_KINDS]).select_related("parent")}
+    for name, kind in ENTITY_KINDS:
+        entity = entities.get(name)
+        expected_parent = "Holding" if name == "Operating Company" else None
+        if entity and (entity.kind != kind or
+                       (entity.parent.name if entity.parent else None) != expected_parent):
+            errors.append(_("Owner configuration conflicts with import: %(name)s") % {"name": name})
+    accounts = {a.name: a for a in Account.objects.select_related("entity").filter(name__in=[m[0] for m in MAPPING])}
+    for label, owner, kind, asset, liquid, pension in MAPPING:
+        account = accounts.get(label)
+        dates = [o["date"] for o in observations if o["amounts"][label] is not None]
+        # New consultancy defaults must also include every actual observation.
+        closed = (account.closed_on if account else
+                  CONSULTANCY_CLOSED_ON if owner == "Consultancy" else None)
+        fields = []
+        if account:
+            expected = {"entity": owner, "kind": kind, "asset_class": asset,
+                        "liquid": liquid, "pension": pension, "joint": False, "currency": "EUR"}
+            for field, value in expected.items():
+                actual = account.entity.name if field == "entity" else getattr(account, field)
+                if actual != value:
+                    fields.append(str(Account._meta.get_field(field).verbose_name))
+            if account.started_on and any(d < account.started_on for d in dates):
+                fields.append(str(Account._meta.get_field("started_on").verbose_name))
+        if closed and any(d >= closed for d in dates):
+            fields.append(str(Account._meta.get_field("closed_on").verbose_name))
+        if fields:
+            errors.append(_("Account configuration conflicts with import: %(name)s") % {"name": label} + ": " + ", ".join(fields))
+    return {**parsed, "errors": errors, "compatible": not errors}
 
 
 @transaction.atomic
 def import_overview(parsed):
-    if ImportRecord.objects.filter(digest=parsed["digest"]).exists():
-        raise ValueError(_("This file has already been imported."))
-    dates = [o["date"] for o in parsed["observations"]]
-    if Snapshot.objects.filter(date__in=dates).exists():
-        raise ValueError(
-            _(
-                "Some dates already exist. Existing observations will not be overwritten."
-            )
-        )
+    checked = preflight_overview(parsed)
+    if checked["errors"]:
+        raise ValueError("\n".join(checked["errors"]))
     entities = {}
-    for name, kind in [
-        ("Private", "private"),
-        ("Consultancy", "sole"),
-        ("Holding", "company"),
-        ("Operating Company", "company"),
-    ]:
+    for name, kind in ENTITY_KINDS:
         entities[name], created = Entity.objects.get_or_create(
             name=name, defaults={"kind": kind}
         )
-        if entities[name].kind != kind:
-            raise ValueError(_("Owner configuration conflicts with import: %(name)s") % {"name": name})
-    entities["Operating Company"].parent = entities["Holding"]
-    entities["Operating Company"].save()
+        if created and name == "Operating Company":
+            entities[name].parent = entities["Holding"]
+            entities[name].save(update_fields=["parent"])
     accounts = {}
     for label, owner, kind, asset, liquid, pension in MAPPING:
         defaults = {
@@ -202,14 +256,8 @@ def import_overview(parsed):
             "pension": pension,
         }
         if owner == "Consultancy":
-            defaults["closed_on"] = date(2025, 1, 1)
+            defaults["closed_on"] = CONSULTANCY_CLOSED_ON
         account, created = Account.objects.get_or_create(name=label, defaults=defaults)
-        if not created and (
-            account.entity_id != entities[owner].id
-            or account.kind != kind
-            or account.joint
-        ):
-            raise ValueError(_("Account configuration conflicts with import: %(name)s") % {"name": label})
         accounts[label] = account
     Account.objects.get_or_create(
         name="Gezamenlijke rekening",

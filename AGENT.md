@@ -293,3 +293,12 @@ Check current CI rather than treating this historical result as current verifica
   startup, authenticated HTTP/static checks and fictional file-backed backup/restore.
   Run `python tests/production_smoke.py IMAGE` after building; no existing volumes or
   production deployment are involved. See docs/verification.md and DEPLOYMENT.md.
+
+- Issues #26/#27: shared Overview preflight powers web/CLI preview and atomic apply.
+  All mapped account rows are required (historical blanks allowed); basis/tax/liquidity
+  rows remain optional. Each date needs a recognized balance and source total;
+  source/detail differences above EUR 2 block import. Preview exposes recognized,
+  ignored and missing rows, reconciliation and configuration errors. Reused account
+  classifications, EUR currency and actual observation lifecycle boundaries must
+  match; safe custom metadata stays unchanged. Existing owner parents are validated,
+  never overwritten. Confirmed header correction and historical tax rules remain.

@@ -48,3 +48,18 @@ Run it locally after building an image; production deployment is a separate acti
 under umask 022, existing files/directories/symlinks (including dangling ones),
 concurrent creation, partial-copy/publication failures, explicit connection closure,
 missing sources and restored fictional SQLite content. No portfolio volumes are used.
+
+## Shared Overview preflight (#26, #27)
+
+Fictional regressions cover missing/renamed account rows, empty dates, source totals,
+EUR 2 tolerance, optional rows and historical blanks, explicit zero, metadata conflicts,
+start/closure boundaries, safe customization preservation, owner parents, duplicate
+files/dates, apply-time rechecking and rollback after a late write failure. Web preview,
+confirmed import and CLI preview share the same compatibility result.
+
+Playwright MCP against a disposable local database checked blocked unrecognized
+files, English/Dutch row inventories and exact reconciliation, confirmed header
+correction, a successful confirmed import and a rejected reused-account pension
+conflict. The preview stayed within the viewport at 390px. No real portfolio was
+used for these checks. Required Python checks and JavaScript regressions passed;
+release CI also exercises the Docker production startup/backup/restore smoke check.

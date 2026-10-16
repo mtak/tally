@@ -1,4 +1,15 @@
-{% extends "base.html" %}{% load i18n %}{% block content %}
+{% extends "base.html" %}{% load i18n money %}{% block content %}
 <div class="page-heading"><div><div class="eyebrow">{% trans "BRING YOUR HISTORY" %}</div><h1>{% trans "Import history" %}</h1><p class="muted">{% trans "Import your Google Sheets Overview CSV. Existing dates are never overwritten." %}</p></div></div>
 <form method="post" enctype="multipart/form-data" class="card form-card">{% csrf_token %}{{ form.as_p }}<button class="button">{% trans "Preview / import" %}</button><p class="muted">{% trans "Leave the confirmation unchecked for a preview. To import, select the file again and check the confirmation." %}</p></form>
-{% if preview %}<section class="card"><h2>{% trans "Import preview" %}</h2><p>{{ preview.observations|length }} {% trans "valuations found" %}</p><ul>{% for warning in preview.warnings %}<li>{{ warning }}</li>{% endfor %}</ul></section>{% endif %}{% endblock %}
+{% if preview %}
+<section class="card"><h2>{% trans "Import preview" %}</h2>
+<p>{{ preview.observations|length }} {% trans "valuations found" %}</p>
+{% if preview.compatible %}<p>{% trans "Compatible Overview. Review the details before confirming import." %}</p>{% else %}<p>{% trans "Import blocked. Correct the file or configuration and preview again." %}</p><ul role="alert">{% for error in preview.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+<h3>{% trans "Recognized rows" %}</h3><ul>{% for row in preview.recognized %}<li>{{ row.label }} ({% trans "CSV row" %} {{ row.line }})</li>{% empty %}<li>{% trans "None" %}</li>{% endfor %}</ul>
+<h3>{% trans "Missing required account rows" %}</h3><ul>{% for label in preview.missing %}<li>{{ label }}</li>{% empty %}<li>{% trans "None" %}</li>{% endfor %}</ul>
+<h3>{% trans "Absent optional rows" %}</h3><ul>{% for label in preview.optional_missing %}<li>{{ label }}</li>{% empty %}<li>{% trans "None" %}</li>{% endfor %}</ul>
+<h3>{% trans "Ignored rows" %}</h3><ul>{% for row in preview.ignored %}<li>{{ row.label }} ({% trans "CSV row" %} {{ row.line }})</li>{% empty %}<li>{% trans "None" %}</li>{% endfor %}</ul>
+<p class="muted">{% trans "Required account rows may contain historical blanks. Blank balances remain unknown. Missing historical tax deductions use zero; liquidity is recalculated." %}</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="{% trans 'Per-date reconciliation' %}"><table><caption>{% trans "Per-date reconciliation" %}</caption><thead><tr><th>{% trans "Valuation date" %}</th><th>{% trans "Recognized balances" %}</th><th>{% trans "Source total" %}</th><th>{% trans "Detail including tax" %}</th><th>{% trans "Difference" %}</th></tr></thead><tbody>{% for obs in preview.observations %}<tr><td>{{ obs.date|date:"SHORT_DATE_FORMAT" }}</td><td>{{ obs.balance_count }}</td><td>{{ obs.source_total|money:True }}</td><td>{{ obs.computed_total|money:True }}</td><td>{{ obs.difference|money:True }}</td></tr>{% endfor %}</tbody></table></div>
+<ul>{% for warning in preview.warnings %}<li>{{ warning }}</li>{% endfor %}</ul></section>
+{% endif %}{% endblock %}

@@ -149,7 +149,13 @@ on top of subsidiaries' assets. Sole-proprietor assets are not classified as Box
 
 Use Import history to preview the agreed Overview CSV, then select the file again
 and check confirmation. It preserves historical tax adjustments/source totals and
-recalculates chart breakdowns. Duplicate dates/files are rejected atomically.
+recalculates chart breakdowns. Preview shows recognized, ignored and missing rows,
+per-date reconciliation and configuration conflicts. All supported account rows are
+required, even when historical cells are blank; basis, tax and liquidity rows are
+optional. Every date needs a source total and a recognized balance. Differences over
+EUR 2 block import until corrected. Existing account classifications and date
+boundaries must be compatible; user settings are never overwritten. Duplicate
+dates/files are rejected atomically.
 The confirmed malformed header '€ 12.345' maps to 2025-08-01. Consultancy is closed
 from 2024-01-01, its first absent source date; adjust if you know the precise date.
 The new joint account has no invented historical balance.

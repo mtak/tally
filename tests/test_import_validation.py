@@ -27,6 +27,9 @@ def overview(extra=()):
         ["Totaal", "", "94"],
         *extra,
     ]
+    from wealth.importer import MAPPING
+    present = {row[1].strip() for row in rows if len(row) > 1}
+    rows.extend(["", m[0]] for m in MAPPING if m[0] not in present)
     stream = io.StringIO()
     csv.writer(stream).writerows(rows)
     return stream.getvalue().encode()

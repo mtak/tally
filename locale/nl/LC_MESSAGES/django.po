@@ -1296,3 +1296,60 @@ msgstr "Gesloten op: kan deze rekening opnemen in of uitsluiten van gepubliceerd
 #: wealth/views.py:205
 msgid "Maturity date: changes the maturity calendar for past valuation dates."
 msgstr "Vervaldatum: wijzigt de vervalkalender voor eerdere waarderingsdatums."
+
+msgid "Compatible Overview. Review the details before confirming import."
+msgstr "Compatibel Overview-bestand. Controleer de details voordat je de import bevestigt."
+
+msgid "Import blocked. Correct the file or configuration and preview again."
+msgstr "Import geblokkeerd. Corrigeer het bestand of de configuratie en bekijk opnieuw het voorbeeld."
+
+msgid "Recognized rows"
+msgstr "Herkende rijen"
+
+msgid "CSV row"
+msgstr "CSV-rij"
+
+msgid "None"
+msgstr "Geen"
+
+msgid "Missing required account rows"
+msgstr "Ontbrekende verplichte rekeningrijen"
+
+msgid "Absent optional rows"
+msgstr "Ontbrekende optionele rijen"
+
+msgid "Ignored rows"
+msgstr "Genegeerde rijen"
+
+msgid "Required account rows may contain historical blanks. Blank balances remain unknown. Missing historical tax deductions use zero; liquidity is recalculated."
+msgstr "Verplichte rekeningrijen mogen historische lege cellen bevatten. Lege saldi blijven onbekend. Ontbrekende historische belastingcorrecties worden nul; liquiditeit wordt opnieuw berekend."
+
+msgid "Per-date reconciliation"
+msgstr "Aansluiting per datum"
+
+msgid "Recognized balances"
+msgstr "Herkende saldi"
+
+msgid "Source total"
+msgstr "Brontotaal"
+
+msgid "Detail including tax"
+msgstr "Detail inclusief belasting"
+
+msgid "Difference"
+msgstr "Verschil"
+
+msgid "Missing required Overview account rows: %(rows)s"
+msgstr "Ontbrekende verplichte Overview-rekeningrijen: %(rows)s"
+
+msgid "No recognized account observations found."
+msgstr "Geen herkende rekeningwaarnemingen gevonden."
+
+msgid "%(date)s: No recognized account observations found."
+msgstr "%(date)s: Geen herkende rekeningwaarnemingen gevonden."
+
+msgid "%(date)s: Source total is missing."
+msgstr "%(date)s: Brontotaal ontbreekt."
+
+msgid "%(date)s: Detail differs from the source total by more than EUR 2. Correct the Overview before importing."
+msgstr "%(date)s: Detail wijkt meer dan EUR 2 af van het brontotaal. Corrigeer het Overview-bestand voordat je importeert."

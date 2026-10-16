@@ -24,7 +24,7 @@ from .forms import (
     minor,
 )
 from .services import report, movement, cumulative_result, broker_tax_covered, asset_mix, investment_history, maturity_calendar
-from .importer import parse_overview, import_overview
+from .importer import parse_overview, preflight_overview, import_overview
 from . import editor
 
 
@@ -468,7 +468,7 @@ def imports(request):
     preview = None
     if request.method == "POST" and form.is_valid():
         try:
-            preview = parse_overview(form.cleaned_data["file"].read())
+            preview = preflight_overview(parse_overview(form.cleaned_data["file"].read()))
             if form.cleaned_data["confirm"]:
                 count = import_overview(preview)
                 messages.success(
