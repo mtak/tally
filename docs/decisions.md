@@ -239,3 +239,19 @@
   existing signed wealth/liquidity and positive gross-category allocation rules.
   No financial calculation or historical balance is rewritten. Observation CSV
   retains signed values; it does not currently export asset classifications.
+
+## Unsaved inputs and historical configuration (#34, #36)
+
+- Valuation editors compare editable values with their initial rendered values.
+  Preference changes, same-tab links and sign-out require confirmation when dirty;
+  browser back/reload/close use the browser's leave warning. Cancelling preferences
+  restores the selector and keeps entered text. Rejected submissions remain guarded;
+  successful saves start clean. No input recovery, storage or locale conversion occurs.
+- Changing owner, account type, class, joint share, liquidity, pension or lifecycle
+  dates on an account with published observations requires a server-side impact
+  review. A signed confirmation binds the proposed values and current configuration;
+  further edits or concurrent changes require another review. Other edits and
+  accounts without published observations save normally.
+- Current metadata still applies to all historical reports and maturity calendars.
+  Confirmation never rewrites observations or imported tax corrections and adds no
+  metadata versioning. Name, notes, currency and rate do not alter report calculations.

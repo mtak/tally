@@ -1,7 +1,7 @@
 {% load static i18n %}{% get_current_language as language %}
 <!doctype html><html lang="{{ language }}" data-theme="dark" data-show-cents="{{ request.show_cents|yesno:'true,false' }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Tally{% endblock %}{% if tally_instance_name %} · {{ tally_instance_name }}{% endif %}</title>
 <script src="{% static 'theme.js' %}"></script>
-<link rel="stylesheet" href="{% static 'app.css' %}"><script src="{% static 'vendor/htmx.min.js' %}" defer></script><script src="{% static 'vendor/echarts.min.js' %}" defer></script><script src="{% static 'app.js' %}" defer></script><script src="{% static 'dates.js' %}" defer></script></head>
+<link rel="stylesheet" href="{% static 'app.css' %}"><script src="{% static 'vendor/htmx.min.js' %}" defer></script><script src="{% static 'vendor/echarts.min.js' %}" defer></script><script src="{% static 'unsaved.js' %}" defer></script><script src="{% static 'app.js' %}" defer></script><script src="{% static 'dates.js' %}" defer></script></head>
 <body><div class="app-shell">
 <aside class="sidebar"><a class="brand" href="{% url 'dashboard' %}"><span class="brand-mark">t</span>tally<span class="brand-dot">.</span></a>
 <p class="nav-caption">{% trans "YOUR WEALTH" %}</p>
@@ -13,7 +13,7 @@
 <a class="{% if '/valuations/' in request.path %}active{% endif %}" href="{% url 'snapshots' %}"><span aria-hidden="true">◷</span>{% trans "Valuations" %}</a>
 <a href="{% url 'imports' %}"><span aria-hidden="true">↓</span>{% trans "Import history" %}</a></nav>
 <div class="sidebar-footer"><div class="local-badge"><span></span>{% trans "Your data. Your server." %}</div>
-<a href="{% url 'export' %}">{% trans "Export observations" %} ↗</a><small>{% include "includes/release.html" %}</small></div></aside>
+<a download href="{% url 'export' %}">{% trans "Export observations" %} ↗</a><small>{% include "includes/release.html" %}</small></div></aside>
 <div class="workspace"><header class="topbar"><span class="workspace-label{% if tally_instance_name %} instance-name{% endif %}">{% if tally_instance_name %}{{ tally_instance_name }}{% else %}{% trans "Personal wealth" %}{% endif %}</span><div class="top-actions">
 <form action="{% url 'set_language' %}" method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
 <label class="sr-only" for="language">{% trans "Language" %}</label><select id="language" name="language" data-auto-submit><option value="nl" {% if language == 'nl' %}selected{% endif %}>NL</option><option value="en" {% if language == 'en' %}selected{% endif %}>EN</option></select></form>

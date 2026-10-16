@@ -2,6 +2,7 @@ import csv
 from decimal import Decimal
 from datetime import date
 from django.contrib import messages
+from django.core import signing
 from .auth import portfolio_access_required
 from django.db import transaction
 from django.db.models import Q
@@ -183,19 +184,53 @@ def account_history(request, pk):
 
 
 @portfolio_access_required
+@transaction.atomic
 def account_edit(request, pk=None):
     obj = get_object_or_404(Account, pk=pk) if pk else None
-    form = AccountForm(request.POST or None, instance=obj)
+    # ModelForm validation mutates its instance; capture the persisted state first.
+    original = dict(Account.objects.filter(pk=pk).values().get()) if obj else None
+    form = AccountForm(request.POST if request.method == "POST" else None, instance=obj)
+    impacts = []
+    confirmation = ""
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, _("Account saved."))
-        return redirect("accounts")
+        explanations = {
+            "entity": _("Owner: changes historical ownership grouping and may change liquidation tax calculations."),
+            "kind": _("Account type: changes historical tax treatment, coverage and account detail interpretation."),
+            "asset_class": _("Asset class: changes historical allocation categories."),
+            "joint": _("Joint ownership: applies 50% instead of 100%, or 100% instead of 50%, to historical reported balances."),
+            "liquid": _("Liquid: changes historical liquidity totals."),
+            "pension": _("Pension: changes historical pension totals and inclusion filters."),
+            "started_on": _("Start date: can include or exclude this account from published valuations and the maturity calendar."),
+            "closed_on": _("Closed on: can include or exclude this account from published valuations and the maturity calendar."),
+            "matures_on": _("Maturity date: changes the maturity calendar for past valuation dates."),
+        }
+        if obj and obj.valuations.filter(snapshot__complete=True).exists():
+            impacts = [text for name, text in explanations.items() if name in form.changed_data]
+        if impacts:
+            proposed = form.save(commit=False)
+            state = {"original": original, "proposed": {
+                field.attname: getattr(proposed, field.attname) for field in Account._meta.fields
+            }}
+            # Bind approval to both the reviewed values and the persisted configuration.
+            state = {key: {name: str(value) for name, value in values.items()}
+                     for key, values in state.items()}
+            try:
+                approved = signing.loads(request.POST.get("history_confirmation", ""), salt="account-history", max_age=3600) == state
+            except signing.BadSignature:
+                approved = False
+            if not approved:
+                confirmation = signing.dumps(state, salt="account-history")
+        if not impacts or not confirmation:
+            form.save()
+            messages.success(request, _("Account saved."))
+            return redirect("accounts")
     return render(
         request,
         "wealth/form.html",
         {
             "form": form,
             "title": _("Edit account") if obj else _("Add account"),
+            "history_impacts": impacts, "history_confirmation": confirmation,
             "back": "accounts",
         },
     )
@@ -421,7 +456,8 @@ def snapshot_edit(request, pk):
         {"snapshot": s, "formset": formset, "entries": entries,
          "summary": report(s) if not deleted else None,
          "editor_version": token, "conflict": conflict, "deleted": deleted,
-         "editor_error": editor_error, "unsafe_layout": unsafe_layout},
+         "editor_error": editor_error, "unsafe_layout": unsafe_layout,
+         "unsaved_inputs": request.method == "POST" and not unsafe_layout},
         status=400 if editor_error else 409 if conflict else 200,
     )
 

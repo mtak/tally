@@ -277,3 +277,10 @@ Check current CI rather than treating this historical result as current verifica
   Liquid availability; enter debt negative, settled zero, provider credit positive.
   Existing signed wealth/liquidity and positive-category gross-allocation rules
   apply unchanged; no separate card balance or automatic sign conversion exists.
+
+- Issues #34/#36: dirty valuation inputs require leave confirmation for preferences,
+  links and sign-out; browser unload covers back/reload/close. Rejected inputs remain
+  guarded and successful saves reset the baseline. No automatic recovery/conversion.
+  Report-affecting account edits with published observations require a signed impact
+  review bound to current/proposed settings. Current metadata still reinterprets
+  history; observations/imported corrections stay unchanged, without versioning.

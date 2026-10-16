@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: '22'
       - run: node tests/test_chart_locale.cjs
+      - run: node tests/test_unsaved.cjs
       - run: python manage.py makemigrations --check --dry-run
       - run: docker compose -f compose.yaml -f compose.dev.yaml config --quiet
       - run: docker build --build-arg TALLY_GIT_COMMIT="${{ github.sha }}" -t tally:test .

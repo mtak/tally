@@ -1225,3 +1225,74 @@ msgstr "Kies voor Creditcard het rekeningtype Bankrekening en beschikbaarheid Li
 #: wealth/models.py:8
 msgid "Credit card"
 msgstr "Creditcard"
+
+#: templates/wealth/form.html:2
+msgid "Review impact on published history"
+msgstr "Controleer de gevolgen voor gepubliceerde historie"
+
+#: templates/wealth/form.html:2
+msgid ""
+"These settings apply to all dates, including already published history. "
+"Reports are recalculated using the current account configuration."
+msgstr "Deze instellingen gelden voor alle datums, ook voor al gepubliceerde historie. Rapporten worden opnieuw berekend met de huidige rekeninginstellingen."
+
+#: templates/wealth/form.html:2
+msgid ""
+"Recorded observations and imported tax corrections will remain unchanged. "
+"Confirm to save these settings, or cancel to keep the saved configuration."
+msgstr "Vastgelegde waarnemingen en geïmporteerde belastingcorrecties blijven ongewijzigd. Bevestig om deze instellingen op te slaan, of annuleer om de opgeslagen instellingen te behouden."
+
+#: templates/wealth/form.html:2
+msgid "Confirm changes to published history"
+msgstr "Wijzigingen voor gepubliceerde historie bevestigen"
+
+#: templates/wealth/snapshot_edit.html:13
+msgid "You have unsaved valuation inputs. Leave this page and discard them?"
+msgstr "Je hebt niet-opgeslagen waarderingsinvoer. Deze pagina verlaten en de invoer weggooien?"
+
+#: wealth/views.py:197
+msgid ""
+"Owner: changes historical ownership grouping and may change liquidation tax "
+"calculations."
+msgstr "Eigenaar: wijzigt de historische groepering per eigenaar en mogelijk de belastingberekeningen bij liquidatie."
+
+#: wealth/views.py:198
+msgid ""
+"Account type: changes historical tax treatment, coverage and account detail "
+"interpretation."
+msgstr "Rekeningtype: wijzigt de historische belastingbehandeling, volledigheid en interpretatie van rekeningdetails."
+
+#: wealth/views.py:199
+msgid ""
+"Asset class: changes historical allocation categories."
+msgstr "Vermogenscategorie: wijzigt historische verdelingscategorieën."
+
+#: wealth/views.py:200
+msgid ""
+"Joint ownership: applies 50% instead of 100%, or 100% instead of 50%, to "
+"historical reported balances."
+msgstr "Gezamenlijk eigendom: past 50% in plaats van 100%, of 100% in plaats van 50%, toe op historisch gerapporteerde saldi."
+
+#: wealth/views.py:201
+msgid "Liquid: changes historical liquidity totals."
+msgstr "Liquide: wijzigt historische liquiditeitstotalen."
+
+#: wealth/views.py:202
+msgid "Pension: changes historical pension totals and inclusion filters."
+msgstr "Pensioen: wijzigt historische pensioentotalen en selectiefilters."
+
+#: wealth/views.py:203
+msgid ""
+"Start date: can include or exclude this account from published valuations "
+"and the maturity calendar."
+msgstr "Startdatum: kan deze rekening opnemen in of uitsluiten van gepubliceerde waarderingen en de vervalkalender."
+
+#: wealth/views.py:204
+msgid ""
+"Closed on: can include or exclude this account from published valuations and "
+"the maturity calendar."
+msgstr "Gesloten op: kan deze rekening opnemen in of uitsluiten van gepubliceerde waarderingen en de vervalkalender."
+
+#: wealth/views.py:205
+msgid "Maturity date: changes the maturity calendar for past valuation dates."
+msgstr "Vervaldatum: wijzigt de vervalkalender voor eerdere waarderingsdatums."
