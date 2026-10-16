@@ -166,6 +166,7 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
     bank_base = 0
     broker_vpb = 0
     broker_ab = 0
+    broker_value = 0
     overrides = {t.kind: t.amount_minor for t in snapshot.tax_adjustments.all()}
     unknown_broker_tax = False
     for account in accounts:
@@ -217,6 +218,7 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
                     )
                     broker_vpb += correction
                     broker_ab -= rate(amount + correction, snapshot.ab_bps)
+                broker_value += amount
             else:
                 bank_base += amount
         rows.append(
@@ -234,6 +236,11 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
         "broker_vpb": None if unknown_broker_tax else broker_vpb,
         "broker_ab": None if unknown_broker_tax else broker_ab,
     }
+    # A snapshot VPB override replaces the portfolio correction as a whole. When
+    # AB is still calculated, apply it to the combined broker value after that
+    # effective VPB amount, with one portfolio-level rounding step.
+    if "broker_vpb" in overrides and "broker_ab" not in overrides and not unknown_broker_tax:
+        tax["broker_ab"] = -rate(broker_value + overrides["broker_vpb"], snapshot.ab_bps)
     tax.update(overrides)
     tax_complete = all(value is not None for value in tax.values())
     tax_total = (sum(tax.values()) if tax_complete else None) if net else 0

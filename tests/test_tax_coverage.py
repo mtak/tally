@@ -141,3 +141,52 @@ def test_unknown_broker_does_not_yield_partial_known_tax_total(portfolio):
     account.closed_on = snapshot.date
     account.save()
     assert report(snapshot)["tax_complete"]
+
+
+def test_vpb_override_drives_unoverridden_ab_across_multiple_brokers():
+    snap = Snapshot.objects.create(date=date(2026, 1, 1), complete=True)
+    owner = Entity.objects.create(name="Example company", kind="company")
+    snap.ab_bps = 2690
+    snap.vpb_bps = 1900
+    snap.save()
+    brokers = [Account.objects.create(name=f"Broker {i}", entity=owner, kind="broker")
+               for i in range(2)]
+    for broker in brokers:
+        Valuation.objects.create(snapshot=snap, account=broker,
+                                 amount_minor=10001, basis_minor=10000)
+    TaxAdjustment.objects.create(snapshot=snap, kind="broker_vpb", amount_minor=101)
+
+    # The override replaces aggregate VPB; AB is rounded once on the combined
+    # broker value plus that effective correction.
+    assert report(snap)["tax"]["broker_vpb"] == 101
+    assert report(snap)["tax"]["broker_ab"] == -5408
+
+    TaxAdjustment.objects.create(snapshot=snap, kind="broker_ab", amount_minor=-77)
+    assert report(snap)["tax"]["broker_vpb"] == 101
+    assert report(snap)["tax"]["broker_ab"] == -77
+
+
+def test_movement_tax_correction_labels_are_neutral():
+    from django.utils import translation
+
+    from wealth.services import movement
+
+    owner = Entity.objects.create(name="Example company", kind="company")
+    snap = Snapshot.objects.create(date=date(2026, 1, 1), complete=True)
+    broker = Account.objects.create(name="Broker", entity=owner, kind="broker")
+    Valuation.objects.create(snapshot=snap, account=broker, amount_minor=100000,
+                             basis_minor=90000)
+    later = Snapshot.objects.create(date=date(2026, 2, 1), complete=True)
+    Valuation.objects.create(snapshot=later, account=broker, amount_minor=100000,
+                             basis_minor=90000)
+    TaxAdjustment.objects.create(snapshot=later, kind="broker_vpb", amount_minor=-123)
+    TaxAdjustment.objects.create(snapshot=later, kind="broker_ab", amount_minor=-456)
+
+    with translation.override("en"):
+        tax = movement(later)["parts"][3]
+        assert tax["label"] == "Tax correction change"
+        assert {row["label"] for row in tax["details"]} == {
+            "VPB on investment gains", "AB after VPB", "AB on bank balances"
+        }
+        assert all("Portfolio-level tax correction" in row["reason"]
+                   for row in tax["details"])

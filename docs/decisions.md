@@ -163,6 +163,19 @@
   their effective carried-forward predecessors, including imported snapshots.
   Drafts can retain unknown basis. Overrides apply only to their own snapshot.
 
+## Historical tax overrides and broker rounding (#30)
+
+- Each snapshot-level correction replaces the calculated portfolio total for its
+  correction type. With known broker bases, a VPB override is the effective total
+  broker VPB correction. If broker AB is not overridden, calculate it on the sum of
+  broker values plus that effective VPB correction, rounding once at portfolio level.
+- Without a VPB override, retain the existing per-broker calculation and rounding
+  of AB. An AB override is preserved verbatim regardless of VPB. When any active
+  broker basis is unknown, broker deductions remain unknown unless both broker
+  corrections are overridden. A complete imported override set remains verbatim.
+- Tax movements remain portfolio-level rows by correction type. Label them as a
+  tax correction change and do not attribute them to accounts or imply a rate change.
+
 ## Inspectable change analysis (#48)
 
 - Chart bars open the corresponding category and focus its keyboard-operable
