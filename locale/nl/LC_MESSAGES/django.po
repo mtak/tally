@@ -1524,3 +1524,7 @@ msgstr "Gedeeltelijk vastgelegd"
 #: templates/wealth/analysis.html
 msgid "Not recorded"
 msgstr "Niet vastgelegd"
+
+#: templates/wealth/snapshot_edit.html
+msgid "Net deposits and tax basis"
+msgstr "Netto-inleg en fiscale boekwaarde"
