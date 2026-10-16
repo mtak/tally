@@ -78,11 +78,12 @@ def test_account_order_all_overviews_and_rename(logged, owner, lang):
     def check(expected):
         assert list(Account.objects.all()) == expected
         for headers in ({}, {"HTTP_HX_REQUEST": "true"}):
-            assert list(logged.get("/accounts/", **headers).context["accounts"]) == expected
+            grouped = sorted(expected, key=lambda a: (a.entity.name.lower(), a.entity_id, a.name.lower(), a.pk))
+            assert list(logged.get("/accounts/", **headers).context["accounts"]) == grouped
             dashboard = logged.get("/", **headers).context
             assert [r["account"] for r in dashboard["summary"]["rows"]] == expected
             editor = logged.get(f"/valuations/{current.pk}/", **headers)
-            assert [r["account"] for r in editor.context["entries"]] == expected
+            assert [r["account"] for r in editor.context["entries"]] == grouped
             analysis = logged.get("/analysis/", **headers)
             assert analysis.context["investment_accounts"] == expected
             assert [r["name"] for r in analysis.context["results"]] == [a.name for a in expected]

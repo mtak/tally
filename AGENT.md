@@ -144,6 +144,7 @@ Required checks for application changes:
     .venv/bin/python manage.py makemigrations --check --dry-run
     git diff --check
 
+Use Playwright MCP for browser validation (user preference).
 Run relevant browser checks for UI changes and Docker builds when deployment inputs
 change. Do not rerun unrelated tests for documentation-only changes.
 Translate new strings, then compile without traversing the virtual environment:
@@ -252,3 +253,10 @@ Check current CI rather than treating this historical result as current verifica
   calendar in both languages. Account overviews/selectors and change-detail groups
   sort by case-insensitive name with primary-key ties. Stale editors preserve the
   submitted row layout. See docs/decisions.md for details.
+
+- Issues #23, #62, #64: observation CSV includes exact entered `interest_eur`.
+  Account History lists actual observations, including drafts/imported history,
+  newest first, with full values and recorded type-specific fields. No carried
+  records are synthesized. Accounts & assets and valuation editor rows use owner
+  name/ID then account name/ID ordering; other overviews retain name ordering.
+  Global account-name uniqueness and stale editor row/owner mappings remain intact.

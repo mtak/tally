@@ -79,7 +79,9 @@
   do not establish lifetime net deposits and remain archived, without invented totals.
 - Tax basis and imported tax adjustments stay independent of performance inputs.
 - Position routes, forms and views are removed. Allocation uses account classification.
-  Existing positions and legacy flow inputs remain stored and exported/backed up.
+  Existing positions and legacy flow inputs remain stored. Observation CSV exports
+  include legacy flow inputs, net deposits and entered interest, but omit positions,
+  tax adjustments, configuration and login data; use a full SQLite backup for those.
 
 ## Amount precision (#7)
 
@@ -198,3 +200,16 @@
   account names ordered within each category. Tax corrections keep their own order.
   Renames take effect on the next load. Rejected stale editors retain the original
   submitted row layout to protect account-to-value reconciliation.
+
+## Read-only account inspection (#23, #62, #64)
+
+- Account history lists actual recorded observations, newest first, including drafts
+  and imported history. Full account values are shown without ownership scaling,
+  carried-forward records or calculated interest. Current account type determines
+  which recorded detail columns appear. Blank remains unknown; zero is explicit.
+- Accounts & assets and valuation editor rows group by case-insensitive owner name,
+  then owner ID, case-insensitive account name and account ID. Other overviews retain
+  alphabetical account ordering. Global account-name uniqueness is unchanged.
+  Stale editor submissions keep their signed original row layout and owner labels.
+- CSV `interest_eur` preserves blank, zero, sign and exact cents regardless of UI
+  language or precision. Observation export is not a full database backup.

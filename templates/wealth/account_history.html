@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load i18n money %}{% block content %}
+<div class="page-heading"><div><a class="back-link" href="{% url 'accounts' %}">← {% trans "Accounts & assets" %}</a><h1>{{ account.name }} · {% trans "History" %}</h1><p class="muted">{{ account.entity }} · {{ account.get_kind_display }}{% if account.closed_on %} · {% trans "Closed" %}{% endif %}</p></div><a class="button secondary" href="{% url 'account_edit' account.pk %}">{% trans "Edit account" %}</a></div>
+<p class="muted">{% trans "Recorded observations only, including drafts. Full account values before ownership adjustments; blank details mean unknown." %}</p>
+{% if observations %}
+<div class="card table-wrap" role="region" aria-label="{% trans 'Account valuation history' %}" tabindex="0"><table>
+<thead><tr><th>{% trans "Valuation date" %}</th><th>{% trans "Status" %}</th><th class="number">{% trans "Value (EUR)" %}</th>{% if account.kind == 'broker' %}<th class="number">{% trans "Net deposits since opening (EUR)" %}</th>{% if account.entity.kind == 'company' %}<th class="number">{% trans "Tax basis (EUR)" %}</th>{% endif %}{% elif account.kind == 'bank' or account.kind == 'claim' %}<th class="number">{% trans "Interest received or accrued (EUR)" %}</th>{% endif %}</tr></thead>
+<tbody>{% for v in observations %}<tr><td><a href="{% url 'snapshot_edit' v.snapshot_id %}">{{ v.snapshot.date|date:"SHORT_DATE_FORMAT" }}</a>{% if v.snapshot.imported %}<small>{% trans "Imported" %}</small>{% endif %}</td><td><span class="tag">{% if v.snapshot.complete %}{% trans "Published" %}{% else %}{% trans "Draft" %}{% endif %}</span></td><td class="number">{{ v.amount_minor|money }}</td>{% if account.kind == 'broker' %}<td class="number">{{ v.net_deposits_minor|money }}</td>{% if account.entity.kind == 'company' %}<td class="number">{{ v.basis_minor|money }}</td>{% endif %}{% elif account.kind == 'bank' or account.kind == 'claim' %}<td class="number">{{ v.interest_minor|money }}</td>{% endif %}</tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<div class="notice">{% trans "No recorded observations for this account yet." %}</div>{% endif %}
+{% endblock %}

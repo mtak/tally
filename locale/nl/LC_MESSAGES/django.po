@@ -1136,3 +1136,21 @@ msgstr "Volgende maand"
 
 msgid "Select a bar or expand a category below to see its contributions, ordered by account name. Values reflect your ownership share. A dash means the account is not included at that endpoint."
 msgstr "Selecteer een balk of open hieronder een categorie om de bijdragen op rekeningnaam te bekijken. Bedragen tonen jouw eigendomsaandeel. Een streepje betekent dat de rekening op dat moment niet is opgenomen."
+
+msgid "History"
+msgstr "Geschiedenis"
+
+msgid "Actions"
+msgstr "Acties"
+
+msgid "Imported"
+msgstr "Geïmporteerd"
+
+msgid "Account valuation history"
+msgstr "Waarderingsgeschiedenis van het account"
+
+msgid "No recorded observations for this account yet."
+msgstr "Nog geen vastgelegde waarnemingen voor dit account."
+
+msgid "Recorded observations only, including drafts. Full account values before ownership adjustments; blank details mean unknown."
+msgstr "Alleen vastgelegde waarnemingen, inclusief concepten. Volledige accountwaarden vóór eigendomscorrecties; lege detailvelden betekenen onbekend."

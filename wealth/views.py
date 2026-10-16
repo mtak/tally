@@ -5,6 +5,7 @@ from django.contrib import messages
 from .auth import portfolio_access_required
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.forms import formset_factory
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
@@ -156,10 +157,22 @@ def accounts(request):
         request,
         "wealth/accounts.html",
         {
-            "accounts": Account.objects.select_related("entity").all(),
+            "accounts": Account.objects.select_related("entity").order_by(
+                Lower("entity__name"), "entity_id", Lower("name"), "pk"
+            ),
             "entities": Entity.objects.all(),
         },
     )
+
+
+@portfolio_access_required
+@require_http_methods(["GET"])
+def account_history(request, pk):
+    account = get_object_or_404(Account.objects.select_related("entity"), pk=pk)
+    return render(request, "wealth/account_history.html", {
+        "account": account,
+        "observations": account.valuations.select_related("snapshot").order_by("-snapshot__date", "-pk"),
+    })
 
 
 @portfolio_access_required
@@ -253,6 +266,7 @@ def snapshot_edit(request, pk):
         Account.objects.select_related("entity")
         .filter(Q(closed_on__isnull=True) | Q(closed_on__gt=s.date))
         .filter(Q(started_on__isnull=True) | Q(started_on__lte=s.date))
+        .order_by(Lower("entity__name"), "entity_id", Lower("name"), "pk")
     )
     if request.method != "POST":
         token = editor.make_token(s, digest, accounts)
@@ -423,7 +437,7 @@ def export(request):
             "flow_mode", "flow_start_date", "flow_end_date",
             "cumulative_deposits_eur", "cumulative_withdrawals_eur",
             "cumulative_start_date", "cumulative_baseline_date",
-            "net_deposits_eur",
+            "net_deposits_eur", "interest_eur",
         ]
     )
 
@@ -452,6 +466,7 @@ def export(request):
                 "" if v.cumulative_outflow_minor is None else str(Decimal(v.cumulative_outflow_minor) / 100),
                 v.cumulative_start_date or "", v.cumulative_baseline_date or "",
                 "" if v.net_deposits_minor is None else str(Decimal(v.net_deposits_minor) / 100),
+                "" if v.interest_minor is None else str(Decimal(v.interest_minor) / 100),
             ]
         )
     return response
