@@ -175,12 +175,14 @@ def dashboard(request):
 
 @portfolio_access_required
 def maturities(request):
-    snapshots = list(Snapshot.objects.filter(complete=True))
+    snapshots = list(Snapshot.objects.filter(complete=True).order_by("date", "pk"))
     selected = next((s for s in snapshots if str(s.pk) == request.GET.get("at")),
                     snapshots[-1] if snapshots else None)
+    calendar = maturity_calendar(selected) if selected else None
+    request._maturity_calendar = calendar
     return render(request, "wealth/maturities.html", {
         "snapshots": snapshots, "selected": selected,
-        "calendar": maturity_calendar(selected) if selected else None,
+        "calendar": calendar,
     })
 
 
