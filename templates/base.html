@@ -11,7 +11,7 @@
 <a class="{% if '/maturities/' in request.path %}active{% endif %}" href="{% url 'maturities' %}"><span aria-hidden="true">◷</span>{% trans "Maturity calendar" %}</a>
 <a class="{% if '/accounts/' in request.path %}active{% endif %}" href="{% url 'accounts' %}"><span aria-hidden="true">▤</span>{% trans "Accounts" %}</a>
 <a class="{% if '/valuations/' in request.path %}active{% endif %}" href="{% url 'snapshots' %}"><span aria-hidden="true">◷</span>{% trans "Valuations" %}</a>
-<a href="{% url 'imports' %}"><span aria-hidden="true">↓</span>{% trans "Import history" %}</a></nav>
+{% if tally_import_history_enabled %}<a href="{% url 'imports' %}"><span aria-hidden="true">↓</span>{% trans "Import history" %}</a>{% endif %}</nav>
 <div class="sidebar-footer"><div class="local-badge"><span></span>{% trans "Your data. Your server." %}</div>
 <a download href="{% url 'export' %}">{% trans "Export observations" %} ↗</a><small>{% include "includes/release.html" %}</small></div></aside>
 <div class="workspace"><header class="topbar"><span class="workspace-label{% if tally_instance_name %} instance-name{% endif %}">{% if tally_instance_name %}{{ tally_instance_name }}{% else %}{% trans "Personal wealth" %}{% endif %}</span><div class="top-actions">

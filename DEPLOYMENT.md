@@ -36,6 +36,7 @@ Do not overwrite an existing .env when updating an installation. Set:
 | TALLY_HOST | Bare hostname, e.g. tally.example.com (no scheme/path) |
 | TALLY_INSTANCE_NAME | Optional display name, e.g. Example portfolio; blank keeps the default appearance |
 | TALLY_AUTH_ENABLED | `1` (default): require Django portfolio login; `0`: rely entirely on upstream authentication; other values fail startup |
+| TALLY_IMPORT_HISTORY_ENABLED | `1` (default): enable historical CSV import; `0`: hide and disable the import page and management command; other values fail startup |
 | TRAEFIK_NETWORK | Existing external Docker network, e.g. traefik |
 | TRAEFIK_ENTRYPOINT | Existing HTTPS entrypoint, e.g. websecure |
 | TALLY_TRAEFIK_ID | Router and service identifier, default `tally`; unique on the shared Traefik network |

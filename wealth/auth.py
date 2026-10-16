@@ -4,6 +4,17 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
+
+
+def import_history_enabled(view):
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if not settings.TALLY_IMPORT_HISTORY_ENABLED:
+            raise Http404
+        return view(request, *args, **kwargs)
+
+    return wrapped
 
 
 def portfolio_access_required(view):

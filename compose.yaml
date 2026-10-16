@@ -9,6 +9,7 @@ services:
       TALLY_DATA_DIR: /data
       TALLY_INSTANCE_NAME: ${TALLY_INSTANCE_NAME:-}
       TALLY_AUTH_ENABLED: ${TALLY_AUTH_ENABLED:-1}
+      TALLY_IMPORT_HISTORY_ENABLED: ${TALLY_IMPORT_HISTORY_ENABLED:-1}
       TZ: Europe/Amsterdam
     volumes:
       - tally-data:/data
