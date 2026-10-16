@@ -312,3 +312,10 @@ Check current CI rather than treating this historical result as current verifica
   Migration 0008 audits historical ownership, dates, rates, signs and money storage
   before adding local constraints; incompatibility stops without repairing data.
   Raw SQL/save_base are maintenance bypasses, not supported financial write APIs.
+
+- Issues #24/#59: all observations and reporting are EUR; account currency is legacy
+  metadata and never triggers conversion. New accounts/currency changes require EUR;
+  existing non-EUR metadata is preserved unchanged. Account deletion is an atomic,
+  CSRF-protected POST and is blocked by any nonzero historical financial value or
+  archived position, with affected dates shown. Safe deletion removes account-owned
+  observations/positions while preserving shared snapshots and tax adjustments.

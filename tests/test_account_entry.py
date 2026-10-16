@@ -1,11 +1,13 @@
 from datetime import date
 
 import pytest
+from django.contrib.auth import get_user_model
+from django.test import Client
 from django.utils import translation
 
 from tests.test_tally import logged, owner
 from wealth.forms import AccountForm
-from wealth.models import Account, Entity, Snapshot, Valuation
+from wealth.models import Account, Entity, Snapshot, Valuation, Position, TaxAdjustment
 from wealth.services import maturity_calendar, movement, report
 
 pytestmark = pytest.mark.django_db
@@ -102,3 +104,65 @@ def test_account_order_all_overviews_and_rename(logged, owner, lang):
     calendar = maturity_calendar(current)
     assert [r["account"].name for r in calendar["sections"][0]["rows"]] == [
         "aardvark", "Alpha", "alpha", "beta"]
+
+
+def test_currency_is_eur_for_new_accounts_and_existing_metadata_is_preserved(owner):
+    assert not AccountForm(account_data(owner, currency="USD")).is_valid()
+    eur_account = Account.objects.create(name="EUR account", entity=owner)
+    eur_change = AccountForm(account_data(owner, name=eur_account.name, currency="USD"), instance=eur_account)
+    assert not eur_change.is_valid() and "currency" in eur_change.errors
+    account = Account.objects.create(name="Legacy currency", entity=owner, currency="USD")
+    form = AccountForm(account_data(owner, name=account.name, currency="USD"), instance=account)
+    assert form.is_valid(), form.errors
+    assert form.save().currency == "USD"
+    changed = AccountForm(account_data(owner, name=account.name, currency="EUR"), instance=account)
+    assert not changed.is_valid() and "currency" in changed.errors
+
+
+def test_account_delete_blocks_any_nonzero_history_and_lists_dates(logged, owner):
+    account = Account.objects.create(name="Historical asset", entity=owner)
+    old = Snapshot.objects.create(date=date(2025, 1, 2), complete=True)
+    latest = Snapshot.objects.create(date=date(2026, 8, 3), complete=True)
+    Valuation.objects.create(account=account, snapshot=old, amount_minor=1)
+    Valuation.objects.create(account=account, snapshot=latest, amount_minor=0)
+    response = logged.post(f"/accounts/{account.pk}/delete/", follow=True)
+    assert Account.objects.filter(pk=account.pk).exists()
+    page = response.content.decode()
+    assert "02-01-2025" in page
+    assert "03-08-2026" not in page
+
+
+def test_account_delete_removes_zero_dependents_and_preserves_shared_snapshot(logged, owner):
+    account = Account.objects.create(name="Empty account", entity=owner)
+    snapshot = Snapshot.objects.create(date=date(2026, 8, 3), complete=True)
+    observation = Valuation.objects.create(account=account, snapshot=snapshot, amount_minor=0,
+                                           net_deposits_minor=0, basis_minor=0, interest_minor=0)
+    Position.objects.create(valuation=observation, name="Archived zero", value_minor=0)
+    tax = TaxAdjustment.objects.create(snapshot=snapshot, kind="bank_ab", amount_minor=-100)
+    other = Account.objects.create(name="Other account", entity=owner)
+    other_value = Valuation.objects.create(account=other, snapshot=snapshot, amount_minor=10)
+    response = logged.post(f"/accounts/{account.pk}/delete/")
+    assert response.status_code == 302
+    assert not Account.objects.filter(pk=account.pk).exists()
+    assert Snapshot.objects.filter(pk=snapshot.pk).exists()
+    assert TaxAdjustment.objects.filter(pk=tax.pk).exists()
+    assert Valuation.objects.filter(pk=other_value.pk).exists()
+
+
+def test_account_delete_requires_post(logged, owner):
+    account = Account.objects.create(name="Zero account", entity=owner)
+    assert logged.get(f"/accounts/{account.pk}/delete/").status_code == 405
+    assert Account.objects.filter(pk=account.pk).exists()
+
+
+def test_account_delete_requires_csrf(logged, owner):
+    account = Account.objects.create(name="CSRF protected zero account", entity=owner)
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(get_user_model().objects.get(username="tester"))
+    path = f"/accounts/{account.pk}/delete/"
+    assert client.post(path).status_code == 403
+    assert Account.objects.filter(pk=account.pk).exists()
+    client.get("/accounts/")
+    token = client.cookies["csrftoken"].value
+    assert client.post(path, {"csrfmiddlewaretoken": token}).status_code == 302
+    assert not Account.objects.filter(pk=account.pk).exists()

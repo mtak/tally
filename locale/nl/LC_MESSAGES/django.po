@@ -1373,3 +1373,24 @@ msgstr "Voer een bedrag in gehele centen in binnen het ondersteunde opslagbereik
 #: wealth/validation.py wealth/models.py wealth/importer.py
 msgid "Enter a finite amount within the supported storage range."
 msgstr "Voer een eindig bedrag in binnen het ondersteunde opslagbereik."
+
+msgid "Deletion is allowed only when all recorded financial values are zero. Shared valuation dates and snapshot-level tax adjustments will be preserved."
+msgstr "Verwijderen is alleen toegestaan als alle vastgelegde financiële waarden nul zijn. Gedeelde waarderingsdatums en correcties op snapshotniveau blijven behouden."
+
+msgid "Delete account"
+msgstr "Account verwijderen"
+
+msgid "Delete this account?"
+msgstr "Dit account verwijderen?"
+
+msgid "Observations and reports are always in EUR. Currency conversion is not provided. Existing currency metadata is preserved as entered."
+msgstr "Waarnemingen en rapporten zijn altijd in EUR. Valutaconversie is niet beschikbaar. Bestaande valutametadata blijft ongewijzigd."
+
+msgid "New accounts and currency changes must use EUR. Existing currency metadata cannot be changed because observations are not converted."
+msgstr "Nieuwe accounts en valutawijzigingen moeten EUR gebruiken. Bestaande valutametadata kan niet worden gewijzigd, omdat waarnemingen niet worden omgerekend."
+
+msgid "This account cannot be deleted because it has non-zero financial data on: %(dates)s."
+msgstr "Dit account kan niet worden verwijderd omdat er op de volgende datums niet-nul financiële gegevens zijn: %(dates)s."
+
+msgid "Account deleted. Zero-value observations were removed; shared valuation records were preserved."
+msgstr "Account verwijderd. Waarnemingen met nulwaarden zijn verwijderd; gedeelde waarderingsgegevens zijn behouden."

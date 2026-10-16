@@ -231,11 +231,41 @@ def account_edit(request, pk=None):
         "wealth/form.html",
         {
             "form": form,
+            "account": obj,
             "title": _("Edit account") if obj else _("Add account"),
             "history_impacts": impacts, "history_confirmation": confirmation,
             "back": "accounts",
         },
     )
+
+
+@portfolio_access_required
+@require_POST
+@transaction.atomic
+def account_delete(request, pk):
+    account = get_object_or_404(Account.objects.select_for_update(), pk=pk)
+    observations = account.valuations.select_for_update().select_related("snapshot").prefetch_related("positions")
+    blocked_dates = set()
+    financial_fields = (
+        "amount_minor", "basis_minor", "net_deposits_minor", "inflow_minor",
+        "outflow_minor", "interest_minor", "cumulative_inflow_minor",
+        "cumulative_outflow_minor",
+    )
+    for observation in observations:
+        has_value = any(getattr(observation, field) not in (None, 0) for field in financial_fields)
+        has_position_value = observation.positions.filter(value_minor__gt=0).exists()
+        if has_value or has_position_value:
+            blocked_dates.add(observation.snapshot.date)
+    if blocked_dates:
+        dates = ", ".join(d.strftime("%d-%m-%Y") for d in sorted(blocked_dates))
+        messages.error(request, _("This account cannot be deleted because it has non-zero financial data on: %(dates)s.") % {"dates": dates})
+        return redirect("account_edit", pk=account.pk)
+    # Valuations and positions belong to this account. Snapshots and snapshot-level
+    # tax adjustments may be shared by every account, so leave them intact.
+    account.valuations.all().delete()
+    account.delete()
+    messages.success(request, _("Account deleted. Zero-value observations were removed; shared valuation records were preserved."))
+    return redirect("accounts")
 
 
 @portfolio_access_required

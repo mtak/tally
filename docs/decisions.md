@@ -31,6 +31,25 @@
 - No banking APIs, portfolio look-through, tax filing, cloud sync or external analytics
   in the first version.
 
+## EUR-only observations (#24)
+
+- Account balances, tax bases, net deposits, interest, reports and observation exports
+  are EUR. Account currency is legacy metadata; it never converts or relabels a value.
+- New accounts and currency changes must use EUR. Existing non-EUR metadata remains
+  unchanged and can be retained while editing an account; its observations remain
+  interpreted as EUR. No FX calculation or new data provider is introduced.
+
+## Safe account deletion (#59)
+
+- Account deletion is an authenticated, CSRF-protected POST. Check every dated
+  observation and archived position within the same transaction as deletion.
+- Any non-zero balance, basis, net deposits, interest, legacy flow amount or archived
+  position value blocks deletion; the message lists the affected valuation dates.
+  A newer zero observation cannot conceal older non-zero history.
+- If all dependent financial values are zero or unknown, remove the account's
+  observations and archived positions. Preserve shared snapshots and their
+  snapshot-level tax adjustments.
+
 ## Follow-up improvements
 
 - Review the real-data dashboard after import and splitting aggregate deposits.

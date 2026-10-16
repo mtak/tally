@@ -84,6 +84,7 @@ class AccountForm(forms.ModelForm):
         ]
         help_texts = {
             "asset_class": _("For Credit card, use Bank account as the account type and Liquid availability. Enter outstanding debt as a negative balance, zero when settled, and a positive balance only for money owed to you by the card provider."),
+            "currency": _("Observations and reports are always in EUR. Currency conversion is not provided. Existing currency metadata is preserved as entered."),
         }
         widgets = {
             k: EuropeanDateInput()
@@ -102,6 +103,10 @@ class AccountForm(forms.ModelForm):
         v = self.cleaned_data["currency"].upper()
         if len(v) != 3 or not v.isalpha():
             raise forms.ValidationError(_("Use a three-letter currency code."))
+        if (v != "EUR" and (not self.instance.pk or v != self.instance.currency)) or (
+            self.instance.pk and self.instance.currency != "EUR" and v != self.instance.currency
+        ):
+            raise forms.ValidationError(_("New accounts and currency changes must use EUR. Existing currency metadata cannot be changed because observations are not converted."))
         return v
 
     def save(self, commit=True):

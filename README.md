@@ -125,6 +125,19 @@ recreate the app with your usual Compose command and `up -d` after changing it.
 For development, select the environment file with `--env-file`. Without Docker,
 export the variable before starting Django. The name is visible before login.
 
+## Currency and account deletion
+
+All balances, tax bases, net deposits, interest, reports and observation exports are
+in EUR. Account currency is legacy metadata and never converts observations. New
+accounts and currency changes use EUR; existing non-EUR metadata is retained as-is.
+No automatic FX conversion is performed.
+
+An account can be deleted only when every dated financial value and archived
+position is zero or unknown. Any non-zero historical value blocks deletion and the
+affected valuation dates are shown. Safe deletion removes the account's observations
+and archived positions while preserving shared valuation snapshots and tax
+adjustments.
+
 ## Workflow
 
 Add owners and accounts, then start a valuation on any date. Enter full EUR balances:

@@ -7,6 +7,7 @@ urlpatterns = [
     path("accounts/", views.accounts, name="accounts"),
     path("accounts/new/", views.account_edit, name="account_add"),
     path("accounts/<int:pk>/", views.account_edit, name="account_edit"),
+    path("accounts/<int:pk>/delete/", views.account_delete, name="account_delete"),
     path("accounts/<int:pk>/history/", views.account_history, name="account_history"),
     path("owners/new/", views.entity_add, name="entity_add"),
     path("valuations/", views.snapshots, name="snapshots"),
