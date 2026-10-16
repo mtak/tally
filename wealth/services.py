@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from django.db.models import Q
 from django.utils.translation import gettext as _
@@ -310,22 +311,53 @@ def asset_mix(summary):
     }
 
 
-def movement(snapshot):
-    previous = (
-        Snapshot.objects.filter(complete=True, date__lt=snapshot.date)
-        .order_by("-date")
-        .first()
-    )
+def previous_year_baseline(snapshot):
+    """Latest published valuation no later than the prior calendar anniversary."""
+    try:
+        anniversary = date(snapshot.date.year - 1, snapshot.date.month, snapshot.date.day)
+    except ValueError:  # February 29 in a non-leap year.
+        anniversary = date(snapshot.date.year - 1, 2, 28)
+    return Snapshot.objects.filter(complete=True, date__lte=anniversary).order_by("-date").first()
+
+
+def covered_interest(account, start, end):
+    """Sum recorded interest only when published intervals tile the whole period."""
+    observations = Valuation.objects.filter(
+        account=account, snapshot__complete=True,
+        snapshot__date__gt=start, snapshot__date__lte=end,
+        interest_minor__isnull=False,
+    ).select_related("snapshot").order_by("snapshot__date")
+    cursor = start
+    total = 0
+    for observation in observations:
+        if (observation.interest_period_start != cursor
+                or observation.interest_period_end != observation.snapshot.date):
+            return None
+        total += owned(account, observation.interest_minor)
+        cursor = observation.snapshot.date
+    return total if cursor == end else None
+
+
+def movement(snapshot, previous=None, require_complete=False, detail_prefix="movement"):
+    if previous is None:
+        previous = (
+            Snapshot.objects.filter(complete=True, date__lt=snapshot.date)
+            .order_by("-date")
+            .first()
+        )
     if not previous:
         return None
     before = report(previous)
     after = report(snapshot)
-    if before["total"] is None or after["total"] is None:
+    if (before["total"] is None or after["total"] is None
+            or (require_complete and (before["missing"] or after["missing"]))):
         return {
             "before": previous,
             "after": snapshot,
             "incomplete": True,
             "warnings": list(dict.fromkeys(before["warnings"] + after["warnings"])),
+            "missing_before": before["missing"],
+            "missing_after": after["missing"],
         }
     prior = {r["account"].pk: r for r in before["rows"]}
     current = {r["account"].pk: r for r in after["rows"]}
@@ -359,26 +391,25 @@ def movement(snapshot):
         elif not matched:
             reason = _("Observation dates do not match this period; older values are carried forward.")
         elif account.kind == "broker":
-            perf = row["performance"]
-            if perf and perf["since"] == previous.date:
-                attributed = owned(account, perf["result"])
+            old_deposits = old["valuation"].net_deposits_minor
+            new_deposits = row["valuation"].net_deposits_minor
+            if old_deposits is not None and new_deposits is not None:
+                gross_result = (
+                    row["valuation"].amount_minor - old["valuation"].amount_minor
+                    - (new_deposits - old_deposits)
+                )
+                attributed = owned(account, gross_result)
                 details["investments"].append({**item, "amount": attributed,
                     "reason": _("Value change minus change in net deposits.")})
                 reason = _("Net deposits or withdrawals; these are not investment results.")
-            elif old["valuation"].net_deposits_minor is None or row["valuation"].net_deposits_minor is None:
-                reason = _("Net deposits unknown at one or both observation dates.")
             else:
-                reason = _("Investment observation period does not match this comparison; result remains unexplained.")
+                reason = _("Net deposits unknown at one or both observation dates.")
         elif account.kind in ("bank", "claim"):
             valuation = row["valuation"]
             interest = valuation.interest_minor
-            covered = (
-                interest is not None
-                and valuation.interest_period_start == previous.date
-                and valuation.interest_period_end == snapshot.date
-            )
-            if covered:
-                attributed = owned(account, interest)
+            interval_interest = covered_interest(account, previous.date, snapshot.date)
+            if interval_interest is not None:
+                attributed = interval_interest
                 details["interest"].append({**item, "amount": attributed,
                     "reason": _("Recorded interest covering this comparison period.")})
             elif interest is not None and (valuation.interest_period_start is None or valuation.interest_period_end is None):
@@ -394,7 +425,12 @@ def movement(snapshot):
         elif account.kind == "mortgage":
             reason = _("Mortgage balance change, including principal repayments.")
         remainder = delta - attributed
-        if remainder or not matched or (account.kind == "broker" and not row["performance"]):
+        unknown_deposits = (
+            account.kind == "broker" and old and row
+            and (old["valuation"].net_deposits_minor is None
+                 or row["valuation"].net_deposits_minor is None)
+        )
+        if remainder or not matched or unknown_deposits:
             details["residual"].append({**item, "amount": remainder, "reason": reason})
 
     # Tax adjustments are snapshot-wide, especially imported corrections. Do not
@@ -432,5 +468,5 @@ def movement(snapshot):
         "closing": after["total"],
         "parts": parts,
         "chart": {"labels": labels, "values": [v / 100 for v in values],
-                  "detail_ids": ["movement-" + p["key"] for p in parts]},
+                  "detail_ids": [detail_prefix + "-" + p["key"] for p in parts]},
     }

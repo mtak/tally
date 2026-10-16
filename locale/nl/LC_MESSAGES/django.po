@@ -1430,3 +1430,31 @@ msgstr "Periode onbekend"
 
 msgid "Enter the dates covered by this amount. The end date must match this valuation. Older amounts without dates remain unassigned."
 msgstr "Vul de datums in die dit bedrag dekt. De einddatum moet overeenkomen met deze peildatum. Oudere bedragen zonder datums blijven niet-toegewezen."
+
+#: templates/wealth/analysis.html
+msgid "Previous-year baseline: latest published valuation on or before the same calendar date one year earlier."
+msgstr "Basis voor vergelijking met vorig jaar: het laatste gepubliceerde meetmoment op of vóór dezelfde kalenderdatum een jaar eerder."
+
+#: templates/wealth/analysis.html
+msgid "Previous-year change unavailable: incomplete endpoint."
+msgstr "Verandering ten opzichte van vorig jaar niet beschikbaar: een meetmoment is onvolledig."
+
+#: templates/wealth/analysis.html
+msgid "Missing opening observations"
+msgstr "Ontbrekende waarnemingen bij begin"
+
+#: templates/wealth/analysis.html
+msgid "Missing closing observations"
+msgstr "Ontbrekende waarnemingen bij einde"
+
+#: templates/wealth/analysis.html
+msgid "Change from previous year"
+msgstr "Verandering ten opzichte van vorig jaar"
+
+#: templates/wealth/analysis.html
+msgid "Investment results need observations and net deposits at both dates. Interest needs recorded periods covering the full span. Other differences remain unexplained."
+msgstr "Beleggingsresultaten vereisen waarnemingen en netto inleg op beide datums. Rente vereist geregistreerde periodes die samen de volledige vergelijking dekken. Andere verschillen blijven onverklaard."
+
+#: templates/wealth/analysis.html
+msgid "Previous-year comparison unavailable: no published valuation on or before the prior-year date."
+msgstr "Vergelijking met vorig jaar niet beschikbaar: er is geen gepubliceerd meetmoment op of vóór de datum een jaar eerder."

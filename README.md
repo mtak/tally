@@ -255,6 +255,13 @@ by magnitude; offsetting transfers remain visible even when the category totals 
 Snapshot-wide tax corrections are broken down by correction type rather than inventing
 an allocation to individual accounts.
 
+Analysis also shows a previous-year wealth bridge. Its baseline is the latest published
+valuation on or before the same calendar date one year earlier (February 29 uses
+February 28). Both actual dates appear. Investment results require actual observations
+and known net deposits at both dates. Interest is attributed only when recorded
+published periods cover the full comparison without gaps. Missing baselines and
+incomplete endpoints show an unavailable state.
+
 ## Local development with real history
 
 Keep demonstration and real portfolios in separate Compose projects/volumes.

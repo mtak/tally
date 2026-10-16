@@ -186,7 +186,10 @@
   }
 
   function drawMovement() {
-    const source=document.getElementById("movement-data"), node=document.getElementById("movement-chart");
+    for (const prefix of ["movement", "year-movement"]) drawMovementChart(prefix);
+  }
+  function drawMovementChart(prefix) {
+    const source=document.getElementById(prefix+"-data"), node=document.getElementById(prefix+"-chart");
     if (!source || !node) return;
     const data=JSON.parse(source.textContent);
     const style=getComputedStyle(document.documentElement), ink=style.getPropertyValue("--muted").trim();

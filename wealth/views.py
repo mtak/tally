@@ -25,7 +25,7 @@ from .forms import (
     ImportForm,
     minor,
 )
-from .services import report, movement, cumulative_result, broker_tax_covered, asset_mix, investment_history, maturity_calendar
+from .services import report, movement, previous_year_baseline, cumulative_result, broker_tax_covered, asset_mix, investment_history, maturity_calendar
 from .importer import parse_overview, preflight_overview, import_overview
 from . import editor
 
@@ -582,6 +582,7 @@ def analysis(request):
         investment_accounts[0] if investment_accounts else None,
     )
     history = investment_history(selected_account, selected.date) if selected and selected_account else None
+    year_baseline = previous_year_baseline(selected) if selected else None
     results = []
     if summary:
         for row in summary["rows"]:
@@ -607,5 +608,7 @@ def analysis(request):
             "investment_history": history,
             "summary": summary,
             "movement": movement(selected) if selected else None,
+            "year_baseline": year_baseline,
+            "year_movement": movement(selected, year_baseline, require_complete=True, detail_prefix="year-movement") if year_baseline else None,
         },
     )

@@ -326,7 +326,8 @@ Check current CI rather than treating this historical result as current verifica
 - Issue #22: interest observations carry explicit start/end dates; the end matches the
   valuation date. Existing undated amounts remain unchanged and uncovered. Movement
   attribution requires an exact interval match. CSV and Account History preserve and
-  expose period coverage. #60 baseline is settled for a follow-up: latest published
-  valuation on/before the same calendar date one year earlier (Feb 29 maps to Feb 28);
-  show actual dates, require matching investment observations, and expose unavailable /
-  incomplete states. Implement #60 after verifying #22 independently.
+  expose period coverage. #60 adds a previous-year wealth bridge using the latest
+  published valuation on/before the same calendar date one year earlier (Feb 29 maps
+  to Feb 28). It shows actual dates, requires matching investment observations and
+  complete endpoints, and attributes interest only for published intervals covering
+  the entire span. Missing baselines and incomplete endpoints remain explicit.

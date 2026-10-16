@@ -779,6 +779,105 @@ def test_movement_zero_unexplained_details_remain_inspectable(logged, owner, sna
         assert ("Explanation" if language == "en" else "Toelichting") in html
 
 
+def test_previous_year_baseline_and_endpoint_attribution(logged, owner):
+    from wealth.services import previous_year_baseline, movement
+
+    Snapshot.objects.create(date=date(2024, 2, 20), complete=True)
+    baseline = Snapshot.objects.create(date=date(2024, 2, 28), complete=True)
+    Snapshot.objects.create(date=date(2024, 3, 1), complete=True)
+    middle = Snapshot.objects.create(date=date(2024, 9, 1), complete=True)
+    selected = Snapshot.objects.create(date=date(2025, 2, 28), complete=True)
+    broker = Account.objects.create(name="Fictional broker", entity=owner, kind="broker")
+    claim = Account.objects.create(name="Fictional claim", entity=owner, kind="claim")
+    for snapshot, value, deposits, claim_value in [
+        (baseline, 100000, 90000, 20000),
+        (middle, 140000, 110000, 20200),
+        (selected, 170000, 130000, 20500),
+    ]:
+        Valuation.objects.create(account=broker, snapshot=snapshot, amount_minor=value,
+                                 net_deposits_minor=deposits)
+        interest = {}
+        if snapshot == middle:
+            interest = {"interest_minor": 200, "interest_period_start": baseline.date,
+                        "interest_period_end": middle.date}
+        elif snapshot == selected:
+            interest = {"interest_minor": 300, "interest_period_start": middle.date,
+                        "interest_period_end": selected.date}
+        Valuation.objects.create(account=claim, snapshot=snapshot,
+                                 amount_minor=claim_value, **interest)
+    assert previous_year_baseline(selected) == baseline
+    leap = Snapshot(date=date(2024, 2, 29))
+    assert previous_year_baseline(leap) is None  # No 2023 valuation.
+    bridge = movement(selected, baseline, require_complete=True, detail_prefix="year-movement")
+    assert bridge["parts"][0]["amount"] == 30000
+    assert bridge["parts"][1]["amount"] == 500
+    assert bridge["opening"] + sum(p["amount"] for p in bridge["parts"]) == bridge["closing"]
+    assert bridge["chart"]["detail_ids"][0] == "year-movement-investments"
+    response = logged.get("/analysis/", {"at": selected.pk})
+    assert response.context["year_baseline"] == baseline
+    assert b'id="year-movement-chart"' in response.content
+    assert b'id="year-movement-investments"' in response.content
+    from django.conf import settings
+    logged.cookies[settings.LANGUAGE_COOKIE_NAME] = "nl"
+    translated = logged.get("/analysis/", {"at": selected.pk})
+    assert "Verandering ten opzichte van vorig jaar" in translated.content.decode()
+
+    preceding_leap = Snapshot.objects.create(date=date(2023, 2, 28), complete=True)
+    assert previous_year_baseline(leap) == preceding_leap
+
+    # A gap in recorded coverage leaves the interest outside attribution.
+    middle_interest = Valuation.objects.get(account=claim, snapshot=middle)
+    middle_interest.interest_period_start = date(2024, 3, 1)
+    middle_interest.save()
+    gap = movement(selected, baseline, require_complete=True)
+    assert gap["parts"][1]["amount"] == 0
+    assert gap["parts"][-1]["amount"] == 40500
+
+    closing_broker = Valuation.objects.get(account=broker, snapshot=selected)
+    closing_broker.net_deposits_minor = None
+    closing_broker.save()
+    unknown = movement(selected, baseline, require_complete=True)
+    assert unknown["parts"][0]["amount"] == 0
+    assert unknown["parts"][-1]["amount"] == 70500
+
+
+def test_previous_year_unavailable_and_incomplete_states(logged, owner):
+    from wealth.services import movement, previous_year_baseline
+
+    baseline = Snapshot.objects.create(date=date(2025, 2, 28), complete=True)
+    selected = Snapshot.objects.create(date=date(2026, 2, 28), complete=True)
+    account = Account.objects.create(name="Known only at close", entity=owner)
+    Valuation.objects.create(account=account, snapshot=selected, amount_minor=1000)
+    assert previous_year_baseline(selected) == baseline
+    bridge = movement(selected, baseline, require_complete=True)
+    assert bridge["incomplete"] and bridge["missing_before"] == [account.name]
+    response = logged.get("/analysis/", {"at": selected.pk})
+    assert b'year-movement-data' not in response.content
+    assert response.context["year_movement"]["incomplete"]
+    early = Snapshot.objects.create(date=date(2024, 1, 1), complete=True)
+    assert previous_year_baseline(early) is None
+    response = logged.get("/analysis/", {"at": early.pk})
+    assert b'year-movement-data' not in response.content
+
+
+def test_previous_year_sums_joint_interest_per_recorded_period(owner):
+    from wealth.services import movement
+
+    baseline = Snapshot.objects.create(date=date(2025, 1, 1), complete=True)
+    middle = Snapshot.objects.create(date=date(2025, 7, 1), complete=True)
+    selected = Snapshot.objects.create(date=date(2026, 1, 1), complete=True)
+    joint = Account.objects.create(name="Joint savings", entity=owner, joint=True)
+    Valuation.objects.create(account=joint, snapshot=baseline, amount_minor=10000)
+    Valuation.objects.create(account=joint, snapshot=middle, amount_minor=10001,
+                             interest_minor=1, interest_period_start=baseline.date,
+                             interest_period_end=middle.date)
+    Valuation.objects.create(account=joint, snapshot=selected, amount_minor=10002,
+                             interest_minor=1, interest_period_start=middle.date,
+                             interest_period_end=selected.date)
+    bridge = movement(selected, baseline, require_complete=True)
+    assert bridge["parts"][1]["amount"] == 2
+
+
 def test_maturities_aggregate_owned_gross_balances_without_interest(owner, snap):
     from wealth.services import maturity_calendar
     business = Entity.objects.create(name="Fictional company", kind="company")

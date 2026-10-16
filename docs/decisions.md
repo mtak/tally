@@ -26,8 +26,9 @@
   non-leap year). Screens show the actual endpoint dates. The comparison is unavailable
   when there is no qualifying baseline or either endpoint is incomplete. Investment
   attribution requires actual observations for that account at both endpoints; interest
-  contributes only when recorded intervals cover the comparison exactly. This baseline
-  is settled for #60; implementation follows the #22 interest-period rollout.
+  contributes only when published, recorded intervals cover the comparison exactly.
+  Consecutive interest intervals may tile the full span; gaps and undated amounts stay
+  unexplained. The analysis page shows this bridge beside the consecutive-period bridge.
 - Home equity and pension are included by default and can be excluded.
 - Business tax rules reproduce the agreed personal liquidation scenario; they do not
   automatically follow statutory rates. Imported historical adjustments are preserved
