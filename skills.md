@@ -28,6 +28,15 @@ historical adjustments to make a new view look complete.
 4. Check the relevant issue and existing UX before introducing a new rule. Settled
    behavior should not be changed as a side effect of a feature.
 
+## Concurrent work
+
+- Use one Git worktree and branch per independent task. Follow `docs/worktrees.md`
+  for setup, isolated Docker projects and cleanup.
+- The currently configured Playwright MCP has one persistent browser profile and
+  one shared page state. Serialize browser validation between contexts. Parallel
+  browser work requires separate MCP server sessions configured with `--isolated`;
+  do not assume separate tabs on the shared endpoint provide isolation.
+
 ## Financial and data rules
 
 - Store money as integer cents; calculate with `Decimal` and explicit half-up rounding.

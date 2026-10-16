@@ -7,7 +7,9 @@
 - Existing local checkout: /path/to/tally
 - ChatGPT project mirror:
   /home/user/.codex/.chatgpt-projects/[local project id]
-- Reuse this checkout and inspect git status before editing. Preserve user changes.
+- Use this checkout for solo work. For concurrent tasks, create a separate Git
+  worktree and branch; inspect status in the selected checkout and preserve user
+  changes. See [docs/worktrees.md](docs/worktrees.md).
 - Read README.md, docs/decisions.md, and relevant code before changing behavior.
 - Generic production instructions are in DEPLOYMENT.md. Site-specific deployment
   scripts, configuration and operational records belong in a separate private
@@ -114,6 +116,12 @@ Optional exact quantities/prices use decimal strings, not SQLite REAL arithmetic
 Keep migrations in Git and calculation rules explicitly tested.
 
 ## Development and verification
+
+Concurrent implementation work can use one Git worktree per task. Give each
+worktree its own Docker Compose project, development port and cookie names; see
+`docs/worktrees.md`. Playwright MCP browser interaction is currently single-owner
+and must be serialized across contexts unless each context has a separate isolated
+MCP server session.
 
 Local Docker via Make:
     make up TALLY_INSTANCE_NAME=tally-dev
