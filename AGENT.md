@@ -284,3 +284,12 @@ Check current CI rather than treating this historical result as current verifica
   Report-affecting account edits with published observations require a signed impact
   review bound to current/proposed settings. Current metadata still reinterprets
   history; observations/imported corrections stay unchanged, without versioning.
+
+
+- Issues #32/#37/#39: backup uses a private exclusive temporary file and atomic
+  no-clobber publication on local storage, with failure cleanup and explicit closes.
+  Production routing uses validated `TALLY_TRAEFIK_ID` (default `tally`); each routed
+  instance needs a unique ID. CI reuses its built image for disposable production
+  startup, authenticated HTTP/static checks and fictional file-backed backup/restore.
+  Run `python tests/production_smoke.py IMAGE` after building; no existing volumes or
+  production deployment are involved. See docs/verification.md and DEPLOYMENT.md.

@@ -255,3 +255,16 @@
 - Current metadata still applies to all historical reports and maturity calendars.
   Confirmation never rewrites observations or imported tax corrections and adds no
   metadata versioning. Name, notes, currency and rate do not alter report calculations.
+
+
+## Backup and production isolation (#32, #37, #39)
+
+- Online backups copy into an exclusively created mode-600 sibling temporary file.
+  Closed, completed copies are published with a no-clobber hard link; failure removes
+  the temporary file. Existing paths and symlink targets are never overwritten.
+- `TALLY_TRAEFIK_ID` defaults to `tally` and consistently names the production router,
+  explicit router service link and service. Startup validates the identifier; separate
+  portfolio instances require distinct IDs as well as projects/hosts/secrets.
+- CI reuses one production image and a fictional file-backed database for startup,
+  secure authenticated HTTP/static assets, backup and isolated restore verification.
+  It creates and cleans up only its own resources and does not deploy the application.

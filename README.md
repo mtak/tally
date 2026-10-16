@@ -90,7 +90,9 @@ Traefik setup. Container runs unprivileged; SQLite lives on a local volume, not 
 
 One instance represents one portfolio: every authenticated user in that instance can
 access the portfolio. Separate logins are NOT data isolation. Use separate Compose
-projects and volumes for separate portfolios.
+projects and volumes for separate portfolios. Set a unique `TALLY_TRAEFIK_ID` in
+each production environment file to isolate Traefik routers/services on the shared
+network (default `tally`; see the production guide for validation and migration).
 
 ### Upstream authentication
 
@@ -187,7 +189,8 @@ Use the SQLite online backup API, not a file copy of an active database:
 
     docker compose -p tally-prod -f compose.yaml -f compose.prod.yaml exec app python manage.py backup /backups/tally-2026-10-11.sqlite3
 
-Copy the backup out using docker compose cp and your existing encrypted off-host
+Backups are private (mode 600) from creation, published without overwriting existing
+paths, and cleaned up on failure. Copy the backup out using docker compose cp and your existing encrypted off-host
 backup process. No external backup service is configured.
 
 Restore while the app is stopped: preserve the existing volume, replace

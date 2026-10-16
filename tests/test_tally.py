@@ -283,7 +283,7 @@ def test_position_deletion_requires_post_and_auth(logged, account, snap):
 def test_rounding_half_up(account, snap):
     Valuation.objects.create(account=account, snapshot=snap, amount_minor=100)
     # pytest's in-memory SQLite connection cannot be reopened by filename.
-    # File-backed online backup is separately exercised in integration verification.
+    # File-backed backup/restore is covered by test_backup.py and production_smoke.py.
     from wealth.services import rounded
 
     assert rounded(Decimal("0.5")) == 1 and rounded(Decimal("-0.5")) == -1

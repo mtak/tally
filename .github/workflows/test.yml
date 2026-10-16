@@ -21,3 +21,5 @@ jobs:
       - run: python manage.py makemigrations --check --dry-run
       - run: docker compose -f compose.yaml -f compose.dev.yaml config --quiet
       - run: docker build --build-arg TALLY_GIT_COMMIT="${{ github.sha }}" -t tally:test .
+      - run: python tests/production_smoke.py tally:test
+        timeout-minutes: 5

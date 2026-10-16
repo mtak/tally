@@ -1,10 +1,17 @@
 import os
+import re
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 TALLY_INSTANCE_NAME = os.getenv("TALLY_INSTANCE_NAME", "").strip()
+TALLY_TRAEFIK_ID = os.getenv("TALLY_TRAEFIK_ID", "tally")
+if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,62}", TALLY_TRAEFIK_ID):
+    raise ImproperlyConfigured(
+        "TALLY_TRAEFIK_ID must be 1–63 lowercase letters, digits, underscores or "
+        "hyphens, starting with a letter or digit."
+    )
 TALLY_GIT_COMMIT = os.getenv("TALLY_GIT_COMMIT", "").strip()
 _auth_enabled = os.getenv("TALLY_AUTH_ENABLED", "1")
 if _auth_enabled not in {"0", "1"}:

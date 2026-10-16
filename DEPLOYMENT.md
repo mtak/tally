@@ -38,6 +38,11 @@ Do not overwrite an existing .env when updating an installation. Set:
 | TALLY_AUTH_ENABLED | `1` (default): require Django portfolio login; `0`: rely entirely on upstream authentication; other values fail startup |
 | TRAEFIK_NETWORK | Existing external Docker network, e.g. traefik |
 | TRAEFIK_ENTRYPOINT | Existing HTTPS entrypoint, e.g. websecure |
+| TALLY_TRAEFIK_ID | Router and service identifier, default `tally`; unique on the shared Traefik network |
+
+`TALLY_TRAEFIK_ID` accepts 1–63 lowercase letters, digits, underscores or hyphens,
+starting with a letter or digit. Invalid values fail application startup before
+migrations. Compose project names isolate volumes; this identifier isolates routing.
 
 Generate a secret locally with `openssl rand -hex 32`, then put it in .env.
 Keep it stable between deployments; do not commit it or print a resolved Compose
@@ -59,9 +64,9 @@ no additional labels are necessary. Otherwise create `compose.prod.local.yaml`:
     services:
       app:
         labels:
-          traefik.http.routers.tally.tls.certresolver: letsencrypt
+          - "traefik.http.routers.${TALLY_TRAEFIK_ID:-tally}.tls.certresolver=letsencrypt"
           # Optional: existing middleware configured in your Traefik setup:
-          # traefik.http.routers.tally.middlewares: private-access@file
+          # - "traefik.http.routers.${TALLY_TRAEFIK_ID:-tally}.middlewares=private-access@file"
 
 Use your actual resolver/middleware names. This local override is ignored by Git.
 Do not configure a new resolver here: it must already exist in Traefik.
@@ -90,12 +95,12 @@ describes application policies and origin token validation. Tally provisions non
 of these services.
 
 **Traefik authentication:** attach your existing authentication middleware to the
-entire `tally` router in `compose.prod.local.yaml`, using your actual middleware name:
+entire configured router in `compose.prod.local.yaml`, using your actual middleware name:
 
     services:
       app:
         labels:
-          traefik.http.routers.tally.middlewares: existing-auth@file
+          - "traefik.http.routers.${TALLY_TRAEFIK_ID:-tally}.middlewares=existing-auth@file"
 
 For delegated authentication, [Traefik ForwardAuth](https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/forwardauth/)
 only forwards requests when the authentication service permits them. Check that
@@ -204,8 +209,14 @@ application is running. Do not copy a live database file directly.
     dc cp "app:/backups/$tally_backup_name" "backups/$tally_backup_name"
     chmod 600 "backups/$tally_backup_name"
 
-The backup command refuses to overwrite an existing file. Backups contain financial
-data and Django user/password-hash/session data. Move a copy to your existing encrypted
+The backup command creates an exclusive private temporary file (mode 600) before
+copying with the online API. It closes both connections, then publishes the completed
+backup atomically without replacing any existing path, including symlinks. Failures
+remove the temporary file; an interrupted/killed process may leave a private
+`.tally-backup-*` file that can be removed after confirming no backup is running.
+The destination directory must support hard links (the supplied local volume does).
+Backups contain financial data and Django user/password-hash/session data.
+Move a copy to your existing encrypted
 off-host backup process and retain .env separately in your secret store.
 Both Compose volumes are on this server: the /backups volume alone is not off-host
 protection. No R2 or other cloud storage is configured.
@@ -296,12 +307,19 @@ or pull while investigating a rollback.
 
 ## Separate portfolio / second instance
 
-A second Compose project provides separate database volumes, but the supplied Traefik
-router/service names are fixed to `tally`. A second production instance also needs
-its own hostname/secret AND distinct router/service label names (including middleware
-and certificate resolver labels). Use a separate checkout and adapt its production
-Compose labels, removing the old tally labels there. Merely changing the Compose
-project name is insufficient for two routed instances.
+Use a distinct Compose project, hostname, secret and `TALLY_TRAEFIK_ID` for each
+portfolio, for example `tally-example-a` and `tally-example-b`. Each project gets independent
+data/backup volumes; each routing identifier gets independent Traefik router/service
+labels with explicit linkage to internal port 8000. They may share the existing
+Traefik network. Choose separate session/CSRF cookie names when sharing a browser
+hostname in development.
+
+Existing deployments keep identifier `tally` by default, so no routing migration is
+required. To rename it, set `TALLY_TRAEFIK_ID` and update any local middleware or
+certificate labels to the list syntax above; remove old hardcoded router labels,
+then validate with `dc config --quiet` and recreate the app in your normal deployment
+cycle. Keep the existing Compose project name to preserve volume selection. A new
+identifier does not require a new database or volume.
 
 Give each instance a distinct `TALLY_INSTANCE_NAME` in its own environment file,
 for example `"Example portfolio"` and `"Second example portfolio"`. The name appears in the

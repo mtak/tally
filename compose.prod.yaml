@@ -7,15 +7,18 @@ services:
       DJANGO_ALLOWED_HOSTS: ${TALLY_HOST:?Set TALLY_HOST}
       DJANGO_CSRF_TRUSTED_ORIGINS: https://${TALLY_HOST}
       TALLY_TRUST_PROXY: "1"
+      TALLY_TRAEFIK_ID: ${TALLY_TRAEFIK_ID:-tally}
     networks:
       - traefik
+    # List syntax is required for Compose interpolation in label keys.
     labels:
-      traefik.enable: "true"
-      traefik.docker.network: ${TRAEFIK_NETWORK:?Set TRAEFIK_NETWORK}
-      traefik.http.routers.tally.rule: Host("${TALLY_HOST}")
-      traefik.http.routers.tally.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
-      traefik.http.routers.tally.tls: "true"
-      traefik.http.services.tally.loadbalancer.server.port: "8000"
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:?Set TRAEFIK_NETWORK}"
+      - 'traefik.http.routers.${TALLY_TRAEFIK_ID:-tally}.rule=Host("${TALLY_HOST}")'
+      - "traefik.http.routers.${TALLY_TRAEFIK_ID:-tally}.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.${TALLY_TRAEFIK_ID:-tally}.tls=true"
+      - "traefik.http.routers.${TALLY_TRAEFIK_ID:-tally}.service=${TALLY_TRAEFIK_ID:-tally}"
+      - "traefik.http.services.${TALLY_TRAEFIK_ID:-tally}.loadbalancer.server.port=8000"
 networks:
   traefik:
     external: true

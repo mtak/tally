@@ -26,3 +26,25 @@ and replacement aggregates. Read-only localized view tests protect stored observ
 interest and tax adjustments and unchanged report output. Browser checks cover English
 and Dutch, whole amounts/cents, valuation selection, both charts, dark/light themes,
 and a 390px mobile viewport with keyboard-scrollable tables and no page overflow.
+
+
+## Backup and production reliability (#32, #37, #39)
+
+CI builds one image and runs `python tests/production_smoke.py tally:test`.
+The smoke check renders two production configurations with fictional hosts/secrets,
+checks disjoint router/service labels and independent volumes, and rejects invalid
+routing identifiers. It starts the image's default migration/Gunicorn command as
+UID/GID 10001 with DEBUG off, verifies proxy HTTPS trust, secure cookies, authenticated
+HTTP dashboard access and bundled static assets, and confirms no dev login is created.
+
+The same image and fictional demo database exercise online backup, mode 600,
+no-overwrite, integrity and SQL-content comparison. A second fresh data volume
+receives the backup, then starts the same image and verifies restored portfolio
+and login data through authenticated HTTP. No host ports or Traefik network are
+needed. Cleanup targets only UUID-named containers and volumes created by this run.
+Run it locally after building an image; production deployment is a separate action.
+
+`tests/test_backup.py` additionally checks permissions before destination connection
+under umask 022, existing files/directories/symlinks (including dangling ones),
+concurrent creation, partial-copy/publication failures, explicit connection closure,
+missing sources and restored fictional SQLite content. No portfolio volumes are used.
