@@ -1,28 +1,33 @@
 """Importer for the documented example CSV layout. No source file is retained."""
 
-import csv, hashlib, io
+import csv, hashlib, io, re
 from datetime import datetime, date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
+from django.core.exceptions import ValidationError
+from .validation import to_minor, validate_balance
 from django.db import transaction
 from django.utils.translation import gettext as _
 from .models import Entity, Account, Snapshot, Valuation, TaxAdjustment, ImportRecord
 
 
-def euro(text):
-    text = (
-        text.strip()
-        .replace("€", "")
-        .replace(" ", "")
-        .replace("\u00a0", "")
-        .replace(".", "")
-        .replace(",", ".")
-    )
+def euro(text, *, kind=None, asset_class=None):
+    text = text.strip()
     if not text:
         return None
+    # Explicit Dutch source syntax: optional euro prefix/sign, correctly grouped
+    # thousands and a comma fraction. Never strip arbitrary punctuation/spaces.
+    if re.match(r"[+-]€", text):
+        text = '€' + text[0] + text[2:].lstrip(' \u00a0')
+    match = re.fullmatch(r"(?:€[ \u00a0]*)?([+-]?)([0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+)(?:,([0-9]+))?", text)
+    if not match:
+        raise ValueError(_("Invalid amount in the CSV."))
+    value = Decimal(match[1] + match[2].replace('.', '') + '.' + (match[3] or '0'))
     try:
-        return int((Decimal(text) * 100).quantize(Decimal("1")))
-    except InvalidOperation as exc:
-        raise ValueError(_("Invalid amount in the CSV.")) from exc
+        if kind is not None:
+            validate_balance(kind, asset_class, value)
+        return to_minor(value)
+    except ValidationError as exc:
+        raise ValueError('; '.join(exc.messages)) from exc
 
 
 # Label, owner, account type, asset, liquid, pension
@@ -105,13 +110,19 @@ def parse_overview(content):
     if not columns or not totalrow:
         raise ValueError(_("No historical totals found."))
 
-    def value(label, index):
-        row = labels.get(label, [])
-        return euro(row[index]) if index < len(row) else None
+    def value(label, index, kind=None, asset_class=None):
+        row = totalrow if label == 'Totaal' else labels.get(label, [])
+        try:
+            return euro(row[index], kind=kind, asset_class=asset_class) if index < len(row) else None
+        except ValueError as exc:
+            line = seen[("structure", "Totaal")] if label == 'Totaal' else seen[("label", label)]
+            raise ValueError(_(
+                'CSV row %(row)s (%(label)s), date %(date)s: %(error)s'
+            ) % {'row': line, 'label': label, 'date': dict(columns)[index], 'error': exc}) from exc
 
     observations = []
     for idx, when in columns:
-        amounts = {m[0]: value(m[0], idx) for m in MAPPING}
+        amounts = {m[0]: value(m[0], idx, m[2], m[3]) for m in MAPPING}
         taxes = {
             k: value(label, idx)
             for k, label in [
@@ -122,7 +133,7 @@ def parse_overview(content):
         }
         # Absent historic deductions mean no deduction in that source scenario.
         taxvalues = {k: v or 0 for k, v in taxes.items()}
-        total = euro(totalrow[idx]) if idx < len(totalrow) else None
+        total = value("Totaal", idx)
         computed = sum(v for v in amounts.values() if v is not None) + sum(
             taxvalues.values()
         )
@@ -218,6 +229,10 @@ def preflight_overview(parsed):
                   CONSULTANCY_CLOSED_ON if owner == "Consultancy" else None)
         fields = []
         if account:
+            try:
+                account.full_clean()
+            except ValidationError as exc:
+                fields.extend(exc.messages)
             expected = {"entity": owner, "kind": kind, "asset_class": asset,
                         "liquid": liquid, "pension": pension, "joint": False, "currency": "EUR"}
             for field, value in expected.items():
@@ -233,8 +248,15 @@ def preflight_overview(parsed):
     return {**parsed, "errors": errors, "compatible": not errors}
 
 
-@transaction.atomic
 def import_overview(parsed):
+    try:
+        return _import_overview(parsed)
+    except ValidationError as exc:
+        raise ValueError('; '.join(exc.messages)) from exc
+
+
+@transaction.atomic
+def _import_overview(parsed):
     checked = preflight_overview(parsed)
     if checked["errors"]:
         raise ValueError("\n".join(checked["errors"]))

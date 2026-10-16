@@ -1,4 +1,6 @@
 import csv
+from django.core.exceptions import ValidationError
+from .validation import validate_balance
 from decimal import Decimal
 from datetime import date
 from django.contrib import messages
@@ -375,16 +377,10 @@ def snapshot_edit(request, pk):
         for form, a in zip(formset, accounts):
             data = form.cleaned_data
             value = data.get("amount")
-            if value is not None and (
-                (a.kind == "mortgage" and value > 0)
-                or (a.kind != "mortgage" and a.asset_class != "credit_card" and value < 0)
-            ):
-                form.add_error(
-                    "amount",
-                    _(
-                        "Use a negative balance for a mortgage and a nonnegative balance for assets."
-                    ),
-                )
+            try:
+                validate_balance(a.kind, a.asset_class, value)
+            except ValidationError as exc:
+                form.add_error("amount", exc)
                 valid = False
             if (
                 (s.complete or action == "complete")

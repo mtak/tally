@@ -15,7 +15,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def history_account():
     owner = Entity.objects.create(name="Fictional holding", kind="company")
-    account = Account.objects.create(name="Fictional broker", entity=owner, kind="broker", joint=True,
+    account = Account.objects.create(name="Fictional broker", entity=owner, kind="broker",
                                      closed_on=date(2026, 9, 1))
     for month, day, value, deposits in [(1, 3, 11800000, 10000000), (2, 19, 10800000, 9000000),
                                       (4, 1, 10800001, None), (7, 11, 1800001, 0),

@@ -5,6 +5,7 @@ from .models import Account, Entity, Snapshot, ASSETS
 from .preferences import whole_amount
 from .numbers import LocalizedDecimalField
 from .widgets import EuropeanDateInput
+from .validation import to_minor
 
 
 class MoneyField(LocalizedDecimalField):
@@ -46,7 +47,7 @@ def money_field(label, required=False, minimum=None):
 
 
 def minor(value):
-    return None if value is None else int(value * 100)
+    return to_minor(value)
 
 
 class EntityForm(forms.ModelForm):
@@ -96,23 +97,6 @@ class AccountForm(forms.ModelForm):
             self.fields[name].help_text = _("Use dd-mm-yyyy, for example 05-04-2026.")
         if self.instance.pk:
             self.fields["interest_rate"].initial = Decimal(self.instance.rate_bps) / 100
-
-    def clean(self):
-        data = super().clean()
-        if data.get("joint") and (
-            data.get("kind") != "bank"
-            or data.get("entity")
-            and data["entity"].kind != "private"
-        ):
-            self.add_error("joint", _("Only a private bank account can be shared."))
-        for end in ("closed_on", "matures_on"):
-            if (
-                data.get("started_on")
-                and data.get(end)
-                and data[end] < data["started_on"]
-            ):
-                self.add_error(end, _("This date must be on or after the start date."))
-        return data
 
     def clean_currency(self):
         v = self.cleaned_data["currency"].upper()

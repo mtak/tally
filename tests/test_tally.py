@@ -749,7 +749,7 @@ def test_maturities_aggregate_owned_gross_balances_without_interest(owner, snap)
     for name, entity, amount, joint in [
         ("Deposit one", owner, 1000000, False),
         ("Loan two", owner, 1500000, False),
-        ("Shared test claim", owner, 10001, True),
+        ("Small test claim", owner, 5001, False),
         ("Company deposit", business, 400000, False),
     ]:
         claim = Account.objects.create(name=name, entity=entity, kind="claim", joint=joint,
@@ -776,7 +776,11 @@ def test_maturities_unknown_overdue_zero_and_missing_stay_separate(owner, snap):
     for name, end, amount, status in cases:
         claim = Account.objects.create(name=name, entity=owner, kind="claim", matures_on=end)
         if amount is not None:
-            Valuation.objects.create(snapshot=snap, account=claim, amount_minor=amount)
+            observation = Valuation(snapshot=snap, account=claim, amount_minor=amount)
+            if amount < 0:
+                observation.save_base(raw=True)  # Simulate pre-validation historical data.
+            else:
+                observation.save()
     calendar = maturity_calendar(snap)
     assert [(r["account"].name, r["status"]) for r in calendar["rows"]] == sorted([(c[0],c[3]) for c in cases], key=lambda item: item[0].lower())
     assert calendar["quarters"][0]["total"] == 30000

@@ -1353,3 +1353,23 @@ msgstr "%(date)s: Brontotaal ontbreekt."
 
 msgid "%(date)s: Detail differs from the source total by more than EUR 2. Correct the Overview before importing."
 msgstr "%(date)s: Detail wijkt meer dan EUR 2 af van het brontotaal. Corrigeer het Overview-bestand voordat je importeert."
+
+#: wealth/validation.py wealth/models.py wealth/importer.py
+msgid "CSV row %(row)s (%(label)s), date %(date)s: %(error)s"
+msgstr "CSV-rij %(row)s (%(label)s), datum %(date)s: %(error)s"
+
+#: wealth/validation.py wealth/models.py wealth/importer.py
+msgid "Financial updates require explicit values."
+msgstr "Financiële wijzigingen vereisen expliciete waarden."
+
+#: wealth/validation.py wealth/models.py wealth/importer.py
+msgid "Financial writes cannot ignore or overwrite conflicts."
+msgstr "Financiële schrijfacties mogen conflicten niet negeren of overschrijven."
+
+#: wealth/validation.py wealth/models.py wealth/importer.py
+msgid "Enter an integer amount within the supported storage range."
+msgstr "Voer een bedrag in gehele centen in binnen het ondersteunde opslagbereik."
+
+#: wealth/validation.py wealth/models.py wealth/importer.py
+msgid "Enter a finite amount within the supported storage range."
+msgstr "Voer een eindig bedrag in binnen het ondersteunde opslagbereik."

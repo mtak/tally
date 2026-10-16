@@ -292,3 +292,28 @@
 - Safe start/closure dates, maturity, rate and notes remain untouched. Existing owner
   types and company parent relationships must match the supported structure;
   import never repairs or overwrites them. This remains an Overview-only importer.
+
+## Consistent financial validation (#28, #29)
+
+- Forms, admin and ordinary/service ORM writes share account ownership/date and
+  balance-sign validation. Only private bank accounts can be joint. Mortgages are
+  nonpositive, other assets nonnegative, and credit-card debt/zero/provider credit
+  remain signed as before. Signed net deposits, tax basis, interest and historical
+  tax adjustments remain valid; no automatic sign conversion occurs.
+- Monetary storage accepts integer cents in the signed 64-bit range. The Overview
+  parser accepts an optional euro prefix and sign (including `-€`), ungrouped digits
+  or correct Dutch period thousands groups, and optional comma fractions. Blank
+  stays unknown; bare currency symbols, exponents, nonfinite values, misplaced
+  whitespace and malformed groups are rejected. Fractional cents round half-up,
+  including negative ties; sign validation happens before rounding to zero.
+- Model saves validate explicitly; queryset update/bulk writes also validate within
+  a transaction. Expression updates and conflict-ignoring bulk writes are rejected.
+  Related owner/classification edits cannot invalidate existing ownership/balances.
+  Partial saves validate their persisted field combination. Direct SQL, save_base
+  and historical migration models are deliberate maintenance bypasses.
+- Database constraints enforce local joint-account type, lifecycle date order and
+  snapshot assumption ranges. Migration 0008 first audits existing cross-model
+  ownership/sign rules and monetary storage too. Any conflict stops the migration
+  with record IDs, without logging amounts or rewriting/discarding records. Review
+  incompatible history explicitly before retrying. Existing archived positions
+  and financial corrections remain stored and reports still read legacy records.

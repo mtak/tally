@@ -302,3 +302,13 @@ Check current CI rather than treating this historical result as current verifica
   classifications, EUR currency and actual observation lifecycle boundaries must
   match; safe custom metadata stays unchanged. Existing owner parents are validated,
   never overwritten. Confirmed header correction and historical tax rules remain.
+
+- Issues #28/#29: shared financial validation guards forms/admin and ORM saves,
+  queryset updates and bulk writes, with atomic rejection. Mortgage balances must
+  be nonpositive; ordinary assets nonnegative; credit-card balances stay signed.
+  Net deposits, basis, interest and historical tax corrections remain signed.
+  Overview uses strict Dutch grouping and explicit half-up cent rounding with
+  signed 64-bit storage checks, reporting row/label/date without echoing amounts.
+  Migration 0008 audits historical ownership, dates, rates, signs and money storage
+  before adding local constraints; incompatibility stops without repairing data.
+  Raw SQL/save_base are maintenance bypasses, not supported financial write APIs.

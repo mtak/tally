@@ -1,4 +1,6 @@
-from django.db import models
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
+from .validation import validate_account, validate_balance, validate_minor
 from django.db.models.functions import Lower
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
@@ -22,7 +24,76 @@ KINDS = [
 ]
 
 
-class Entity(models.Model):
+class FinancialQuerySet(models.QuerySet):
+    """Validate ORM writes, including paths that normally bypass Model.save()."""
+    @transaction.atomic
+    def update(self, **kwargs):
+        objects = list(self.select_for_update())
+        for obj in objects:
+            for key, value in kwargs.items():
+                if hasattr(value, 'resolve_expression'):
+                    raise ValidationError(_("Financial updates require explicit values."))
+                setattr(obj, key, value)
+            obj.save(update_fields=list(kwargs))
+        return len(objects)
+
+    @transaction.atomic
+    def bulk_create(self, objs, **kwargs):
+        objs = list(objs)
+        if kwargs.get('ignore_conflicts') or kwargs.get('update_conflicts'):
+            raise ValidationError(_("Financial writes cannot ignore or overwrite conflicts."))
+        for obj in objs:
+            obj.full_clean()
+        return super().bulk_create(objs, **kwargs)
+
+    @transaction.atomic
+    def bulk_update(self, objs, fields, **kwargs):
+        objs = list(objs)
+        for obj in objs:
+            obj.save(update_fields=fields)
+        return len(objs)
+
+
+class FinancialModel(models.Model):
+    objects = FinancialQuerySet.as_manager()
+
+    class Meta:
+        abstract = True
+
+    def clean_fields(self, exclude=None):
+        errors = {}
+        for field in self._meta.fields:
+            if isinstance(field, models.BigIntegerField) and field.name not in (exclude or ()):
+                try:
+                    validate_minor(getattr(self, field.name))
+                except ValidationError as exc:
+                    errors[field.name] = exc.messages
+        if errors:
+            raise ValidationError(errors)
+        super().clean_fields(exclude=exclude)
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        # Validate before Django's integer fields can coerce fractional inputs.
+        # A partial update must validate the record that will actually persist,
+        # rather than unrelated unsaved attributes on the caller's instance.
+        candidate = self
+        fields = kwargs.get('update_fields')
+        if fields is not None and self.pk:
+            candidate = type(self).objects.get(pk=self.pk)
+            for name in fields:
+                field = self._meta.get_field(name)
+                setattr(candidate, field.attname, getattr(self, field.attname))
+        for field in candidate._meta.fields:
+            if field.is_relation and field.is_cached(candidate):
+                field.delete_cached_value(candidate)
+        candidate.full_clean()
+        if candidate is not self:
+            return super(FinancialModel, candidate).save(*args, **kwargs)
+        return super().save(*args, **kwargs)
+
+
+class Entity(FinancialModel):
     name = models.CharField(_("Name"), max_length=120, unique=True)
     kind = models.CharField(
         _("Owner type"),
@@ -41,11 +112,16 @@ class Entity(models.Model):
         verbose_name=_("Parent company"),
     )
 
+    def clean(self):
+        super().clean()
+        if self.pk and self.kind != 'private' and self.account_set.filter(joint=True).exists():
+            raise ValidationError({'kind': _("Only a private bank account can be shared.")})
+
     def __str__(self):
         return self.name
 
 
-class Account(models.Model):
+class Account(FinancialModel):
     name = models.CharField(_("Name"), max_length=160, unique=True)
     entity = models.ForeignKey(
         Entity, on_delete=models.PROTECT, verbose_name=_("Owner")
@@ -66,14 +142,30 @@ class Account(models.Model):
     matures_on = models.DateField(_("Maturity date"), null=True, blank=True)
     notes = models.TextField(_("Notes"), blank=True)
 
+    def clean(self):
+        super().clean()
+        owner_kind = Entity.objects.filter(pk=self.entity_id).values_list("kind", flat=True).first()
+        validate_account(self, owner_kind)
+        if self.pk:
+            for value in self.valuations.values_list('amount_minor', flat=True):
+                try:
+                    validate_balance(self.kind, self.asset_class, value)
+                except ValidationError as exc:
+                    raise ValidationError({'kind': exc.messages}) from exc
+
     class Meta:
         ordering = [Lower("name"), "pk"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(joint=False) | models.Q(kind='bank'), name='joint_bank_only'),
+            models.CheckConstraint(condition=models.Q(closed_on__gte=models.F('started_on')) | models.Q(closed_on=None) | models.Q(started_on=None), name='account_closure_order'),
+            models.CheckConstraint(condition=models.Q(matures_on__gte=models.F('started_on')) | models.Q(matures_on=None) | models.Q(started_on=None), name='account_maturity_order'),
+        ]
 
     def __str__(self):
         return self.name
 
 
-class Snapshot(models.Model):
+class Snapshot(FinancialModel):
     date = models.DateField(_("Valuation date"), unique=True)
     complete = models.BooleanField(default=False)
     ab_bps = models.PositiveIntegerField(
@@ -88,12 +180,16 @@ class Snapshot(models.Model):
 
     class Meta:
         ordering = ["date"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(ab_bps__gte=0, ab_bps__lte=10000), name='snapshot_ab_range'),
+            models.CheckConstraint(condition=models.Q(vpb_bps__gte=0, vpb_bps__lte=10000), name='snapshot_vpb_range'),
+        ]
 
     def __str__(self):
         return str(self.date)
 
 
-class Valuation(models.Model):
+class Valuation(FinancialModel):
     snapshot = models.ForeignKey(
         Snapshot, on_delete=models.CASCADE, related_name="valuations"
     )
@@ -127,11 +223,20 @@ class Valuation(models.Model):
             )
         ]
 
+    def clean(self):
+        super().clean()
+        account = Account.objects.filter(pk=self.account_id).first() if self.account_id else None
+        if account:
+            try:
+                validate_balance(account.kind, account.asset_class, self.amount_minor)
+            except ValidationError as exc:
+                raise ValidationError({'amount_minor': exc.messages}) from exc
+
     def __str__(self):
         return f"{self.account} — {self.snapshot}"
 
 
-class Position(models.Model):
+class Position(FinancialModel):
     valuation = models.ForeignKey(
         Valuation, on_delete=models.CASCADE, related_name="positions"
     )
@@ -151,7 +256,7 @@ class Position(models.Model):
     priced_at = models.DateTimeField(null=True, blank=True)
 
 
-class TaxAdjustment(models.Model):
+class TaxAdjustment(FinancialModel):
     snapshot = models.ForeignKey(
         Snapshot, on_delete=models.CASCADE, related_name="tax_adjustments"
     )

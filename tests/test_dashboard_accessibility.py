@@ -19,7 +19,7 @@ pytestmark = pytest.mark.django_db
 
 @pytest.mark.parametrize('lang,cents', [('en', '0'), ('nl', '1')])
 def test_dashboard_chart_tables_match_reports_and_filters(logged, owner, lang, cents):
-    cash = Account.objects.create(entity=owner, name='Fictional cash', joint=True)
+    cash = Account.objects.create(entity=owner, name='Fictional cash', joint=True, asset_class='credit_card')
     home = Account.objects.create(entity=owner, name='Fictional home', kind='property', asset_class='property')
     pension = Account.objects.create(entity=owner, name='Fictional pension', pension=True)
     company = Entity.objects.create(name='Fictional company', kind='company')

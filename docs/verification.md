@@ -63,3 +63,15 @@ correction, a successful confirmed import and a rejected reused-account pension
 conflict. The preview stayed within the viewport at 390px. No real portfolio was
 used for these checks. Required Python checks and JavaScript regressions passed;
 release CI also exercises the Docker production startup/backup/restore smoke check.
+
+## Financial validation (#28, #29)
+
+Fictional focused regressions cover strict Dutch monetary syntax, nonfinite values,
+signed 64-bit edges/overflow, positive and negative half-cent ties, pre-rounding
+sign rejection and translated row/date errors. Ordinary/admin/model writes share
+ownership, date, balance and rate checks. Tests exercise atomic queryset/bulk and
+late import rejection, persisted partial updates, related metadata changes, signed
+credit-card debt/credit and optional amounts. Raw-SQL checks verify local database
+constraints independently; the migration compatibility audit rejects explicit
+legacy sign violations without modifying their records. Reporting still reads a
+constructed legacy negative claim. No real financial fixtures are committed.
