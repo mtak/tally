@@ -1,6 +1,8 @@
 TALLY_INSTANCE_NAME ?= tally-dev
 TALLY_ENV_FILE ?=
 export TALLY_INSTANCE_NAME TALLY_DEV_PORT
+TALLY_GIT_COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null)
+export TALLY_GIT_COMMIT
 
 COMPOSE = docker compose $(if $(TALLY_ENV_FILE),--env-file "$(TALLY_ENV_FILE)") -p "$(TALLY_INSTANCE_NAME)" -f compose.yaml -f compose.dev.yaml
 

@@ -128,7 +128,9 @@ includes the optional local override:
       tally_compose_files+=(-f compose.prod.local.yaml)
     fi
     dc() {
-      docker compose -p tally-prod "${tally_compose_files[@]}" "$@"
+      local tally_revision
+      tally_revision="$(git rev-parse HEAD)" || return
+      TALLY_GIT_COMMIT="$tally_revision" docker compose -p tally-prod "${tally_compose_files[@]}" "$@"
     }
 
 Use this `dc` function for all commands below. Do not include compose.dev.yaml in
@@ -145,6 +147,13 @@ Validate without printing secrets, then start:
 Startup runs Django migrations, then Gunicorn on internal port 8000. The process runs
 as UID/GID 10001, with one worker and four threads. No production host port is published.
 WhiteNoise serves bundled static assets; no external CDN or separate webserver is needed.
+
+The `dc` function supplies the current checkout's commit as a build argument. The
+image retains it as `TALLY_GIT_COMMIT` and the OCI revision label. The bottom-left
+version shows its first seven characters; hover for the full SHA. On mobile the
+same release label appears in the page footer. Reusing or rolling back an image
+retains that image's revision. Build from a clean checkout to identify a release
+accurately; do not override `TALLY_GIT_COMMIT` in the container's runtime environment.
 
 ## 4. Create your login and check HTTPS
 

@@ -158,6 +158,12 @@ Check current CI rather than treating this historical result as current verifica
 
 ## Known boundaries and next work
 
+- Issue #66: the version label includes the image's short Git SHA (full SHA on
+  hover), also visible in the mobile page footer. `TALLY_GIT_COMMIT` is baked into
+  the image via a build argument; Make and the production `dc` helper supply the
+  checkout revision. Missing metadata shows only the version. Build clean releases
+  and keep the image metadata when reusing/rolling back images.
+
 - Production host/network/certificate settings belong to the operator's infrastructure.
 - Public market-data updates are a later feature. Choose a provider with the user;
   preserve historical observations and label price source/time.

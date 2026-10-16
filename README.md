@@ -61,6 +61,20 @@ Without Make, the equivalent startup and seeding commands are:
 
 See [AGENT.md](AGENT.md) for the project handoff and [DEPLOYMENT.md](DEPLOYMENT.md) for the full production runbook.
 
+### Release identification
+
+The version label includes the image's seven-character Git commit, with the full
+SHA available on hover. On mobile it appears in the page footer. `make up` and
+`make demo` supply the checkout's commit automatically. When building directly with
+Compose, run `export TALLY_GIT_COMMIT="$(git rev-parse HEAD)"` immediately before
+the build. For plain Docker, use:
+
+    docker build --build-arg TALLY_GIT_COMMIT="$(git rev-parse HEAD)" -t tally .
+
+Build releases from a clean checkout. Commit metadata is baked into the image;
+rebuilding is required to update it. Without metadata, only the version appears.
+Without Docker, optionally export the same variable before starting Django.
+
 ## Production behind Traefik
 
 Copy .env.example to .env and set a random DJANGO_SECRET_KEY, hostname and existing

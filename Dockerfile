@@ -7,6 +7,9 @@ RUN groupadd --gid 10001 tally && useradd --uid 10001 --gid tally --create-home 
 COPY . .
 RUN mkdir -p /data /backups && chown tally:tally /data /backups
 RUN python manage.py collectstatic --noinput
+ARG TALLY_GIT_COMMIT=""
+ENV TALLY_GIT_COMMIT=${TALLY_GIT_COMMIT}
+LABEL org.opencontainers.image.revision=${TALLY_GIT_COMMIT}
 ENV TALLY_DATA_DIR=/data
 USER tally
 EXPOSE 8000

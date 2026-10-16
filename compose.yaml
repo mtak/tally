@@ -1,6 +1,9 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        TALLY_GIT_COMMIT: ${TALLY_GIT_COMMIT:-}
     init: true
     environment:
       TALLY_DATA_DIR: /data
