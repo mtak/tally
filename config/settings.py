@@ -75,6 +75,7 @@ TEMPLATES = [
                 "config.context_processors.instance_name",
                 "config.context_processors.authentication",
                 "config.context_processors.release",
+                "config.context_processors.maturity_navigation",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ]
