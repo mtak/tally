@@ -25,13 +25,18 @@ def test_export_preserves_interest_exactly(logged, owner, lang, cents):
             snapshot, _ = Snapshot.objects.get_or_create(
                 date=date(2026, index + 1, 1), defaults={"complete": index % 2 == 0})
             Valuation.objects.create(account=account, snapshot=snapshot,
-                                     amount_minor=123456, interest_minor=interest)
+                                     amount_minor=123456, interest_minor=interest,
+                                     **({"interest_period_start": date(2026, 2, 1),
+                                        "interest_period_end": date(2026, 3, 1)}
+                                        if index == 2 else {}))
     before = list(Valuation.objects.order_by("pk").values())
     rows = list(csv.DictReader(io.StringIO(logged.get("/export/").content.decode())))
     assert len(rows) == 8
     for kind in ("bank", "claim"):
         selected = [r for r in rows if r["account"] == f"'=Fictional {kind}"]
         assert [r["interest_eur"] for r in selected] == ["", "0", "12.34", "-5.67"]
+        assert [r["interest_period_start"] for r in selected] == ["", "", "2026-02-01", ""]
+        assert [r["interest_period_end"] for r in selected] == ["", "", "2026-03-01", ""]
         assert [r["status"] for r in selected] == ["published", "draft", "published", "draft"]
         assert all(r["value_eur"] == "1234.56" for r in selected)
     assert list(Valuation.objects.order_by("pk").values()) == before

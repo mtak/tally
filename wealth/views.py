@@ -369,10 +369,12 @@ def snapshot_edit(request, pk):
             ]:
                 amount = getattr(v, field)
                 row[key] = None if amount is None else Decimal(amount) / 100
+            row["interest_period_start"] = v.interest_period_start
+            row["interest_period_end"] = v.interest_period_end
         initial.append(row)
     FormSet = formset_factory(ValuationForm, extra=0, max_num=500, validate_max=True)
     formset = FormSet(request.POST if request.method == "POST" else None,
-                      initial=initial, form_kwargs={"show_cents": request.show_cents})
+                      initial=initial, form_kwargs={"show_cents": request.show_cents, "snapshot_date": s.date})
     if request.method == "POST":
         # Validate identity/order before pairing bound inputs with account labels or
         # enabling type-specific fields. Never relabel an untrusted row's values.
@@ -393,7 +395,7 @@ def snapshot_edit(request, pk):
                 editor_error = _("Invalid account order. Reload the valuation and try again.")
                 unsafe_layout = True
         if unsafe_layout:
-            formset = FormSet(initial=initial, form_kwargs={"show_cents": request.show_cents})
+            formset = FormSet(initial=initial, form_kwargs={"show_cents": request.show_cents, "snapshot_date": s.date})
     for form, account in zip(formset, accounts):
         if account.kind != "broker":
             form.fields["net_deposits"].disabled = True
@@ -401,6 +403,8 @@ def snapshot_edit(request, pk):
             form.fields["basis"].disabled = True
         if account.kind not in ("bank", "claim"):
             form.fields["interest"].disabled = True
+            form.fields["interest_period_start"].disabled = True
+            form.fields["interest_period_end"].disabled = True
     if request.method == "POST" and not conflict and not editor_error and formset.is_valid():
         valid = True
         overrides = {t.kind: t.amount_minor for t in s.tax_adjustments.all()}
@@ -455,6 +459,8 @@ def snapshot_edit(request, pk):
                                 "basis_minor": minor(d["basis"]),
                                 **flow_defaults,
                                 "interest_minor": minor(d["interest"]),
+                                "interest_period_start": d["interest_period_start"],
+                                "interest_period_end": d["interest_period_end"],
                             },
                         )
                 # Publishing is one-way in the ordinary editor. A stale draft
@@ -526,7 +532,7 @@ def export(request):
             "flow_mode", "flow_start_date", "flow_end_date",
             "cumulative_deposits_eur", "cumulative_withdrawals_eur",
             "cumulative_start_date", "cumulative_baseline_date",
-            "net_deposits_eur", "interest_eur",
+            "net_deposits_eur", "interest_eur", "interest_period_start", "interest_period_end",
         ]
     )
 
@@ -556,6 +562,7 @@ def export(request):
                 v.cumulative_start_date or "", v.cumulative_baseline_date or "",
                 "" if v.net_deposits_minor is None else str(Decimal(v.net_deposits_minor) / 100),
                 "" if v.interest_minor is None else str(Decimal(v.interest_minor) / 100),
+                v.interest_period_start or "", v.interest_period_end or "",
             ]
         )
     return response

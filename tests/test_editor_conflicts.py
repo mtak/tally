@@ -33,6 +33,8 @@ def body(client, snapshot):
     for form in forms:
         for name in form.fields:
             value = form[name].value()
+            if hasattr(value, "strftime"):
+                value = value.strftime("%d-%m-%Y")
             data[f"{form.prefix}-{name}"] = "" if value is None else str(value)
     return data
 
@@ -45,7 +47,11 @@ def test_old_tab_cannot_overwrite_newer_fields(editors, lang, field, index):
     path = f"/valuations/{snapshot.pk}/"
     stale, newer = body(a,snapshot), body(b,snapshot)
     newer[f"form-{index}-{field}"] = "300"
-    assert b.post(path,newer).status_code == 302
+    if field == "interest":
+        newer[f"form-{index}-interest_period_start"] = "01-12-2025"
+        newer[f"form-{index}-interest_period_end"] = "01-01-2026"
+    response = b.post(path,newer)
+    assert response.status_code == 302
     before = list(snapshot.valuations.order_by("pk").values())
     response = a.post(path,stale)
     assert response.status_code == 409

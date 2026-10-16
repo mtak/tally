@@ -206,6 +206,8 @@ class Valuation(FinancialModel):
         null=True, blank=True, validators=[MinValueValidator(0)]
     )
     interest_minor = models.BigIntegerField(null=True, blank=True)
+    interest_period_start = models.DateField(null=True, blank=True)
+    interest_period_end = models.DateField(null=True, blank=True)
     flow_mode = models.CharField(max_length=12, default="period", choices=[
         ("period", _("Period totals")), ("cumulative", _("Cumulative totals")),
     ])
@@ -225,6 +227,15 @@ class Valuation(FinancialModel):
 
     def clean(self):
         super().clean()
+        if (self.interest_period_start is None) != (self.interest_period_end is None):
+            raise ValidationError({"interest_period_start": _("Enter both interest period dates, or leave both blank.")})
+        if self.interest_period_start and self.interest_period_end:
+            if self.interest_period_start >= self.interest_period_end:
+                raise ValidationError({"interest_period_start": _("The interest period must end after it starts.")})
+            if self.interest_period_end != self.snapshot.date:
+                raise ValidationError({"interest_period_end": _("The interest period must end on this valuation date.")})
+        if self.interest_minor is None and self.interest_period_start is not None:
+            raise ValidationError({"interest": _("Enter an interest amount for this period.")})
         account = Account.objects.filter(pk=self.account_id).first() if self.account_id else None
         if account:
             try:

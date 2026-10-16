@@ -301,7 +301,8 @@ def test_movement_bridge_reconciles_and_ignores_internal_flows(owner, snap):
     Valuation.objects.create(account=broker, snapshot=snap, amount_minor=10000, net_deposits_minor=10000)
     later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
     Valuation.objects.create(
-        account=cash, snapshot=later, amount_minor=15100, interest_minor=100
+        account=cash, snapshot=later, amount_minor=15100, interest_minor=100,
+        interest_period_start=snap.date, interest_period_end=later.date,
     )
     Valuation.objects.create(
         account=broker,
@@ -331,10 +332,12 @@ def test_analysis_chart_excludes_wealth_totals_and_tracks_period(logged, account
     Valuation.objects.create(account=account, snapshot=snap, amount_minor=100000000)
     later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
     Valuation.objects.create(account=account, snapshot=later,
-                            amount_minor=100010000, interest_minor=20000)
+                                amount_minor=100010000, interest_minor=20000,
+                                interest_period_start=snap.date, interest_period_end=later.date)
     latest = Snapshot.objects.create(date=date(2026, 9, 1), complete=True)
     Valuation.objects.create(account=account, snapshot=latest,
-                            amount_minor=100005000, interest_minor=0)
+                                amount_minor=100005000, interest_minor=0,
+                                interest_period_start=later.date, interest_period_end=latest.date)
     with translation.override(language):
         for selected, opening, closing, values in [
             (later, 100000000, 100010000, [0, 200, 0, 0, -100]),
@@ -694,7 +697,10 @@ def test_movement_details_attribute_home_interest_and_keep_mortgage_residual(own
     ]:
         Valuation.objects.create(account=account, snapshot=snap, amount_minor=opening)
         Valuation.objects.create(account=account, snapshot=later,
-                                 amount_minor=closing, interest_minor=interest)
+                                 amount_minor=closing, interest_minor=interest,
+                                 **({"interest_period_start": snap.date,
+                                    "interest_period_end": later.date}
+                                    if interest is not None else {}))
     bridge = movement(later)
     assert [p["amount"] for p in bridge["parts"]] == [0, 2000, 1000000, 0, 0]
     assert bridge["parts"][1]["details"][0]["account"] == claim
@@ -703,6 +709,36 @@ def test_movement_details_attribute_home_interest_and_keep_mortgage_residual(own
         "Mortgage": 100000, "Deposit": -100000,
     }
     assert bridge["opening"] + sum(p["amount"] for p in bridge["parts"]) == bridge["closing"]
+
+
+def test_interest_requires_explicit_period_for_new_entries_but_preserves_legacy(owner, snap):
+    from wealth.services import movement
+
+    account = Account.objects.create(name="Period deposit", entity=owner, kind="claim")
+    later = Snapshot.objects.create(date=date(2026, 5, 1), complete=True)
+    legacy = Valuation.objects.create(account=account, snapshot=snap, amount_minor=10000,
+                                      interest_minor=200)
+    current = Valuation.objects.create(account=account, snapshot=later, amount_minor=10300,
+                                       interest_minor=300, interest_period_start=snap.date,
+                                       interest_period_end=later.date)
+    legacy.refresh_from_db()
+    assert (legacy.interest_minor, legacy.interest_period_start, legacy.interest_period_end) == (200, None, None)
+    bridge = movement(later)
+    assert bridge["parts"][1]["amount"] == 300
+    assert bridge["parts"][1]["details"][0]["account"] == account
+
+    legacy_form = ValuationForm(
+        {"account_id": account.pk, "amount": "100", "interest": "2",
+         "interest_period_start": "", "interest_period_end": ""},
+        initial={"interest": Decimal("2")}, snapshot_date=snap.date,
+    )
+    assert legacy_form.is_valid(), legacy_form.errors
+    new_form = ValuationForm(
+        {"account_id": account.pk, "amount": "103", "interest": "3",
+         "interest_period_start": "", "interest_period_end": ""},
+        snapshot_date=later.date,
+    )
+    assert not new_form.is_valid()
 
 
 @pytest.mark.parametrize("language", ["en", "nl"])

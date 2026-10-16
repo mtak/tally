@@ -370,11 +370,21 @@ def movement(snapshot):
             else:
                 reason = _("Investment observation period does not match this comparison; result remains unexplained.")
         elif account.kind in ("bank", "claim"):
-            interest = row["valuation"].interest_minor
-            if interest is not None:
+            valuation = row["valuation"]
+            interest = valuation.interest_minor
+            covered = (
+                interest is not None
+                and valuation.interest_period_start == previous.date
+                and valuation.interest_period_end == snapshot.date
+            )
+            if covered:
                 attributed = owned(account, interest)
                 details["interest"].append({**item, "amount": attributed,
-                    "reason": _("Recorded interest for this period.")})
+                    "reason": _("Recorded interest covering this comparison period.")})
+            elif interest is not None and (valuation.interest_period_start is None or valuation.interest_period_end is None):
+                reason = _("Interest amount retained; its historical coverage period is unknown.")
+            elif interest is not None:
+                reason = _("Recorded interest does not cover this entire comparison period.")
             else:
                 reason = _("No interest recorded; cause of balance change not recorded.")
         elif account.kind == "property":

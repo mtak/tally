@@ -50,7 +50,10 @@ the same portfolio; authentication does not provide tenant isolation.
 - Internal transfers are not total-wealth growth. Unexplained differences remain visible.
 - Loans and deposits share the interest-bearing-claim model. The personal loan is money
   lent out. Deposits can have different rates/maturities. Principal repayment is not income.
-  Interest must be entered once, on the account that earned it.
+  Interest is entered once as a period amount (not cumulative-to-date), on the account
+  that earned it, with explicit start/end dates ending on the valuation date. Legacy
+  amounts remain unchanged with unknown
+  coverage and are never assigned to a period by inference.
 - Home = full estimated property value plus negative mortgage balances.
   Report equity and LTMV. Gross asset-allocation charts exclude debts and tax corrections.
 - Pension is a separate attribute, not an exclusive investment asset class.
@@ -319,3 +322,11 @@ Check current CI rather than treating this historical result as current verifica
   CSRF-protected POST and is blocked by any nonzero historical financial value or
   archived position, with affected dates shown. Safe deletion removes account-owned
   observations/positions while preserving shared snapshots and tax adjustments.
+
+- Issue #22: interest observations carry explicit start/end dates; the end matches the
+  valuation date. Existing undated amounts remain unchanged and uncovered. Movement
+  attribution requires an exact interval match. CSV and Account History preserve and
+  expose period coverage. #60 baseline is settled for a follow-up: latest published
+  valuation on/before the same calendar date one year earlier (Feb 29 maps to Feb 28);
+  show actual dates, require matching investment observations, and expose unavailable /
+  incomplete states. Implement #60 after verifying #22 independently.

@@ -14,6 +14,20 @@
   Individual position workflows have been removed; existing data stays archived.
 - Loans and term deposits use one interest-bearing-claim model with individual rates
   and maturity dates. Claims are separate accounts, so each can be valued independently.
+- Interest amounts are period flows, not cumulative-to-date totals. Store each with
+  explicit start and end dates; the end date must equal its valuation date. New
+  amounts cannot be saved without both dates. Existing amounts
+  retain null dates and are treated as uncovered: no period may be inferred from
+  neighboring valuations. Interest attribution requires exact equality between its
+  recorded interval and the comparison endpoints. The old amount remains available
+  in account history and CSV export.
+- Previous-year comparisons use the latest published valuation on or before the same
+  calendar date one year before the selected valuation (Feb 29 maps to Feb 28 in a
+  non-leap year). Screens show the actual endpoint dates. The comparison is unavailable
+  when there is no qualifying baseline or either endpoint is incomplete. Investment
+  attribution requires actual observations for that account at both endpoints; interest
+  contributes only when recorded intervals cover the comparison exactly. This baseline
+  is settled for #60; implementation follows the #22 interest-period rollout.
 - Home equity and pension are included by default and can be excluded.
 - Business tax rules reproduce the agreed personal liquidation scenario; they do not
   automatically follow statutory rates. Imported historical adjustments are preserved
@@ -244,7 +258,9 @@
   alphabetical account ordering. Global account-name uniqueness is unchanged.
   Stale editor submissions keep their signed original row layout and owner labels.
 - CSV `interest_eur` preserves blank, zero, sign and exact cents regardless of UI
-  language or precision. Observation export is not a full database backup.
+  language or precision; `interest_period_start` and `interest_period_end` preserve
+  coverage, including blanks for ambiguous legacy amounts. Observation export is not
+  a full database backup.
 
 ## Overview ambiguity and recoverable errors (#25, #38)
 

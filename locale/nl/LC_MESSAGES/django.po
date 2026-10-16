@@ -1391,3 +1391,42 @@ msgstr "Dit account kan niet worden verwijderd omdat er op de volgende datums ni
 
 msgid "Account deleted. Zero-value observations were removed; shared valuation records were preserved."
 msgstr "Account verwijderd. Waarnemingen met nulwaarden zijn verwijderd; gedeelde waarderingsgegevens zijn behouden."
+
+msgid "Interest period start"
+msgstr "Begin van renteperiode"
+
+msgid "Interest for this period (EUR)"
+msgstr "Rente over deze periode (EUR)"
+
+msgid "Interest period end"
+msgstr "Einde van renteperiode"
+
+msgid "Enter both interest period dates, or leave both blank."
+msgstr "Vul beide datums van de renteperiode in, of laat ze allebei leeg."
+
+msgid "The interest period must end after it starts."
+msgstr "De renteperiode moet eindigen na de begindatum."
+
+msgid "The interest period must end on this valuation date."
+msgstr "De renteperiode moet eindigen op deze peildatum."
+
+msgid "Enter an interest amount for this period."
+msgstr "Vul een rentebedrag voor deze periode in."
+
+msgid "Enter the start and end dates for this interest amount."
+msgstr "Vul de begin- en einddatum van dit rentebedrag in."
+
+msgid "Interest amount retained; its historical coverage period is unknown."
+msgstr "Rentebedrag behouden; de historische dekkingsperiode is onbekend."
+
+msgid "Recorded interest does not cover this entire comparison period."
+msgstr "De vastgelegde rente dekt niet de volledige vergelijkingsperiode."
+
+msgid "Recorded interest covering this comparison period."
+msgstr "Vastgelegde rente over deze vergelijkingsperiode."
+
+msgid "Period unknown"
+msgstr "Periode onbekend"
+
+msgid "Enter the dates covered by this amount. The end date must match this valuation. Older amounts without dates remain unassigned."
+msgstr "Vul de datums in die dit bedrag dekt. De einddatum moet overeenkomen met deze peildatum. Oudere bedragen zonder datums blijven niet-toegewezen."

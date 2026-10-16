@@ -154,16 +154,45 @@ class ValuationForm(MoneyFormMixin, forms.Form):
     amount = money_field(_("Value (EUR)"))
     net_deposits = money_field(_("Net deposits since opening (EUR)"))
     basis = money_field(_("Tax basis (EUR)"))
-    interest = money_field(_("Interest received or accrued (EUR)"))
+    interest = money_field(_("Interest for this period (EUR)"))
+    interest_period_start = forms.DateField(
+        label=_("Interest period start"), required=False, input_formats=["%d-%m-%Y"],
+        widget=EuropeanDateInput(),
+    )
+    interest_period_end = forms.DateField(
+        label=_("Interest period end"), required=False, input_formats=["%d-%m-%Y"],
+        widget=EuropeanDateInput(),
+    )
+
+    def __init__(self, *args, snapshot_date=None, **kwargs):
+        self.snapshot_date = snapshot_date
+        self.original_interest = (kwargs.get("initial") or {}).get("interest")
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         data = super().clean()
         if data.get("amount") is None and any(
-            data.get(key) is not None for key in ("net_deposits", "basis", "interest")
+            data.get(key) is not None for key in ("net_deposits", "basis", "interest", "interest_period_start", "interest_period_end")
         ):
             raise forms.ValidationError(
                 _("Enter an account value before entering net deposits, interest or tax basis.")
             )
+        start, end, interest = (data.get(key) for key in ("interest_period_start", "interest_period_end", "interest"))
+        legacy_unchanged = (
+            start is None and end is None and interest is not None
+            and interest == self.original_interest
+        )
+        if interest is not None and not legacy_unchanged and (start is None or end is None):
+            self.add_error("interest_period_start", _("Enter the start and end dates for this interest amount."))
+        if (start is None) != (end is None):
+            self.add_error("interest_period_start", _("Enter both interest period dates, or leave both blank."))
+        if start and end:
+            if start >= end:
+                self.add_error("interest_period_start", _("The interest period must end after it starts."))
+            if self.snapshot_date and end != self.snapshot_date:
+                self.add_error("interest_period_end", _("The interest period must end on this valuation date."))
+            if interest is None:
+                self.add_error("interest", _("Enter an interest amount for this period."))
         return data
 
 

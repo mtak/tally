@@ -150,7 +150,9 @@ def test_alternate_decimals_save_and_reload(logged, lang, separator):
     data = {"editor_version": response.context["editor_version"], "action": "draft",
             "form-TOTAL_FORMS": 1, "form-INITIAL_FORMS": 1,
             "form-0-account_id": account.pk, "form-0-amount": "12"+separator+"34",
-            "form-0-interest": "-0"+separator+"25"}
+                "form-0-interest": "-0"+separator+"25",
+                "form-0-interest_period_start": "04-04-2026",
+                "form-0-interest_period_end": "05-04-2026"}
     assert logged.post(path, data).status_code == 302
     value = Valuation.objects.get(account=account)
     assert (value.amount_minor, value.interest_minor) == (1234, -25)
