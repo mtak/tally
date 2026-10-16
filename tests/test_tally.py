@@ -475,21 +475,14 @@ def test_explicit_language_selection_persists(logged, language):
 
 
 @pytest.mark.parametrize("lang, expected", [("en", "€ 1,235"), ("nl", "€ 1.235")])
-def test_whole_amount_display_and_preference(logged, account, snap, lang, expected):
-    from wealth.preferences import cents_cookie_name
+def test_whole_amount_display_uses_instance_default(logged, account, snap, lang, expected):
     Valuation.objects.create(account=account, snapshot=snap, amount_minor=123456)
     logged.cookies["django_language"] = lang
     page = logged.get("/").content.decode()
     assert expected in page
     assert 'data-show-cents="false"' in page
-    response = logged.post("/preferences/money/", {"show_cents": "1", "next": "/?home=0"})
-    assert response.url == "/?home=0"
-    assert response.cookies[cents_cookie_name()]["max-age"] == 31536000
-    page = logged.get("/").content.decode()
-    assert ('€ 1.234,56' if lang == 'nl' else '€ 1,234.56') in page
-    assert 'data-show-cents="true"' in page
-    assert logged.post("/preferences/money/", {"next": "https://example.com"}).url == "/"
-    assert logged.get("/preferences/money/").status_code == 405
+    assert 'id="show-cents"' not in page
+    assert logged.post("/preferences/money/", {"show_cents": "1"}).status_code == 404
 
 
 @pytest.mark.parametrize("lang, amount", [("en", "123.45"), ("nl", "123,45")])
@@ -1027,8 +1020,8 @@ def test_maturities_as_of_carries_published_values_and_excludes_replaced_claims(
     ("en", "Maturity calendar", "1,234.56", "Q2 2026"),
     ("nl", "Vervalkalender", "1.234,56", "K2 2026"),
 ])
-def test_maturity_view_localized_and_read_only(logged, owner, snap, language, title, amount, quarter):
-    from wealth.preferences import cents_cookie_name
+def test_maturity_view_localized_and_read_only(logged, owner, snap, settings, language, title, amount, quarter):
+    settings.TALLY_MONEY_PRECISION = "cents"
     claim = Account.objects.create(name="Fictional <claim>", entity=owner, kind="claim",
         matures_on=date(2026, 6, 1))
     Valuation.objects.create(snapshot=snap, account=claim, amount_minor=123456, interest_minor=321)
@@ -1037,7 +1030,6 @@ def test_maturity_view_localized_and_read_only(logged, owner, snap, language, ti
     TaxAdjustment.objects.create(snapshot=snap, kind="bank_ab", amount_minor=-123)
     before = (list(Valuation.objects.values()), list(TaxAdjustment.objects.values()), report(snap))
     logged.cookies["django_language"] = language
-    logged.cookies[cents_cookie_name()] = "1"
     response = logged.get("/maturities/", {"at": snap.pk})
     assert response.status_code == 200
     assert response.context["selected"] == snap

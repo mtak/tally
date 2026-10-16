@@ -7,7 +7,6 @@ from django.utils import translation
 
 from wealth.models import Account, Entity, Snapshot, TaxAdjustment, Valuation
 from wealth.services import investment_history
-from wealth.preferences import cents_cookie_name
 
 pytestmark = pytest.mark.django_db
 
@@ -45,7 +44,8 @@ def test_history_uses_actual_published_dates_and_gross_results(history_account):
 
 
 @pytest.mark.parametrize("language", ["en", "nl"])
-def test_analysis_selectors_table_locale_and_empty_history(history_account, language):
+def test_analysis_selectors_table_locale_and_empty_history(history_account, language, settings):
+    settings.TALLY_MONEY_PRECISION = "cents"
     client = Client()
     client.cookies["django_language"] = language
     client.force_login(get_user_model().objects.create_user(username="fictional-tester"))
@@ -62,7 +62,6 @@ def test_analysis_selectors_table_locale_and_empty_history(history_account, lang
         assert 'tabindex="0" role="region"' in content
         assert ("18.000" if language == "nl" else "18,000") in content
         assert ("Netto-inleg onbekend" if language == "nl" else "Net deposits unknown") in content
-        client.cookies[cents_cookie_name()] = "1"
         precise = client.get("/analysis/", {"at": snapshot.pk, "account": history_account.pk})
         assert ("18.000,01" if language == "nl" else "18,000.01") in precise.content.decode()
         empty = client.get("/analysis/", {"at": snapshot.pk, "account": other.pk})

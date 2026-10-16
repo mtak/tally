@@ -97,7 +97,7 @@ historical adjustments to make a new view look complete.
   and exports. Numeric input accepts comma or period decimals in either language and
   rejects ambiguous single three-digit separator forms. Account dates use `dd-mm-yyyy`.
 - Whole-euro entry/display is the default; preserve stored cents when a rounded field
-  is unchanged. Respect the saved precision preference.
+  is unchanged. Respect the instance's `TALLY_MONEY_PRECISION` setting.
 - Keep desktop compact and mobile usable. Charts need matching semantic tables or
   accessible detail, keyboard operation, actual observation dates, and clear unknown
   or carried-value states. Avoid color as the only signal.

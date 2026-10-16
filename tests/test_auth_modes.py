@@ -49,7 +49,7 @@ def test_default_mode_rejects_anonymous_writes_and_identity_headers(settings, po
     _, account, snapshot = portfolio
     client = Client(HTTP_REMOTE_USER="admin", HTTP_X_FORWARDED_USER="admin",
                     HTTP_CF_ACCESS_AUTHENTICATED_USER_EMAIL="fictional@example.invalid")
-    for path in ["/preferences/money/", "/owners/new/", "/accounts/new/",
+    for path in ["/owners/new/", "/accounts/new/",
                  f"/accounts/{account.pk}/", "/valuations/new/",
                  f"/valuations/{snapshot.pk}/", f"/valuations/{snapshot.pk}/delete/",
                  "/import/"]:
@@ -89,7 +89,7 @@ def test_writes_and_csrf_in_both_modes(settings, portfolio, enabled):
         client.force_login(user)
     client.get("/accounts/")
     token = client.cookies["csrftoken"].value
-    for path in ["/preferences/money/", "/owners/new/", "/accounts/new/",
+    for path in ["/owners/new/", "/accounts/new/",
                  f"/accounts/{account.pk}/", "/valuations/new/",
                  f"/valuations/{snapshot.pk}/", f"/valuations/{snapshot.pk}/delete/",
                  "/import/", "/logout/"]:
@@ -111,7 +111,6 @@ def test_writes_and_csrf_in_both_modes(settings, portfolio, enabled):
     assert post(f"/accounts/{account.pk}/", account_data).status_code == 302
     account.refresh_from_db()
     assert account.name == "Edited fictional bank"
-    assert post("/preferences/money/", {"show_cents": "1"}).status_code == 302
     assert post("/valuations/new/", {"date": "2026-10-01", "ab_rate": "26.9", "vpb_rate": "19"}).status_code == 302
     new = Snapshot.objects.get(date=date(2026, 10, 1))
     body = snapshot_editor_body(client, snapshot, "complete")
@@ -132,9 +131,6 @@ def test_writes_and_csrf_in_both_modes(settings, portfolio, enabled):
     export = client.get("/export/")
     assert export.status_code == 200
     assert "Edited fictional bank" in export.content.decode()
-    # HTTPS origin validation also applies with a valid CSRF token.
-    assert client.post("/preferences/money/", {"show_cents": "0"}, secure=True,
-                       HTTP_X_CSRFTOKEN=token, HTTP_ORIGIN="https://untrusted.example").status_code == 403
 
 
 @pytest.mark.parametrize("enabled", [True, False])
@@ -147,14 +143,14 @@ def test_login_logout_and_navigation(settings, enabled):
         assert response.url == "/"
         assert client.post("/login/", {"username": "ignored"}).status_code == 403
         html = client.get("/").content.decode()
-        assert 'id="show-cents"' in html
+        assert 'id="show-cents"' not in html
         assert 'action="/logout/"' not in html
         assert 'class="user-name"' not in html
     token = client.cookies["csrftoken"].value
     user = get_user_model().objects.create_user(username="fictional", password="test-only", is_staff=True)
     client.force_login(user)
     html = client.get("/").content.decode()
-    assert 'id="show-cents"' in html
+    assert 'id="show-cents"' not in html
     assert ('action="/logout/"' in html) == enabled
     assert ('class="user-name"' in html) == enabled
     assert client.get("/logout/").status_code == 405

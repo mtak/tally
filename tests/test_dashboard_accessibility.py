@@ -10,15 +10,24 @@ from tests.test_tally import logged, owner
 from tests.test_editor_conflicts import body
 from wealth.forms import AccountForm
 from wealth.models import Account, Entity, Snapshot, Valuation
-from wealth.preferences import cents_cookie_name
 from wealth.services import report, asset_mix
+from wealth.preferences import show_cents
 from wealth.templatetags.money import money
 
 pytestmark = pytest.mark.django_db
 
 
+def configured_money(value, cents):
+    token = show_cents.set(cents)
+    try:
+        return money(value)
+    finally:
+        show_cents.reset(token)
+
+
 @pytest.mark.parametrize('lang,cents', [('en', '0'), ('nl', '1')])
-def test_dashboard_chart_tables_match_reports_and_filters(logged, owner, lang, cents):
+def test_dashboard_chart_tables_match_reports_and_filters(logged, owner, settings, lang, cents):
+    settings.TALLY_MONEY_PRECISION = "cents" if cents == "1" else "whole"
     cash = Account.objects.create(entity=owner, name='Fictional cash', joint=True, asset_class='credit_card')
     home = Account.objects.create(entity=owner, name='Fictional home', kind='property', asset_class='property')
     pension = Account.objects.create(entity=owner, name='Fictional pension', pension=True)
@@ -32,7 +41,6 @@ def test_dashboard_chart_tables_match_reports_and_filters(logged, owner, lang, c
         Valuation.objects.create(account=account, snapshot=old, amount_minor=amount)
     Valuation.objects.create(account=broker, snapshot=latest, amount_minor=300003)
     logged.cookies['django_language'] = lang
-    logged.cookies[cents_cookie_name()] = cents
     before = list(Valuation.objects.values())
     for query, flags in [('', {}), ('home=0&pension=0&net=0', dict(include_home=False, include_pension=False, net=False))]:
         response = logged.get('/?' + query, HTTP_HX_REQUEST='true')
@@ -53,15 +61,15 @@ def test_dashboard_chart_tables_match_reports_and_filters(logged, owner, lang, c
                 if r['total'] is None:
                     assert 'colspan="5"' in row
                 else:
-                    assert money(r['total'], cents == '1') in row
+                    assert configured_money(r['total'], cents == '1') in row
                     for amount in r['groups'].values():
-                        assert money(amount, cents == '1') in row
+                        assert configured_money(amount, cents == '1') in row
             for key, chart_key, summary_id in [('allocation', 'assets', 'allocation-data-summary'), ('liquidity', 'liquidity', 'liquidity-data-summary')]:
                 table = html.split('id="' + summary_id + '"')[1].split('</table>')[0]
                 for display, point in zip(response.context[key], chart[chart_key]):
                     assert display['name'] == point['name']
                     assert display['amount'] / 100 == point['value']
-                    assert money(display['amount'], cents == '1') in table
+                    assert configured_money(display['amount'], cents == '1') in table
         assert 'tabindex="0" role="region"' in html
         assert '<caption>' in html and '<th scope="col"' in html
     response = logged.get(f'/?at={interim.pk}')

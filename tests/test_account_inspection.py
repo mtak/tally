@@ -9,16 +9,15 @@ from tests.test_tally import logged, owner
 from tests.test_editor_conflicts import body
 from wealth.forms import AccountForm
 from wealth.models import Account, Entity, Snapshot, TaxAdjustment, Valuation
-from wealth.preferences import cents_cookie_name
 
 pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize("lang", ["en", "nl"])
 @pytest.mark.parametrize("cents", ["0", "1"])
-def test_export_preserves_interest_exactly(logged, owner, lang, cents):
+def test_export_preserves_interest_exactly(logged, owner, settings, lang, cents):
+    settings.TALLY_MONEY_PRECISION = "cents" if cents == "1" else "whole"
     logged.cookies["django_language"] = lang
-    logged.cookies[cents_cookie_name()] = cents
     for kind in ("bank", "claim"):
         account = Account.objects.create(name=f"=Fictional {kind}", entity=owner, kind=kind)
         for index, interest in enumerate((None, 0, 1234, -567)):
@@ -45,9 +44,9 @@ def test_export_preserves_interest_exactly(logged, owner, lang, cents):
 @pytest.mark.parametrize("lang", ["en", "nl"])
 @pytest.mark.parametrize("kind,company", [("bank", False), ("claim", False), ("broker", True), ("property", False)])
 @pytest.mark.parametrize("cents", ["0", "1"])
-def test_history_only_actual_observations_and_no_mutation(logged, owner, lang, kind, company, cents):
+def test_history_only_actual_observations_and_no_mutation(logged, owner, settings, lang, kind, company, cents):
+    settings.TALLY_MONEY_PRECISION = "cents" if cents == "1" else "whole"
     logged.cookies["django_language"] = lang
-    logged.cookies[cents_cookie_name()] = cents
     if company:
         owner.kind = "company"
         owner.save()

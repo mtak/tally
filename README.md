@@ -130,6 +130,11 @@ recreate the app with your usual Compose command and `up -d` after changing it.
 For development, select the environment file with `--env-file`. Without Docker,
 export the variable before starting Django. The name is visible before login.
 
+Set `TALLY_MONEY_PRECISION=whole` (the default) or `TALLY_MONEY_PRECISION=cents` in
+the instance environment to control monetary display and input precision for every
+browser using that instance. Restart the app after changing it. Stored values and
+calculations always retain exact cents.
+
 ## Currency and account deletion
 
 All balances, tax bases, net deposits, interest, reports and observation exports are

@@ -5,20 +5,16 @@ from django.conf import settings
 show_cents = ContextVar("show_cents", default=False)
 
 
-def cents_cookie_name():
-    return settings.SESSION_COOKIE_NAME + "_show_cents"
-
-
 def whole_amount(value):
     return Decimal(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
 
 
-class MoneyPreferenceMiddleware:
+class MoneyPrecisionMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        request.show_cents = request.COOKIES.get(cents_cookie_name()) == "1"
+        request.show_cents = settings.TALLY_MONEY_PRECISION == "cents"
         token = show_cents.set(request.show_cents)
         try:
             return self.get_response(request)

@@ -110,8 +110,9 @@ and other cloud providers need discussion. No external data service is configure
 - tests/test_tally.py: fictional calculation, import, validation and view tests.
 
 Store money as integer cents and calculate with Decimal (half-up rounding).
-Money display/input defaults to whole amounts. The top-bar preference enables cents
-and is saved per browser/instance. Unchanged rounded fields preserve stored precision.
+Money display/input defaults to whole amounts. Instance configuration
+`TALLY_MONEY_PRECISION=whole|cents` controls monetary precision for all browsers.
+Unchanged rounded fields preserve stored precision.
 Optional exact quantities/prices use decimal strings, not SQLite REAL arithmetic.
 Keep migrations in Git and calculation rules explicitly tested.
 
@@ -207,7 +208,7 @@ Check current CI rather than treating this historical result as current verifica
   Other values fail startup. Portfolio routes keep CSRF and existing validation;
   no proxy identities or users are created. Login redirects to dashboard; POST logout
   redirects without ending sessions and GET remains disallowed. Hide portfolio
-  user/sign-out controls, retain precision preferences. Admin still requires its own
+  user/sign-out controls. Admin still requires its own
   active staff login/permissions; use admin login/logout. See DEPLOYMENT.md for setup.
 - Draft valuations can be deleted from the list or editor after a translated confirmation.
   Deletion requires an authenticated CSRF-protected POST and removes associated
@@ -289,7 +290,7 @@ Check current CI rather than treating this historical result as current verifica
   tables using the same report values as charts. Annual totals use exact report
   cents and actual valuation dates; incomplete net years have no bar/total label.
   Full EUR labels sit above positive stacks, with keyboard horizontal scrolling
-  on narrow screens. Home/pension/net, language and precision remain shared.
+  on narrow screens. Home/pension/net, language and configured precision remain shared.
 - Issue #63: Credit card is an account-level asset class. Use Bank account and
   Liquid availability; enter debt negative, settled zero, provider credit positive.
   Existing signed wealth/liquidity and positive-category gross-allocation rules

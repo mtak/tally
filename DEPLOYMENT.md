@@ -35,6 +35,7 @@ Do not overwrite an existing .env when updating an installation. Set:
 | DJANGO_SECRET_KEY | A unique, stable random secret |
 | TALLY_HOST | Bare hostname, e.g. tally.example.com (no scheme/path) |
 | TALLY_INSTANCE_NAME | Optional display name, e.g. Example portfolio; blank keeps the default appearance |
+| TALLY_MONEY_PRECISION | `whole` (default) or `cents` for monetary display and input precision |
 | TALLY_AUTH_ENABLED | `1` (default): require Django portfolio login; `0`: rely entirely on upstream authentication; other values fail startup |
 | TALLY_IMPORT_HISTORY_ENABLED | `1` (default): enable historical CSV import; `0`: hide and disable the import page and management command; other values fail startup |
 | TRAEFIK_NETWORK | Existing external Docker network, e.g. traefik |
