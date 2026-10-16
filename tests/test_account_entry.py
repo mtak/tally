@@ -151,6 +151,8 @@ def test_account_delete_removes_zero_dependents_and_preserves_shared_snapshot(lo
 
 def test_account_delete_requires_post(logged, owner):
     account = Account.objects.create(name="Zero account", entity=owner)
+    page = logged.get(f"/accounts/{account.pk}/").content.decode()
+    assert f'data-confirm="Zero account — Delete account?"' in page
     assert logged.get(f"/accounts/{account.pk}/delete/").status_code == 405
     assert Account.objects.filter(pk=account.pk).exists()
 

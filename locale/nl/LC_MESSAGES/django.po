@@ -1380,9 +1380,6 @@ msgstr "Verwijderen is alleen toegestaan als alle vastgelegde financiële waarde
 msgid "Delete account"
 msgstr "Account verwijderen"
 
-msgid "Delete this account?"
-msgstr "Dit account verwijderen?"
-
 msgid "Observations and reports are always in EUR. Currency conversion is not provided. Existing currency metadata is preserved as entered."
 msgstr "Waarnemingen en rapporten zijn altijd in EUR. Valutaconversie is niet beschikbaar. Bestaande valutametadata blijft ongewijzigd."
 
