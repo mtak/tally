@@ -781,17 +781,8 @@ msgstr "Geschat perioderendement"
 msgid "Counters decreased. Correct the totals or start a new comparison. Totals must still cover the complete account history; no period return is calculated across this change."
 msgstr "De tellers zijn gedaald. Corrigeer de totalen of begin een nieuwe vergelijking. De totalen moeten nog steeds de volledige rekeninghistorie omvatten; over deze wijziging wordt geen perioderendement berekend."
 
-msgid "Amount precision"
-msgstr "Precisie van bedragen"
-
-msgid "Whole amounts"
-msgstr "Hele bedragen"
-
-msgid "With cents"
-msgstr "Met centen"
-
-msgid "Enter a whole amount, or enable cents."
-msgstr "Voer een heel bedrag in of zet centen aan."
+msgid "Enter a whole amount."
+msgstr "Voer een heel bedrag in."
 
 msgid "Total investment gain/loss = account value − net deposits since opening."
 msgstr "Totale beleggingswinst/-verlies = rekeningwaarde − netto-inleg sinds opening."

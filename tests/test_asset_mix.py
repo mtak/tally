@@ -7,7 +7,6 @@ from django.test import Client
 from django.utils import translation
 
 from wealth.models import Account, Entity, Snapshot, TaxAdjustment, Valuation
-from wealth.preferences import cents_cookie_name
 from wealth.services import asset_mix, report
 from wealth.templatetags.money import percent
 
@@ -83,7 +82,8 @@ def test_filters_ownership_unknown_tax_and_zero():
 
 @pytest.mark.parametrize('lang', ['en', 'nl'])
 @pytest.mark.parametrize('cents', [True, False])
-def test_annual_selection_dates_carried_observations_and_table(lang, cents):
+def test_annual_selection_dates_carried_observations_and_table(settings, lang, cents):
+    settings.TALLY_MONEY_PRECISION = "cents" if cents else "whole"
     owner, cash, equities, old = setup_portfolio()
     earlier = Snapshot.objects.create(date=date(2024, 1, 2), complete=True)
     Snapshot.objects.create(date=date(2025, 6, 1), complete=False)
@@ -93,7 +93,6 @@ def test_annual_selection_dates_carried_observations_and_table(lang, cents):
     client = Client()
     client.force_login(get_user_model().objects.create_user(username='tester'))
     client.cookies['django_language'] = lang
-    client.cookies[cents_cookie_name()] = '1' if cents else '0'
     response = client.get('/')
     assert response.status_code == 200
     assert response.context['chart']['years'] == ['2024', '2026']

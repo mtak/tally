@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django import forms
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from .models import Account, Entity, Snapshot, ASSETS
 from .preferences import whole_amount
@@ -16,15 +17,17 @@ class MoneyField(LocalizedDecimalField):
         result = super().clean(value)
         if self.whole_only and result is not None:
             if result != whole_amount(result):
-                raise forms.ValidationError(_("Enter a whole amount, or enable cents."))
+                raise forms.ValidationError(_("Enter a whole amount."))
             if self.original is not None and result == whole_amount(self.original):
                 return Decimal(self.original)
         return result
 
 
 class MoneyFormMixin:
-    def __init__(self, *args, show_cents=False, **kwargs):
+    def __init__(self, *args, show_cents=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if show_cents is None:
+            show_cents = settings.TALLY_MONEY_PRECISION == "cents"
         for name, field in self.fields.items():
             if isinstance(field, MoneyField) and not show_cents:
                 field.whole_only = True

@@ -1,6 +1,6 @@
 (() => {
   const palette = ["#307d6e", "#9cae9a", "#d7a761", "#8799c5", "#bd8f9d", "#90bfc2", "#b7b9a8"];
-  // HTMX updates dashboard filters without replacing the language/precision forms.
+  // HTMX updates dashboard filters without replacing the language form.
   document.addEventListener("submit", e => {
     const next = e.target.querySelector('input[name="next"]');
     if (next) next.value = window.location.pathname + window.location.search;

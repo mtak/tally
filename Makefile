@@ -19,7 +19,7 @@ help:
 	  'make down       Stop this instance, preserving its data' \
 	  'make logs       Follow this instance logs' \
 	  '' \
-	  'Options: TALLY_INSTANCE_NAME=tally-dev TALLY_DEV_PORT=8000 TALLY_ENV_FILE=.env.local'
+	  'Options: TALLY_INSTANCE_NAME=tally-dev TALLY_MONEY_PRECISION=whole|cents TALLY_DEV_PORT=8000 TALLY_ENV_FILE=.env.local'
 
 up:
 	$(COMPOSE) build

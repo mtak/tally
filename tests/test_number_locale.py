@@ -6,7 +6,7 @@ from django.utils import translation
 
 from wealth.forms import AccountForm, SnapshotForm, ValuationForm
 from wealth.numbers import LocalizedDecimalField
-from wealth.preferences import show_cents, cents_cookie_name
+from wealth.preferences import show_cents
 from wealth.templatetags.money import money, percent
 from wealth.models import Account, Entity, Snapshot, Valuation
 from tests.test_tally import logged
@@ -64,7 +64,7 @@ def test_percent_forms_and_money_precision(lang):
 
 
 @pytest.mark.django_db
-def test_saved_draft_survives_language_switches(logged):
+def test_saved_draft_survives_language_switches(logged, settings):
     from datetime import date
     owner = Entity.objects.create(name="Fictional owner", kind="company")
     account = Account.objects.create(name="Fictional broker", entity=owner, kind="broker")
@@ -73,7 +73,7 @@ def test_saved_draft_survives_language_switches(logged):
                                         net_deposits_minor=-123456, basis_minor=0)
     path = f"/valuations/{snap.pk}/"
     for cents in [True, False]:
-        logged.cookies[cents_cookie_name()] = "1" if cents else "0"
+        settings.TALLY_MONEY_PRECISION = "cents" if cents else "whole"
         for lang in ["nl", "en", "nl"]:
             logged.post("/language/setlang/", {"language": lang, "next": path})
             expected = (("1234,56" if lang == "nl" else "1234.56") if cents
@@ -138,10 +138,10 @@ def test_ambiguous_numbers_require_explicit_input(lang, value):
 @pytest.mark.django_db
 @pytest.mark.parametrize("lang", ["nl", "en"])
 @pytest.mark.parametrize("separator", [",", "."])
-def test_alternate_decimals_save_and_reload(logged, lang, separator):
+def test_alternate_decimals_save_and_reload(logged, settings, lang, separator):
     from datetime import date
     logged.cookies["django_language"] = lang
-    logged.cookies[cents_cookie_name()] = "1"
+    settings.TALLY_MONEY_PRECISION = "cents"
     owner = Entity.objects.create(name="Fictional owner", kind="private")
     account = Account.objects.create(name="Fictional account", entity=owner)
     snapshot = Snapshot.objects.create(date=date(2026, 4, 5))

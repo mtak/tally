@@ -14,8 +14,6 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST, require_http_methods
-from django.utils.http import url_has_allowed_host_and_scheme
-from .preferences import cents_cookie_name
 from .models import Account, Entity, Snapshot, Valuation, ASSETS
 from .forms import (
     AccountForm,
@@ -39,19 +37,6 @@ from .services import (
 )
 from .importer import parse_overview, preflight_overview, import_overview
 from . import editor
-
-
-@portfolio_access_required
-@require_POST
-def money_preference(request):
-    next_url = request.POST.get("next", "/")
-    if not url_has_allowed_host_and_scheme(next_url, {request.get_host()}, require_https=request.is_secure()):
-        next_url = "/"
-    response = redirect(next_url)
-    response.set_cookie(cents_cookie_name(), "1" if request.POST.get("show_cents") == "1" else "0",
-                        max_age=365 * 24 * 60 * 60, httponly=True,
-                        secure=request.is_secure(), samesite="Lax")
-    return response
 
 
 @portfolio_access_required

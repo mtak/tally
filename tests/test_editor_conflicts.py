@@ -3,7 +3,6 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
 from wealth.models import Account, Entity, Snapshot, TaxAdjustment, Valuation
-from wealth.preferences import cents_cookie_name
 
 pytestmark = pytest.mark.django_db
 
@@ -80,11 +79,11 @@ def test_stale_blank_cannot_remove_or_recreate_observation(editors,create):
     assert snapshot.valuations.filter(account=bank).exists() == create
 
 
-def test_whole_amount_detects_changes_hidden_by_rounding(editors):
+def test_cents_configuration_detects_changes_hidden_by_rounding(editors, settings):
+    settings.TALLY_MONEY_PRECISION = "cents"
     (a,b), snapshot, broker, bank = editors
     path = f"/valuations/{snapshot.pk}/"
     stale = body(a,snapshot)
-    b.cookies[cents_cookie_name()] = "1"
     newer = body(b,snapshot)
     newer["form-0-amount"] = "100.40"
     assert b.post(path,newer).status_code == 302

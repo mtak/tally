@@ -127,15 +127,16 @@
   include legacy flow inputs, net deposits and entered interest, but omit positions,
   tax adjustments, configuration and login data; use a full SQLite backup for those.
 
-## Amount precision (#7)
+## Amount precision (#7, #87)
 
-- Show and enter whole currency amounts by default, with a persistent browser preference
-  in the top bar to enable cents. The preference is isolated by instance cookie name.
+- `TALLY_MONEY_PRECISION` is an instance setting: `whole` (the default) or `cents`.
+  It controls monetary display and input consistently for every browser using the
+  instance; there is no per-browser precision preference.
 - Round display half-up; retain integer cents in storage and exact calculation/export.
   Saving an unchanged rounded input preserves its original precision. Editing it to
-  a different whole amount replaces that value. Optional quote prices follow this
-  preference; enabling cents restores their existing higher precision. Quantities
-  and percentages retain their own precision.
+  a different whole amount replaces that value. Optional quote prices follow the
+  configured mode. Cents mode shows and accepts cents. Quantities and percentages
+  retain their own precision.
 
 ## Locale boundaries (#14)
 
