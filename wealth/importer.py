@@ -52,7 +52,35 @@ def parse_overview(content):
         rows = list(csv.reader(io.StringIO(content.decode("utf-8-sig"))))
     except (UnicodeDecodeError, csv.Error) as exc:
         raise ValueError(_("Use a UTF-8 CSV export.")) from exc
-    header = next((r for r in rows if r and r[0].strip() == "Prive"), None)
+    # Only consumed rows must be unique; repeated section/subtotal headings
+    # in the agreed layout remain harmless.
+    consumed = {m[0] for m in MAPPING} | {
+        "Example Brokerage Contributions", "Example Bank Capital Tax", "Example Brokerage Corporate Tax", "Example Brokerage Capital Tax",
+        "Liquide vermogen", "Niet-liquide vermogen",
+    }
+    seen = {}
+    labels = {}
+    header = totalrow = None
+    for line, row in enumerate(rows, 1):
+        structure = row[0].strip() if row else ""
+        label = row[1].strip() if len(row) > 1 else ""
+        keys = []
+        if structure in {"Prive", "Totaal"}:
+            keys.append(("structure", structure))
+        if label in consumed:
+            keys.append(("label", label))
+        for key in keys:
+            if key in seen:
+                raise ValueError(_(
+                    'Duplicate CSV row "%(label)s" at rows %(first)s and %(second)s.'
+                ) % {"label": key[1], "first": seen[key], "second": line})
+            seen[key] = line
+        if structure == "Prive":
+            header = row
+        if structure == "Totaal":
+            totalrow = row
+        if label in consumed:
+            labels[label] = row
     if not header:
         raise ValueError(_("The Overview header was not found."))
     columns = []
@@ -71,12 +99,6 @@ def parse_overview(content):
         if when in [d for _, d in columns]:
             raise ValueError(_("Duplicate valuation date."))
         columns.append((i, when))
-    labels = {
-        r[1].strip(): r
-        for r in rows
-        if len(r) > 1 and r[1].strip() and r[1].strip() != "Totaal banktegoeden"
-    }
-    totalrow = next((r for r in rows if r and r[0].strip() == "Totaal"), None)
     if not columns or not totalrow:
         raise ValueError(_("No historical totals found."))
 
@@ -167,7 +189,7 @@ def import_overview(parsed):
             name=name, defaults={"kind": kind}
         )
         if entities[name].kind != kind:
-            raise ValueError("Owner configuration conflicts with import: " + name)
+            raise ValueError(_("Owner configuration conflicts with import: %(name)s") % {"name": name})
     entities["Operating Company"].parent = entities["Holding"]
     entities["Operating Company"].save()
     accounts = {}
@@ -187,7 +209,7 @@ def import_overview(parsed):
             or account.kind != kind
             or account.joint
         ):
-            raise ValueError("Account configuration conflicts with import: " + label)
+            raise ValueError(_("Account configuration conflicts with import: %(name)s") % {"name": label})
         accounts[label] = account
     Account.objects.get_or_create(
         name="Gezamenlijke rekening",

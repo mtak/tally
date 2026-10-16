@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.forms import formset_factory
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST, require_http_methods
@@ -260,8 +260,10 @@ def snapshot_edit(request, pk):
         or submitted.get("version") != digest or deleted
     )
     action = request.POST.get("action")
+    editor_error = None
+    unsafe_layout = False
     if request.method == "POST" and action not in {"draft", "complete"}:
-        return HttpResponseBadRequest(_("Invalid valuation action."))
+        editor_error = _("Invalid valuation action.")
     accounts = list(
         Account.objects.select_related("entity")
         .filter(Q(closed_on__isnull=True) | Q(closed_on__gt=s.date))
@@ -295,7 +297,29 @@ def snapshot_edit(request, pk):
                 row[key] = None if amount is None else Decimal(amount) / 100
         initial.append(row)
     FormSet = formset_factory(ValuationForm, extra=0, max_num=500, validate_max=True)
-    formset = FormSet(request.POST or None, initial=initial, form_kwargs={"show_cents": request.show_cents})
+    formset = FormSet(request.POST if request.method == "POST" else None,
+                      initial=initial, form_kwargs={"show_cents": request.show_cents})
+    if request.method == "POST":
+        # Validate identity/order before pairing bound inputs with account labels or
+        # enabling type-specific fields. Never relabel an untrusted row's values.
+        management = formset.management_form
+        if not management.is_valid() or any(
+            management.cleaned_data[key] != len(accounts)
+            for key in ("TOTAL_FORMS", "INITIAL_FORMS")
+        ):
+            editor_error = _("Invalid valuation form. Reload the valuation and try again.")
+            unsafe_layout = True
+        else:
+            ids = [request.POST.get(f"form-{i}-account_id") for i in range(len(accounts))]
+            expected = [str(a.pk) for a in accounts]
+            if len(set(ids)) != len(ids) or set(ids) != set(expected):
+                editor_error = _("Invalid accounts. Reload the valuation and try again.")
+                unsafe_layout = True
+            elif ids != expected:
+                editor_error = _("Invalid account order. Reload the valuation and try again.")
+                unsafe_layout = True
+        if unsafe_layout:
+            formset = FormSet(initial=initial, form_kwargs={"show_cents": request.show_cents})
     for form, account in zip(formset, accounts):
         if account.kind != "broker":
             form.fields["net_deposits"].disabled = True
@@ -303,15 +327,10 @@ def snapshot_edit(request, pk):
             form.fields["basis"].disabled = True
         if account.kind not in ("bank", "claim"):
             form.fields["interest"].disabled = True
-    if request.method == "POST" and not conflict and formset.is_valid():
-        ids = [f.cleaned_data.get("account_id") for f in formset]
-        if len(ids) != len(set(ids)) or set(ids) != {a.pk for a in accounts}:
-            return HttpResponseBadRequest("Invalid accounts")
+    if request.method == "POST" and not conflict and not editor_error and formset.is_valid():
         valid = True
         overrides = {t.kind: t.amount_minor for t in s.tax_adjustments.all()}
         for form, a in zip(formset, accounts):
-            if form.cleaned_data["account_id"] != a.pk:
-                return HttpResponseBadRequest("Invalid order")
             data = form.cleaned_data
             value = data.get("amount")
             if value is not None and (
@@ -394,8 +413,9 @@ def snapshot_edit(request, pk):
         "wealth/snapshot_edit.html",
         {"snapshot": s, "formset": formset, "entries": entries,
          "summary": report(s) if not deleted else None,
-         "editor_version": token, "conflict": conflict, "deleted": deleted},
-        status=409 if conflict else 200,
+         "editor_version": token, "conflict": conflict, "deleted": deleted,
+         "editor_error": editor_error, "unsafe_layout": unsafe_layout},
+        status=400 if editor_error else 409 if conflict else 200,
     )
 
 

@@ -3,7 +3,9 @@
 <div class="notice">{% trans "Blank means no observation on this date. Older values keep their original date. Enter zero only when the balance is actually zero." %}</div>
 {% if snapshot.imported %}<div class="notice">{% trans "Historical tax adjustments are preserved. Editing balances does not recalculate these imported adjustments." %}</div>{% endif %}
 {% include "wealth/coverage.html" %}
-{% if conflict %}<div class="notice" role="alert">
+{% if editor_error %}<div class="notice" role="alert">{{ editor_error }}
+{% if not deleted %}<a href="{% url 'snapshot_edit' snapshot.pk %}">{% trans "Reload valuation" %}</a>{% endif %}</div>{% endif %}
+{% if conflict and not unsafe_layout %}<div class="notice" role="alert">
 {% if deleted %}{% trans "This valuation was deleted while you were editing. Your submitted inputs are shown below and have not been saved." %}
 {% else %}{% trans "This valuation or its accounts changed while you were editing. Your submitted inputs are shown below and have not been saved. Compare them with the latest saved values before re-entering your changes." %}
 <a href="{% url 'snapshot_edit' snapshot.pk %}" target="_blank" rel="noopener">{% trans "Open latest saved valuation" %}</a>{% endif %}
@@ -32,5 +34,5 @@
 {% else %}{% trans "No saved observation" %}{% endif %}
 </td>{% endif %}</tr>
 {% empty %}<tr><td colspan="4">{% trans "Add accounts before entering a valuation." %} <a href="{% url 'account_add' %}">{% trans "Add account" %}</a></td></tr>{% endfor %}
-</tbody></table></div><div class="sticky-actions"><div class="actions">{% if not snapshot.complete and not conflict %}<button class="button secondary" {% if conflict %}disabled{% endif %} name="action" value="draft">{% trans "Save draft" %}</button>{% endif %}<button class="button" {% if conflict %}disabled{% endif %} name="action" value="complete">{% if snapshot.complete %}{% trans "Save" %}{% else %}{% trans "Save & publish" %}{% endif %}</button>{% if not snapshot.complete and not conflict %}<a class="button secondary" href="{% url 'snapshot_delete' snapshot.pk %}">{% trans "Delete draft" %}</a>{% endif %}</div></div></form>
+</tbody></table></div><div class="sticky-actions"><div class="actions">{% if not snapshot.complete and not conflict %}<button class="button secondary" {% if conflict or unsafe_layout %}disabled{% endif %} name="action" value="draft">{% trans "Save draft" %}</button>{% endif %}<button class="button" {% if conflict or unsafe_layout %}disabled{% endif %} name="action" value="complete">{% if snapshot.complete %}{% trans "Save" %}{% else %}{% trans "Save & publish" %}{% endif %}</button>{% if not snapshot.complete and not conflict %}<a class="button secondary" href="{% url 'snapshot_delete' snapshot.pk %}">{% trans "Delete draft" %}</a>{% endif %}</div></div></form>
 {% endblock %}

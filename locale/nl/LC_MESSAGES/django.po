@@ -1154,3 +1154,27 @@ msgstr "Nog geen vastgelegde waarnemingen voor dit account."
 
 msgid "Recorded observations only, including drafts. Full account values before ownership adjustments; blank details mean unknown."
 msgstr "Alleen vastgelegde waarnemingen, inclusief concepten. Volledige accountwaarden vóór eigendomscorrecties; lege detailvelden betekenen onbekend."
+
+msgid "Reload valuation"
+msgstr "Meetmoment opnieuw laden"
+
+#, python-format
+msgid "Duplicate CSV row \"%(label)s\" at rows %(first)s and %(second)s."
+msgstr "Dubbele CSV-rij \"%(label)s\" op rijen %(first)s en %(second)s."
+
+#, python-format
+msgid "Owner configuration conflicts with import: %(name)s"
+msgstr "Eigenaarconfiguratie is in strijd met de import: %(name)s"
+
+#, python-format
+msgid "Account configuration conflicts with import: %(name)s"
+msgstr "Rekeningconfiguratie is in strijd met de import: %(name)s"
+
+msgid "Invalid valuation form. Reload the valuation and try again."
+msgstr "Ongeldige meetmomentformuliergegevens. Laad het meetmoment opnieuw en probeer het opnieuw."
+
+msgid "Invalid accounts. Reload the valuation and try again."
+msgstr "Ongeldige rekeningen. Laad het meetmoment opnieuw en probeer het opnieuw."
+
+msgid "Invalid account order. Reload the valuation and try again."
+msgstr "Ongeldige rekeningvolgorde. Laad het meetmoment opnieuw en probeer het opnieuw."

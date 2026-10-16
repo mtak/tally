@@ -260,3 +260,10 @@ Check current CI rather than treating this historical result as current verifica
   records are synthesized. Accounts & assets and valuation editor rows use owner
   name/ID then account name/ID ordering; other overviews retain name ordering.
   Global account-name uniqueness and stale editor row/owner mappings remain intact.
+
+- Issues #25/#38: Overview rejects duplicate consumed labels and Prive/Totaal
+  structures with translated row locations; irrelevant repeated headings remain
+  allowed. Import conflicts are translated and atomic. Malformed editor layouts
+  return a normal translated HTTP 400 page with saved rows and reload recovery;
+  validate identities/order before binding rows to account labels. Valid stale
+  layouts keep HTTP 409 and their signed original mapping and submitted values.

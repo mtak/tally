@@ -213,3 +213,16 @@
   Stale editor submissions keep their signed original row layout and owner labels.
 - CSV `interest_eur` preserves blank, zero, sign and exact cents regardless of UI
   language or precision. Observation export is not a full database backup.
+
+## Overview ambiguity and recoverable errors (#25, #38)
+
+- Reject repeated consumed account, basis, tax and liquidity labels, and repeated
+  Prive/Totaal structures before building observations. Errors identify the label
+  and both CSV row numbers; irrelevant repeated headings remain supported.
+- Import configuration conflicts use translated messages with unchanged owner/account
+  names and remain atomic. Recoverable import failures stay on the import form.
+- Malformed editor identities, row order and management counts return a translated
+  HTTP 400 in the editor, with saved values and a reload link. Untrusted row values
+  are not paired with account labels. Valid stale layouts retain their signed row
+  mapping, submitted inputs and HTTP 409 reconciliation behavior. Invalid actions
+  also render in the editor with HTTP 400; no rejected request writes data.

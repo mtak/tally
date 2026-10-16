@@ -149,3 +149,48 @@ def test_invalid_input_retry_keeps_original_revision(editors):
     data["form-0-amount"] = "444"
     assert a.post(path,data).status_code == 409
     assert snapshot.valuations.get(account=broker).amount_minor == 33300
+
+
+@pytest.mark.parametrize("lang", ["en", "nl"])
+@pytest.mark.parametrize("malformed", ["duplicate", "foreign", "order", "missing-id", "count", "management", "action"])
+@pytest.mark.parametrize("stale", [False, True])
+def test_malformed_editor_uses_translated_safe_page(editors, lang, malformed, stale):
+    (client, _), snapshot, broker, bank = editors
+    client.cookies['django_language'] = lang
+    data = body(client, snapshot)
+    data['form-0-amount'] = '987654321'
+    if malformed == 'duplicate':
+        data['form-1-account_id'] = data['form-0-account_id']
+    elif malformed == 'foreign':
+        data['form-0-account_id'] = '999999'
+    elif malformed == 'order':
+        data['form-0-account_id'], data['form-1-account_id'] = data['form-1-account_id'], data['form-0-account_id']
+    elif malformed == 'missing-id':
+        del data['form-0-account_id']
+    elif malformed == 'count':
+        data['form-TOTAL_FORMS'] = '1'
+    elif malformed == 'management':
+        del data['form-TOTAL_FORMS']
+    else:
+        data['action'] = 'unknown'
+    if stale:
+        broker.name = 'Renamed broker'
+        broker.save()
+    before = list(snapshot.valuations.values())
+    response = client.post(f'/valuations/{snapshot.pk}/', data)
+    assert response.status_code == 400
+    assert response.templates[0].name == 'wealth/snapshot_edit.html'
+    html = response.content.decode()
+    expected = ('Ongeldige' if lang == 'nl' else 'Invalid')
+    assert expected in response.context['editor_error']
+    assert 'role="alert"' in html
+    assert response.context['editor_version'] == data['editor_version']
+    assert list(snapshot.valuations.values()) == before
+    if malformed != 'action':
+        assert '987654321' not in html
+        assert response.context['unsafe_layout']
+        assert response.context['entries'][0]['form']['account_id'].value() == broker.pk
+    else:
+        assert response.context['formset'][0]['amount'].value() == '987654321'
+    snapshot.refresh_from_db()
+    assert not snapshot.complete
