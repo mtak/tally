@@ -235,6 +235,12 @@ Check current CI rather than treating this historical result as current verifica
   Unknown causes stay neutral; tax changes are labeled correction changes.
   Reconciliation, tax coverage and observation-period attribution are unchanged.
 
+- Issue #49: Analysis includes an account-by-published-valuation coverage matrix
+  through the selected date. Cells distinguish observed, carried (original date and
+  exact age), missing and lifecycle-not-applicable values. Broker result and business
+  tax coverage remain separate from balance coverage; drafts are excluded and no
+  data is inferred.
+
 - Issue #47: analysis includes gross investment-account history with an account
   selector (including closed accounts), true calendar spacing and a matching
   accessible table. Only actual published observations through the selected date

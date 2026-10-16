@@ -1458,3 +1458,66 @@ msgstr "Beleggingsresultaten vereisen waarnemingen en netto inleg op beide datum
 #: templates/wealth/analysis.html
 msgid "Previous-year comparison unavailable: no published valuation on or before the prior-year date."
 msgstr "Vergelijking met vorig jaar niet beschikbaar: er is geen gepubliceerd meetmoment op of vóór de datum een jaar eerder."
+
+#: templates/wealth/analysis.html
+msgid "Valuation coverage over time"
+msgstr "Dekking van waarderingen door de tijd"
+
+#: templates/wealth/analysis.html
+msgid "Published valuations only. Each cell uses the latest published observation on or before its date; the source date and exact age are shown."
+msgstr "Alleen gepubliceerde waarderingen. Elke cel gebruikt de laatst gepubliceerde waarneming op of vóór de datum; de brondatum en exacte ouderdom worden getoond."
+
+#: templates/wealth/analysis.html
+msgid "Balance, investment result and business tax coverage are separate. Drafts are excluded."
+msgstr "Dekking van saldo, beleggingsresultaat en bedrijfsbelasting staat los van elkaar. Concepten zijn uitgesloten."
+
+#: templates/wealth/analysis.html
+msgid "Not applicable"
+msgstr "Niet van toepassing"
+
+#: templates/wealth/analysis.html
+msgid "Missing observation"
+msgstr "Ontbrekende waarneming"
+
+#: templates/wealth/analysis.html
+msgid "Result coverage"
+msgstr "Dekking beleggingsresultaat"
+
+#: templates/wealth/analysis.html
+msgid "Tax coverage"
+msgstr "Dekking belasting"
+
+#: templates/wealth/analysis.html
+msgid "Observed"
+msgstr "Waargenomen"
+
+#: templates/wealth/analysis.html
+msgid "Balance"
+msgstr "Saldo"
+
+#: templates/wealth/analysis.html
+#, python-format
+msgid "%(age)s day old"
+msgid_plural "%(age)s days old"
+msgstr[0] "%(age)s dag oud"
+msgstr[1] "%(age)s dagen oud"
+
+#: templates/wealth/analysis.html
+msgid "Covered"
+msgstr "Gedekt"
+
+#: templates/wealth/analysis.html
+msgid "Broker tax adjustments"
+msgstr "VPB/AB-correcties"
+
+#: templates/wealth/analysis.html
+msgid "Both recorded"
+msgstr "Beide vastgelegd"
+
+#: templates/wealth/analysis.html
+msgid "Partially recorded"
+msgstr "Gedeeltelijk vastgelegd"
+
+#: templates/wealth/analysis.html
+msgid "Not recorded"
+msgstr "Niet vastgelegd"

@@ -2,6 +2,48 @@
 <div class="page-heading"><div><div class="eyebrow">{% trans "BEHIND THE NUMBERS" %}</div><h1>{% trans "Performance & assumptions" %}</h1><p class="muted">{% trans "Separate investment results from money added or withdrawn." %}</p></div></div>
 <form method="get" class="filterbar analysis-filters"><div><label for="at">{% trans "Valuation date" %}</label><select name="at" id="at" data-auto-submit>{% for s in snapshots %}<option value="{{ s.pk }}" {% if selected.pk == s.pk %}selected{% endif %}>{{ s.date|date:"DATE_FORMAT" }}</option>{% endfor %}</select></div>{% if investment_accounts %}<div><label for="investment-account">{% trans "Investment account" %}</label><select name="account" id="investment-account" data-auto-submit>{% for account in investment_accounts %}<option value="{{ account.pk }}" {% if selected_account.pk == account.pk %}selected{% endif %}>{{ account.name }} · {{ account.entity.name }}</option>{% endfor %}</select></div>{% endif %}<noscript><button>{% trans "Apply" %}</button></noscript></form>
 {% include "wealth/coverage.html" %}
+{% if valuation_coverage.rows %}
+<section class="card">
+  <h2>{% trans "Valuation coverage over time" %}</h2>
+  <p class="muted">{% trans "Published valuations only. Each cell uses the latest published observation on or before its date; the source date and exact age are shown." %}</p>
+  <p class="muted">{% trans "Balance, investment result and business tax coverage are separate. Drafts are excluded." %}</p>
+  <div class="table-wrap coverage-matrix" tabindex="0" role="region" aria-label="{% trans 'Valuation coverage over time' %}">
+    <table>
+      <thead><tr><th scope="col">{% trans "Account" %}</th>{% for snapshot in valuation_coverage.snapshots %}<th scope="col">{{ snapshot.date|date:"SHORT_DATE_FORMAT" }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for row in valuation_coverage.rows %}
+        <tr>
+          <th scope="row"><a href="{% url 'account_edit' row.account.pk %}">{{ row.account.name }}</a><small>{{ row.account.entity.name }}</small></th>
+          {% for cell in row.cells %}
+            <td class="coverage-cell coverage-{{ cell.status }}">
+            {% if cell.status == "na" %}
+              <strong>— {% trans "Not applicable" %}</strong>
+            {% elif cell.status == "missing" %}
+              <strong>! {% trans "Missing observation" %}</strong>
+              <small>{% trans "Balance unknown" %}</small>
+              {% if cell.result != "na" %}<small>{% trans "Result coverage" %}: {% trans "Unknown" %}</small>{% endif %}
+              {% if cell.tax != "na" %}<small>{% trans "Tax coverage" %}: {% trans "Unknown" %}</small>{% endif %}
+            {% else %}
+              <strong>{% if cell.status == "observed" %}● {% trans "Observed" %}{% else %}↪ {% trans "Carried forward" %}{% endif %}</strong>
+              <small>{% trans "Balance" %}: {{ cell.valuation.amount_minor|money }}</small>
+              <small>{% trans "Observed" %}: {{ cell.valuation.snapshot.date|date:"SHORT_DATE_FORMAT" }}</small>
+              {% if cell.status == "carried" %}<small>{% blocktrans count age=cell.age_days %}{{ age }} day old{% plural %}{{ age }} days old{% endblocktrans %}</small>{% endif %}
+              {% if cell.result != "na" %}<small>{% trans "Result coverage" %}: {% if cell.result == "covered" %}{% trans "Covered" %}{% else %}{% trans "Unknown" %}{% endif %}</small>{% endif %}
+              {% if cell.tax != "na" %}<small>{% trans "Tax coverage" %}: {% if cell.tax == "covered" %}{% trans "Covered" %}{% else %}{% trans "Unknown" %}{% endif %}</small>{% endif %}
+            {% endif %}
+            {% if row.account.entity.kind == "company" and row.account.kind == "broker" %}
+              <small>{% trans "Tax basis" %}: {% if cell.tax_basis == "na" %}{% trans "Not applicable" %}{% elif cell.tax_basis == "covered" %}{% trans "Covered" %}{% else %}{% trans "Unknown" %}{% endif %}</small>
+              <small>{% trans "Broker tax adjustments" %}: {% if cell.tax_overrides == "na" %}{% trans "Not applicable" %}{% elif cell.tax_overrides == "complete" %}{% trans "Both recorded" %}{% elif cell.tax_overrides == "partial" %}{% trans "Partially recorded" %}{% else %}{% trans "Not recorded" %}{% endif %}</small>
+            {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
 {% if movement.incomplete %}<div class="notice">{% trans "Change unavailable: incomplete liquidation scenario." %} {{ movement.before.date|date:"DATE_FORMAT" }} → {{ movement.after.date|date:"DATE_FORMAT" }}{% for warning in movement.warnings %}<p>{{ warning }}</p>{% endfor %}</div>{% elif movement %}<section class="card"><h2>{% trans "What changed?" %}</h2><p class="muted">{{ movement.before.date|date:"DATE_FORMAT" }} → {{ movement.after.date|date:"DATE_FORMAT" }}</p><div id="movement-chart" class="chart history-chart" role="img" aria-label="{% trans 'Change in wealth' %}"></div><div class="table-wrap"><table class="movement-table"><tbody><tr><td>{% trans "Opening wealth" %}</td><td class="number">{{ movement.opening|money }}</td></tr>{% for part in movement.parts %}<tr><td colspan="2" class="movement-cell"><details class="movement-details" id="movement-{{ part.key }}"><summary><span>{{ part.label }}</span><span class="number">{{ part.amount|money }}</span></summary>
 {% if part.details %}<div class="table-wrap" tabindex="0" role="region" aria-label="{{ part.label }}"><table><caption class="sr-only">{{ part.label }}</caption><thead><tr><th>{% trans "Account / correction" %}</th><th class="number">{% trans "Opening value" %}</th><th class="number">{% trans "Closing value" %}</th><th class="number">{% trans "Contribution" %}</th><th>{% trans "Explanation" %}</th></tr></thead><tbody>
 {% for item in part.details %}<tr><td>{% if item.account %}<a href="{% url 'account_edit' item.account.pk %}">{{ item.label }}</a><small>{{ item.account.entity.name }}</small>{% else %}{{ item.label }}{% endif %}</td><td class="number">{{ item.opening|money }}{% if item.opening_date %}<small>{{ item.opening_date|date:"SHORT_DATE_FORMAT" }}</small>{% endif %}</td><td class="number">{{ item.closing|money }}{% if item.closing_date %}<small>{{ item.closing_date|date:"SHORT_DATE_FORMAT" }}</small>{% endif %}</td><td class="number">{{ item.amount|money }}</td><td>{{ item.reason }}</td></tr>{% endfor %}

@@ -98,6 +98,16 @@
 - Current account classifications also reinterpret historical mix. This feature
   does not introduce classification versioning.
 
+## Valuation coverage matrix (#49)
+
+- Analysis shows every account against published valuation dates through the selected
+  date. Cells distinguish same-date observations, carried observations with their
+  original date and exact age, missing values, and dates outside the account lifecycle.
+- A recorded zero is an observed balance. Drafts never contribute to the matrix.
+- Balance coverage is independent of broker result coverage (which requires net
+  deposits) and company tax coverage (which follows the existing basis/override rules).
+  The matrix is descriptive and does not change report calculations or infer data.
+
 ## Investment entry (#13, supersedes #3)
 
 - Each dated investment observation needs only account value and signed cumulative

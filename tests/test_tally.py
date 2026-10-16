@@ -15,7 +15,7 @@ from wealth.models import (
     TaxAdjustment,
     ImportRecord,
 )
-from wealth.services import report, performance, rate
+from wealth.services import report, performance, rate, valuation_coverage
 from wealth.importer import parse_overview, import_overview
 from wealth.forms import AccountForm, ValuationForm
 
@@ -84,6 +84,80 @@ def test_start_date_hides_unopened_accounts(account, snap):
     account.started_on = date(2026, 2, 1)
     account.save()
     assert report(snap)["missing"] == []
+
+
+def test_valuation_coverage_preserves_lifecycle_observations_and_independent_coverage(owner, snap):
+    carried = Account.objects.create(name="Carried zero", entity=owner)
+    Valuation.objects.create(snapshot=snap, account=carried, amount_minor=0)
+    closed = Account.objects.create(name="Closed account", entity=owner,
+                                    closed_on=date(2026, 3, 1))
+    Valuation.objects.create(snapshot=snap, account=closed, amount_minor=20000)
+    missing = Account.objects.create(name="Missing account", entity=owner)
+    unopened = Account.objects.create(name="New account", entity=owner,
+                                      started_on=date(2026, 3, 1))
+    draft = Snapshot.objects.create(date=date(2026, 2, 1))
+    Valuation.objects.create(snapshot=draft, account=missing, amount_minor=999999)
+    later = Snapshot.objects.create(date=date(2026, 3, 1), complete=True)
+
+    company = Entity.objects.create(name="Coverage company", kind="company")
+    unknown_basis = Account.objects.create(name="Unknown basis", entity=company, kind="broker")
+    covered_basis = Account.objects.create(name="Recorded deposits", entity=company, kind="broker")
+    Valuation.objects.create(snapshot=snap, account=unknown_basis, amount_minor=10000)
+    Valuation.objects.create(snapshot=snap, account=covered_basis, amount_minor=20000,
+                             net_deposits_minor=0)
+    # Draft-only values must not appear as historical observations.
+    adjustments_snapshot = later
+    for kind in ("broker_vpb", "broker_ab"):
+        TaxAdjustment.objects.create(snapshot=adjustments_snapshot, kind=kind, amount_minor=0)
+    Valuation.objects.create(snapshot=adjustments_snapshot, account=unknown_basis,
+                             amount_minor=11000)
+    Valuation.objects.create(snapshot=adjustments_snapshot, account=covered_basis,
+                             amount_minor=22000, net_deposits_minor=0)
+    Valuation.objects.create(snapshot=adjustments_snapshot, account=unopened, amount_minor=0)
+
+    matrix = valuation_coverage([snap, later])
+    assert [s.pk for s in matrix["snapshots"]] == [snap.pk, later.pk]
+    rows = {row["account"].name: row["cells"] for row in matrix["rows"]}
+    assert rows["Carried zero"][0]["status"] == "observed"
+    assert rows["Carried zero"][1]["status"] == "carried"
+    assert rows["Carried zero"][1]["age_days"] == 59
+    assert rows["Closed account"][1]["status"] == "na"
+    assert rows["New account"][0]["status"] == "na"
+    assert rows["New account"][1]["status"] == "observed"
+    assert rows["Missing account"][1]["status"] == "missing"
+    assert rows["Unknown basis"][0]["tax"] == "unknown"
+    assert rows["Unknown basis"][0]["tax_basis"] == "unknown"
+    assert rows["Unknown basis"][0]["tax_overrides"] == "none"
+    assert rows["Unknown basis"][1]["tax"] == "covered"
+    assert rows["Unknown basis"][1]["result"] == "unknown"
+    assert rows["Unknown basis"][1]["valuation"].amount_minor == 11000
+    assert rows["Unknown basis"][1]["tax_basis"] == "unknown"
+    assert rows["Unknown basis"][1]["tax_overrides"] == "complete"
+    assert rows["Recorded deposits"][1]["result"] == "covered"
+    assert rows["Recorded deposits"][1]["tax_overrides"] == "complete"
+
+
+@pytest.mark.parametrize("language,title,observed,carried", [
+    ("en", "Valuation coverage over time", "Observed", "Carried forward"),
+    ("nl", "Dekking van waarderingen door de tijd", "Waargenomen", "Overgenomen"),
+])
+def test_analysis_shows_localized_coverage_matrix(logged, owner, snap, language,
+                                                  title, observed, carried):
+    first = Account.objects.create(name="Coverage account", entity=owner)
+    Valuation.objects.create(snapshot=snap, account=first, amount_minor=0)
+    second = Snapshot.objects.create(date=date(2026, 2, 1), complete=True)
+    future = Snapshot.objects.create(date=date(2026, 3, 1), complete=True)
+    Valuation.objects.create(snapshot=future, account=first, amount_minor=999999)
+    logged.cookies["django_language"] = language
+    response = logged.get("/analysis/", {"at": second.pk}, HTTP_ACCEPT_LANGUAGE=language)
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert title in html
+    assert observed in html
+    assert carried in html
+    if language == "nl":
+        assert "Alleen gepubliceerde waarderingen." in html
+    assert [s.pk for s in response.context["valuation_coverage"]["snapshots"]] == [snap.pk, second.pk]
 
 
 def test_home_pension_filters_and_gross_allocation(owner, snap):

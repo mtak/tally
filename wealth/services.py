@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils.translation import gettext as _
 from .models import Account, Snapshot, Valuation, TaxAdjustment, ASSETS
 
@@ -138,6 +139,94 @@ def maturity_calendar(snapshot):
             ],
         },
     }
+
+
+def valuation_coverage(snapshots):
+    """Published account coverage by valuation date, preserving source dates."""
+    snapshots = sorted(snapshots, key=lambda snapshot: snapshot.date)
+    accounts = list(Account.objects.select_related("entity").order_by(
+        Lower("entity__name"), "entity_id", Lower("name"), "pk"
+    ))
+    if not snapshots:
+        return {"snapshots": [], "rows": []}
+
+    dates = [snapshot.date for snapshot in snapshots]
+    valuations = Valuation.objects.filter(
+        account__in=accounts, snapshot__complete=True,
+        snapshot__date__lte=dates[-1],
+    ).select_related("snapshot", "account").order_by("snapshot__date", "pk")
+    by_account = defaultdict(list)
+    for valuation in valuations:
+        by_account[valuation.account_id].append(valuation)
+    adjustments = {snapshot.pk: set() for snapshot in snapshots}
+    for snapshot_id, kind in TaxAdjustment.objects.filter(
+        snapshot__in=snapshots
+    ).values_list("snapshot_id", "kind"):
+        adjustments[snapshot_id].add(kind)
+
+    def override_status(kinds):
+        recorded = {"broker_vpb", "broker_ab"} & kinds
+        if len(recorded) == 2:
+            return "complete"
+        return "partial" if recorded else "none"
+
+    rows = []
+    for account in accounts:
+        observed = by_account.get(account.pk, [])
+        is_company_broker = account.entity.kind == "company" and account.kind == "broker"
+        cursor = 0
+        latest = None
+        cells = []
+        for snapshot in snapshots:
+            while cursor < len(observed) and observed[cursor].snapshot.date <= snapshot.date:
+                latest = observed[cursor]
+                cursor += 1
+            if (latest is not None and account.started_on is not None
+                    and latest.snapshot.date < account.started_on):
+                latest = None
+            applicable = (
+                (account.started_on is None or account.started_on <= snapshot.date)
+                and (account.closed_on is None or account.closed_on > snapshot.date)
+            )
+            if not applicable:
+                cells.append({"status": "na", "valuation": None,
+                              "result": "na", "tax": "na", "tax_basis": "na",
+                              "tax_overrides": "na", "age_days": None})
+                continue
+            if latest is None:
+                cells.append({"status": "missing", "valuation": None,
+                              "result": "unknown" if account.kind == "broker" else "na",
+                              "tax": "unknown" if account.entity.kind == "company" else "na",
+                              "tax_basis": "unknown" if is_company_broker else "na",
+                              "tax_overrides": override_status(adjustments[snapshot.pk]) if is_company_broker else "na",
+                              "age_days": None})
+                continue
+            age_days = (snapshot.date - latest.snapshot.date).days
+            result = (
+                "na" if account.kind != "broker" else
+                "covered" if latest.net_deposits_minor is not None else "unknown"
+            )
+            if not is_company_broker and account.entity.kind != "company":
+                tax = "na"
+                tax_basis = tax_overrides = "na"
+            elif is_company_broker:
+                tax_basis = "covered" if latest.basis_minor is not None else "unknown"
+                tax_overrides = override_status(adjustments[snapshot.pk])
+                tax = "covered" if tax_basis == "covered" or tax_overrides == "complete" else "unknown"
+            else:
+                tax = "covered"
+                tax_basis = tax_overrides = "na"
+            cells.append({
+                "status": "observed" if age_days == 0 else "carried",
+                "valuation": latest,
+                "result": result,
+                "tax": tax,
+                "tax_basis": tax_basis,
+                "tax_overrides": tax_overrides,
+                "age_days": age_days,
+            })
+        rows.append({"account": account, "cells": cells})
+    return {"snapshots": snapshots, "rows": rows}
 
 
 class ReportBatch:

@@ -19,6 +19,7 @@
 @media(max-width:760px){.page-footer{flex-wrap:wrap;gap:12px}.mobile-release{display:block;width:100%}}
 
 .history-scroll{overflow-x:auto;padding-top:4px}.history-scroll:focus-visible,.chart-details .table-wrap:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.coverage-matrix{max-height:70vh}.coverage-matrix:focus-visible{outline:2px solid var(--green);outline-offset:2px}.coverage-matrix table{min-width:max-content}.coverage-matrix th:first-child{position:sticky;left:0;background:var(--surface);z-index:2}.coverage-matrix td{min-width:170px}.coverage-cell{font-size:11px}.coverage-cell strong,.coverage-cell small{display:block}.coverage-cell strong{white-space:nowrap}.coverage-observed{border-left:3px solid var(--green)}.coverage-carried{border-left:3px solid #b08b3e}.coverage-missing{border-left:3px solid #b65b57}.coverage-na{color:var(--muted)}
 .chart-details{margin-top:18px;font-size:12px}.chart-details summary{cursor:pointer;color:var(--green);padding:8px 0}.chart-details caption{text-align:left;color:var(--muted);padding:10px}.chart-details tbody th{font-size:12px;color:var(--ink);font-weight:500;vertical-align:top}.chart-details th[scope=row]{white-space:nowrap}
 
 .two-columns>.chart-card{min-width:0}
