@@ -1,9 +1,10 @@
+from bisect import bisect_right
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from django.db.models import Q
 from django.utils.translation import gettext as _
-from .models import Account, Snapshot, Valuation, ASSETS
+from .models import Account, Snapshot, Valuation, TaxAdjustment, ASSETS
 
 
 def rounded(value):
@@ -33,15 +34,7 @@ def performance(valuation):
         account=valuation.account, snapshot__complete=True,
         snapshot__date__lt=valuation.snapshot.date,
     ).select_related("snapshot").order_by("-snapshot__date").first()
-    if previous is None or previous.net_deposits_minor is None:
-        return None
-    net = valuation.net_deposits_minor - previous.net_deposits_minor
-    return {
-        "result": valuation.amount_minor - previous.amount_minor - net,
-        "net_deposits": net,
-        "since": previous.snapshot.date,
-        "days": (valuation.snapshot.date - previous.snapshot.date).days,
-    }
+    return performance_from_previous(valuation, previous)
 
 
 def investment_history(account, through):
@@ -147,15 +140,122 @@ def maturity_calendar(snapshot):
     }
 
 
-def report(snapshot, include_home=True, include_pension=True, net=True):
-    accounts = list(active_accounts(snapshot))
-    available = (
-        Valuation.objects.filter(snapshot__date__lte=snapshot.date)
-        .filter(Q(snapshot__complete=True) | Q(snapshot=snapshot))
-        .select_related("account__entity", "snapshot")
-        .order_by("snapshot__date")
-    )
-    latest = {v.account_id: v for v in available}
+class ReportBatch:
+    """Load shared report inputs once and index carry-forward observations."""
+
+    def __init__(self, snapshots, performance_snapshots=None):
+        snapshots = list(snapshots)
+        self.snapshot_ids = {snapshot.pk for snapshot in snapshots}
+        performance_snapshots = (
+            snapshots if performance_snapshots is None else list(performance_snapshots)
+        )
+        self.valuations_by_account = defaultdict(list)
+        self.valuation_dates = {}
+        self.performance_by_id = {}
+        if not snapshots:
+            self.overrides = {}
+            return
+
+        earliest_date = min(snapshot.date for snapshot in snapshots)
+        latest_date = max(snapshot.date for snapshot in snapshots)
+        account_scope = (
+            (Q(started_on__isnull=True) | Q(started_on__lte=latest_date))
+            & (Q(closed_on__isnull=True) | Q(closed_on__gt=earliest_date))
+        )
+        self.accounts = list(
+            Account.objects.filter(account_scope).select_related("entity")
+        )
+        valuations = Valuation.objects.filter(snapshot__date__lte=latest_date).filter(
+            Q(snapshot__complete=True) | Q(snapshot_id__in=self.snapshot_ids)
+        ).filter(
+            (Q(account__started_on__isnull=True) | Q(account__started_on__lte=latest_date))
+            & (Q(account__closed_on__isnull=True) | Q(account__closed_on__gt=earliest_date))
+        ).select_related("snapshot").order_by("snapshot__date", "pk")
+        for valuation in valuations:
+            self.valuations_by_account[valuation.account_id].append(valuation)
+
+        for account_id, rows in self.valuations_by_account.items():
+            self.valuation_dates[account_id] = [row.snapshot.date for row in rows]
+        performance_ids = {
+            valuation.pk
+            for snapshot in performance_snapshots
+            for valuation in self.latest_for(snapshot).values()
+        }
+        for rows in self.valuations_by_account.values():
+            previous = None
+            for valuation in rows:
+                if valuation.snapshot.complete:
+                    if valuation.pk in performance_ids:
+                        self.performance_by_id[valuation.pk] = performance_from_previous(
+                            valuation, previous
+                        )
+                    previous = valuation
+                elif valuation.snapshot_id in self.snapshot_ids:
+                    if valuation.pk in performance_ids:
+                        self.performance_by_id[valuation.pk] = performance_from_previous(
+                            valuation, previous
+                        )
+
+        self.overrides = defaultdict(dict)
+        for adjustment in TaxAdjustment.objects.filter(snapshot_id__in=self.snapshot_ids):
+            self.overrides[adjustment.snapshot_id][adjustment.kind] = adjustment.amount_minor
+
+    def latest_for(self, snapshot):
+        latest = {}
+        for account_id, rows in self.valuations_by_account.items():
+            index = bisect_right(self.valuation_dates[account_id], snapshot.date) - 1
+            while index >= 0:
+                valuation = rows[index]
+                if valuation.snapshot.complete or valuation.snapshot_id == snapshot.pk:
+                    latest[account_id] = valuation
+                    break
+                index -= 1
+        return latest
+
+
+def performance_from_previous(valuation, previous):
+    """Calculate a period result from an already selected prior observation."""
+    if valuation.net_deposits_minor is None or previous is None:
+        return None
+    if previous.net_deposits_minor is None:
+        return None
+    net = valuation.net_deposits_minor - previous.net_deposits_minor
+    return {
+        "result": valuation.amount_minor - previous.amount_minor - net,
+        "net_deposits": net,
+        "since": previous.snapshot.date,
+        "days": (valuation.snapshot.date - previous.snapshot.date).days,
+    }
+
+
+def reports(
+    snapshots, include_home=True, include_pension=True, net=True,
+    performance_snapshots=None,
+):
+    """Build several dated reports from a bounded set of database reads."""
+    snapshots = list(snapshots)
+    batch = ReportBatch(snapshots, performance_snapshots=performance_snapshots)
+    return [report(snapshot, include_home, include_pension, net, batch=batch)
+            for snapshot in snapshots]
+
+
+def report(snapshot, include_home=True, include_pension=True, net=True, batch=None):
+    if batch is None:
+        accounts = list(active_accounts(snapshot))
+        available = (
+            Valuation.objects.filter(snapshot__date__lte=snapshot.date)
+            .filter(Q(snapshot__complete=True) | Q(snapshot=snapshot))
+            .select_related("account__entity", "snapshot")
+            .order_by("snapshot__date")
+        )
+        latest = {v.account_id: v for v in available}
+        overrides = {t.kind: t.amount_minor for t in snapshot.tax_adjustments.all()}
+    else:
+        accounts = [account for account in batch.accounts
+                    if (account.closed_on is None or account.closed_on > snapshot.date)
+                    and (account.started_on is None or account.started_on <= snapshot.date)]
+        latest = batch.latest_for(snapshot)
+        overrides = batch.overrides.get(snapshot.pk, {})
     groups = dict.fromkeys(["private", "home", "business", "pension"], 0)
     assets = defaultdict(int)
     liquidity = {"liquid": 0, "illiquid": 0}
@@ -168,7 +268,6 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
     broker_vpb = 0
     broker_ab = 0
     broker_value = 0
-    overrides = {t.kind: t.amount_minor for t in snapshot.tax_adjustments.all()}
     unknown_broker_tax = False
     for account in accounts:
         is_home = account.kind in ("property", "mortgage")
@@ -228,7 +327,9 @@ def report(snapshot, include_home=True, include_pension=True, net=True):
                 "valuation": v,
                 "amount": amount,
                 "stale": v.snapshot.date != snapshot.date,
-                "performance": performance(v) if account.kind == "broker" else None,
+                "performance": (
+                    batch.performance_by_id.get(v.pk) if batch else performance(v)
+                ) if account.kind == "broker" else None,
                 "cumulative_result": cumulative_result(v) if account.kind == "broker" else None,
             }
         )

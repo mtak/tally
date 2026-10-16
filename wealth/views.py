@@ -25,7 +25,7 @@ from .forms import (
     ImportForm,
     minor,
 )
-from .services import report, movement, previous_year_baseline, cumulative_result, broker_tax_covered, asset_mix, investment_history, maturity_calendar
+from .services import report, reports, movement, previous_year_baseline, cumulative_result, broker_tax_covered, asset_mix, investment_history, maturity_calendar
 from .importer import parse_overview, preflight_overview, import_overview
 from . import editor
 
@@ -56,7 +56,7 @@ def dashboard(request):
         "include_pension": request.GET.get("pension", "1") != "0",
         "net": request.GET.get("net", "1") != "0",
     }
-    current = report(selected, **flags) if selected else None
+    current = None
     chart = {}
     previous = None
     change = None
@@ -64,14 +64,26 @@ def dashboard(request):
     annual = {}
     allocation = []
     liquidity = []
-    if current:
-        history = [report(s, **flags) for s in snapshots if s.date <= selected.date]
-        annual = {}
-        for r in history:
-            annual[r["snapshot"].date.year] = r
+    if selected:
+        history_snapshots = [s for s in snapshots if s.date <= selected.date]
+        annual_snapshots = {}
+        for snapshot in history_snapshots:
+            annual_snapshots[snapshot.date.year] = snapshot
+        previous_snapshot = history_snapshots[-2] if len(history_snapshots) > 1 else None
+        targets = list(annual_snapshots.values())
+        for snapshot in (previous_snapshot, selected):
+            if snapshot and all(existing.pk != snapshot.pk for existing in targets):
+                targets.append(snapshot)
+        summaries = {
+            summary["snapshot"].pk: summary
+            for summary in reports(targets, performance_snapshots=(selected,), **flags)
+        }
+        current = summaries[selected.pk]
+        history = [summaries[snapshot.pk] for snapshot in annual_snapshots.values()]
+        annual = {summary["snapshot"].date.year: summary for summary in history}
         mix = [asset_mix(r) for r in annual.values()]
-        if len(history) > 1:
-            previous = history[-2]
+        if previous_snapshot:
+            previous = summaries[previous_snapshot.pk]
             if current["total"] is not None and previous["total"] is not None:
                 change = current["total"] - previous["total"]
         allocation = [
