@@ -1,4 +1,4 @@
-"""Importer for the documented example CSV layout. No source file is retained."""
+"""Importer for a documented example CSV layout. No source file is retained."""
 
 import csv, hashlib, io, re
 from datetime import datetime, date
@@ -98,7 +98,7 @@ def parse_overview(content):
             continue
         if label.strip() == "€ 12.345":
             when = date(2025, 8, 1)
-            warnings.append(_("Corrected the confirmed date header to 2025-08-01."))
+            warnings.append(_("Corrected the fictional sample amount header to 2025-08-01."))
         else:
             try:
                 when = datetime.strptime(label.strip(), "%d-%m-%Y").date()
@@ -171,7 +171,7 @@ def parse_overview(content):
         )
     )
     warnings.append(
-        _("Example Brokerage net deposits come from Example Brokerage Contributions. Net deposits for other investment accounts are unknown.")
+        _("Brokerage net deposits come from the designated contributions row. Net deposits for other investment accounts are unknown.")
     )
     return {
         "digest": hashlib.sha256(content).hexdigest(),
@@ -186,7 +186,7 @@ def parse_overview(content):
 
 # Every mapped account row identifies the supported layout, even if all its
 # historical cells are blank. Basis, tax and liquidity rows are optional.
-CONSULTANCY_CLOSED_ON = date(2025, 1, 1)
+CONSULTANCY_CLOSED_ON = date(2024, 1, 1)
 ENTITY_KINDS = [
     ("Private", "private"), ("Consultancy", "sole"),
     ("Holding", "company"), ("Operating Company", "company"),

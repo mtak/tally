@@ -40,7 +40,7 @@ make demo TALLY_INSTANCE_NAME=tally-task-name TALLY_DEV_PORT=8012 \
 
 Use the same values for later `make login`, `make logs` and `make down` commands.
 Only seed a disposable, empty instance with fictional demo data. Never point a task
-worktree at the real-data Compose project or its database. Do not reuse one Compose
+worktree at another portfolio's Compose project or database. Do not reuse one Compose
 project name from different worktrees: Compose could replace a running container
 with a bind mount from the other checkout.
 

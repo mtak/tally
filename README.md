@@ -31,9 +31,7 @@ When running instances simultaneously, choose distinct ports and cookie names:
 
     make demo TALLY_INSTANCE_NAME=tally-demo-2 TALLY_DEV_PORT=8002 TALLY_SESSION_COOKIE_NAME=tally_demo_2_session TALLY_CSRF_COOKIE_NAME=tally_demo_2_csrf
 
-Environment files are optional. For the existing real-data development instance:
-
-    make up TALLY_INSTANCE_NAME=tally-local TALLY_ENV_FILE=.env.local
+Environment files are optional. Use a separate ignored environment file for each local instance.
 
 `TALLY_DEV_PORT` can be supplied on the command line or in the environment file
 (default 8000). Command-line options override values from the environment file.
@@ -50,8 +48,8 @@ Other commands (add the same instance/environment options as used for startup):
 
 `make demo` runs startup followed by `make seed`. Seeding refuses a portfolio that
 already has accounts or valuations; it never clears existing data. Use `make up` to
-restart an existing instance. Use a separate Compose project for real data and never
-seed or import real history into a demo database. Development binds to localhost only.
+restart an existing instance. Use a separate Compose project for each portfolio and never
+mix personal data with fictional demo data. Development binds to localhost only.
 
 Without Make, the equivalent startup and seeding commands are:
 
@@ -179,13 +177,13 @@ optional. Every date needs a source total and a recognized balance. Differences 
 EUR 2 block import until corrected. Existing account classifications and date
 boundaries must be compatible; user settings are never overwritten. Duplicate
 dates/files are rejected atomically.
-The confirmed malformed header '€ 12.345' maps to 2025-08-01. Consultancy is closed
-from 2024-01-01, its first absent source date; adjust if you know the precise date.
+A fictional malformed amount header maps to a sample valuation date. Example business
+closure metadata uses a fictional date and can be configured for another dataset.
 The new joint account has no invented historical balance.
 
 CSV values are rounded displayed euros: small differences with source totals can
-remain. Example Brokerage Contributions supplies Example Brokerage net deposits as confirmed by the user, and remains
-a separate tax-basis value. Net deposits for other investment accounts remain unknown.
+remain. The designated brokerage contributions row supplies net deposits and remains
+separate from tax basis. Net deposits for other investment accounts remain unknown.
 Files are not retained.
 
     python manage.py import_overview /path/to/Overview.csv
@@ -202,8 +200,8 @@ optional quantities/prices are stored as decimal strings, avoiding SQLite REAL.
 - Bank AB = -company bank balances × AB rate.
 - Broker VPB = -(value - tax basis) × VPB rate.
 - Broker AB = -(value + VPB adjustment) × AB rate.
-- Example rates are 26.9% AB, 19% VPB. A loss produces a
-  positive VPB correction. These are assumptions, not statutory tax advice.
+- Example rates are 26.9% AB and 19% VPB. A loss produces a positive VPB
+  correction. These are assumptions, not statutory tax advice.
 - Imported historical tax corrections take precedence and remain unchanged when
   editing the associated balances.
 - Net wealth deducts mortgages and scenario tax. Allocation shows gross assets.
@@ -278,26 +276,16 @@ Keep demonstration and real portfolios in separate Compose projects/volumes.
 The development port and session/CSRF cookie names can be set through an ignored
 environment file, allowing both instances to run on localhost without login conflicts.
 
-The locally prepared real-data instance uses .env.local (mode 600), project tally-local
-and port 8001:
-
-    docker compose --env-file .env.local -p tally-local -f compose.yaml -f compose.dev.yaml up --build -d
-
-Open http://localhost:8001. Its login is separate from the demo. The configuration file
-contains a unique secret and must not be committed. To reproduce this setup elsewhere,
-create an ignored .env.local with TALLY_DEV_PORT=8001, TALLY_SESSION_COOKIE_NAME=tally_local_session,
-TALLY_CSRF_COOKIE_NAME=tally_local_csrf and a newly generated DJANGO_SECRET_KEY.
-Create your login and import your own CSV; do not seed demo data in this instance.
-
-This is a local development environment with DEBUG enabled and a loopback-only port,
-not the server's production deployment.
+Run separate Compose projects with their own ignored environment files, database volumes,
+ports, and cookie names when developing multiple portfolios. Keep personal data, secrets,
+and environment files out of Git. Development instances are not production deployments.
 
 ## Investment simplification (#13)
 
 Migration 0005 converts active, complete inception deposit/withdrawal counters to
 signed net deposits and backfills imported Example Brokerage Value observations from the
 Overview importer's Example Brokerage Contributions field (stored as basis). This mapping is specific
-to the confirmed Example Brokerage source; other tax bases and period-only flows are not treated
+to the designated brokerage source; other tax bases and period-only flows are not treated
 as inception net deposits. Legacy flow inputs, positions and tax corrections remain
 stored. Ordinary editing changes net deposits independently of tax basis. CSV export
 includes net_deposits_eur and preserves legacy columns for recovery.

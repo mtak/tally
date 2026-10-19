@@ -67,7 +67,7 @@
 
 ## Follow-up improvements
 
-- Review the real-data dashboard after import and splitting aggregate deposits.
+- Review the imported dashboard after splitting aggregate deposits.
 - Automated quote adapters, with source approval and immutable valuation history.
 - Versioned classification/ownership changes if historical reinterpretation is needed.
 - More flexible imports and a full portable JSON export.
@@ -117,7 +117,7 @@
 - Changes in account value minus changes in net deposits explain period investment
   gains in the wealth bridge when consecutive observations have matching dates.
   Unknown endpoints stay unexplained; no estimated return percentages are shown.
-- The user confirmed Example Brokerage Contributions is inception net deposits. Import and migration map
+- The example layout defines Example Brokerage Contributions as inception net deposits. Import and migration map
   that specific source field into net deposits independently of its tax-basis use.
   Active cumulative counters migrate to their signed difference. Period-only totals
   do not establish lifetime net deposits and remain archived, without invented totals.
@@ -334,7 +334,7 @@
 - One read-only preflight serves the web and command-line previews and is rerun
   inside the atomic apply transaction. It rejects duplicate files/dates and
   incompatible layouts or existing configuration before creating any records.
-- The supported Overview requires every mapped account label, including rows whose
+- The supported example CSV requires every mapped account label, including rows whose
   historical cells are blank. Renamed/missing account rows are incompatible. Basis,
   historical tax and source liquidity rows are optional; missing tax deductions
   retain the agreed zero override. Blanks never create account observations and
@@ -351,7 +351,7 @@
   require activity on that date. New consultancy defaults are checked too.
 - Safe start/closure dates, maturity, rate and notes remain untouched. Existing owner
   types and company parent relationships must match the supported structure;
-  import never repairs or overwrites them. This remains an Overview-only importer.
+  import never repairs or overwrites them. This remains an example-layout importer.
 
 ## Consistent financial validation (#28, #29)
 

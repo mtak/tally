@@ -2,11 +2,7 @@
 
 ## Start here
 
-- Product: Tally, a personal wealth tracker for the personal wealth tracker project.
-- Project repository: https://github.com/OWNER/REPOSITORY
-- Existing local checkout: /path/to/tally
-- ChatGPT project mirror:
-  /home/user/.codex/.chatgpt-projects/[local project id]
+- Product: Tally, a self-hosted personal wealth tracker.
 - Use this checkout for solo work. For concurrent tasks, create a separate Git
   worktree and branch; inspect status in the selected checkout and preserve user
   changes. See [docs/worktrees.md](docs/worktrees.md).
@@ -14,7 +10,7 @@
 - Generic production instructions are in DEPLOYMENT.md. Site-specific deployment
   scripts, configuration and operational records belong in a separate private
   infrastructure repository, not this application repository.
-- Follow repository contribution guidance. Ask only
+- Follow repository contribution guidance and preserve existing user changes. Ask only
   for missing information that materially affects the work. New external services
   and public-data providers must be discussed before integrating them.
 
@@ -33,15 +29,14 @@ toggleable. Important charts: annual stacked private/home/business/pension bars,
 liquidity, asset allocation and a change-explanation waterfall.
 
 All user-facing screens, validation and chart labels must support Dutch and English.
-Use locale-appropriate numbers/dates and EUR reporting. Account names remain user data.
-Desktop is primary; keep layouts usable on mobile. A separate instance is acceptable
-for the spouse's separate data. All authenticated users within one instance share
+Use locale-appropriate numbers/dates and EUR reporting. Account names are supplied by each portfolio owner.
+Desktop is primary; keep layouts usable on mobile. Separate instances can be used for separate portfolios. All authenticated users within one instance share
 the same portfolio; authentication does not provide tenant isolation.
 
 ## Agreed financial semantics
 
 - Only the joint private bank account is shared: enter the full balance, count 50%.
-  All other assets belong fully to the user.
+  Other assets belong to their recorded owner.
 - Account values are authoritative. Allocation uses account-level classification.
   Individual-position workflows are removed; existing position data remains archived.
 - Investment result = account value - net deposits since opening (all deposits minus
@@ -59,7 +54,7 @@ the same portfolio; authentication does not provide tenant isolation.
 - Home = full estimated property value plus negative mortgage balances.
   Report equity and LTMV. Gross asset-allocation charts exclude debts and tax corrections.
 - Pension is a separate attribute, not an exclusive investment asset class.
-- The closed consultancy was a sole proprietorship. Holding is owned directly, operating
+- The example consultancy is a sole proprietorship. Holding is owned directly, operating
   company through Holding; both companies are fully owned and form a fiscal unity.
   Count underlying accounts once, without also counting participation/intercompany values.
 - The simplified example liquidation assumptions are 26.9% AB and 19% VPB:
@@ -67,31 +62,26 @@ the same portfolio; authentication does not provide tenant isolation.
   broker VPB = -(broker value - tax basis/net contributions) * VPB;
   broker AB = -(broker value + VPB correction) * AB.
   Losses intentionally produce a positive VPB correction in this scenario.
-  These are user assumptions, not a promise of legally current tax rates.
+  These example assumptions are not a promise of legally current tax rates.
 - Preserve imported historical tax corrections. Changing balances does not automatically
   rewrite those corrections.
 
 ## History and privacy
 
-The example importer is verified using fictional fixtures.
-The malformed final header '€ 12.345' was explicitly confirmed as 2025-08-01.
-Its displayed whole-euro values can leave small rounding differences in totals.
-Recalculate derived liquidity breakdowns from recorded inputs.
-Missing historical joint account balances remain unknown.
-Historical cash flows and individual positions are unavailable.
+The importer supports a documented CSV layout and uses fictional fixtures. Keep source
+files, real financial values, and derived personal history out of the repository.
+Missing values remain unknown; do not invent historical balances or cash flows.
 
-The dedicated importer currently recognizes the agreed Overview layout. It preserves
+The dedicated importer recognizes the documented example CSV layout. It preserves
 historical values/adjustments, rejects duplicate files/dates and does not retain uploads.
-Consultancy closure is currently inferred as 2024-01-01 (first absent source date);
-a more precise closure date can be configured later.
-When splitting historical aggregate Example Deposit Provider into individual deposits, close the aggregate
+Example business closure metadata uses a sample date and can be configured for another dataset.
+When splitting an aggregate deposit account into individual deposits, close the aggregate
 on the first detailed date so both representations are not counted together.
 
 Do not commit real financial values, exports, databases, backups, credentials or .env.
 Use fictional fixtures and demo data. Do not copy private source data into documentation,
 screenshots, tests or CI logs. The project mirror's sources/ and synced files are read-only.
-Google is an accepted provider, R2 was mentioned as an optional future backup destination,
-and other cloud providers need discussion. No external data service is configured now.
+No external financial data service is configured. Discuss new providers before integration.
 
 ## Architecture and navigation
 
@@ -185,7 +175,7 @@ Check current CI rather than treating this historical result as current verifica
   reinterpret past reports. Add versioning if historical changes become a requirement.
 - Issue #13 supersedes #3. Migration 0005 converts active inception counters and
   backfills imported Example Brokerage Value from the Overview importer's Example Brokerage Contributions/basis field,
-  confirmed by the user as inception net deposits. Other tax bases and period-only
+  defined as inception net deposits for this example layout. Other tax bases and period-only
   totals do not imply inception flows. Old inputs remain stored; net deposits edit
   independently of tax basis. Historical tax corrections are never rewritten.
 - CSV export covers observations; a full SQLite backup is required for positions,
@@ -196,13 +186,8 @@ Check current CI rather than treating this historical result as current verifica
 ## Local development instances
 
 - Demo: Compose project tally-dev, http://localhost:8000, fictional data.
-- Real-data development: project tally-local, http://localhost:8001, using ignored
-  .env.local with a unique secret and distinct session/CSRF cookie names.
-- Restart the real-data instance with:
-      docker compose --env-file .env.local -p tally-local -f compose.yaml -f compose.dev.yaml up -d
-- Development uses fictional data. Never seed
-  this database or reset its volume. Inspect current state before importing again.
-- No production-server deployment is implied by this local real-data instance.
+- Additional local portfolios should use separate Compose projects, environment files,
+  ports, and cookie names. Keep environment files and databases out of Git.
 - Issue #54: `TALLY_AUTH_ENABLED=1` (default) requires portfolio login; `0` delegates
   access control entirely to an authenticating proxy with direct access blocked.
   Other values fail startup. Portfolio routes keep CSRF and existing validation;

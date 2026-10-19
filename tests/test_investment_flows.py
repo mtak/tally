@@ -104,7 +104,7 @@ def test_missing_value_rejects_counter(setup):
     assert not Valuation.objects.exists()
 
 
-def test_overview_import_uses_confirmed_example_brokerage_source_without_other_inference():
+def test_overview_import_uses_designated_brokerage_source_without_other_inference():
     from tests.test_tally import fixture_csv
     parsed = parse_overview(fixture_csv())
     import_overview(parsed)

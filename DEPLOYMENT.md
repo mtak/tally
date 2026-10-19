@@ -8,7 +8,7 @@ with values from your existing infrastructure.
 ## 1. Prerequisites
 
 - Docker Engine and the Docker Compose plugin on the server.
-- Git access to the private repository https://github.com/OWNER/REPOSITORY.
+- Git access to the project repository.
 - An existing Traefik instance and its external Docker network.
 - DNS for your chosen hostname pointing to the server (or private routing/VPN).
 - HTTPS certificates provided by Traefik and HTTP-to-HTTPS redirect configured there.

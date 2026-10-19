@@ -493,8 +493,8 @@ msgstr "Gebruik een CSV-export in UTF-8."
 msgid "The Overview header was not found."
 msgstr "De kop van het Overview-overzicht ontbreekt."
 
-msgid "Corrected the confirmed date header to 2025-08-01."
-msgstr "De bevestigde datumkop is gecorrigeerd naar 01-08-2025."
+msgid "Corrected the sample amount header to 2025-08-01."
+msgstr "De voorbeeldbedragkop is gecorrigeerd naar 01-08-2025."
 
 msgid "Invalid date header: "
 msgstr "Ongeldige datumkop: "
@@ -802,7 +802,7 @@ msgstr "Alleen gebruikt voor het liquidatiescenario. Los van de netto-inleg."
 msgid "Enter an account value before entering net deposits, interest or tax basis."
 msgstr "Vul een rekeningwaarde in voordat je netto-inleg, rente of fiscale grondslag invoert."
 
-msgid "Example Brokerage net deposits come from Example Brokerage Contributions. Net deposits for other investment accounts are unknown."
+msgid "Brokerage net deposits come from the designated contributions row. Net deposits for other investment accounts are unknown."
 msgstr "De netto-inleg bij Example Brokerage komt uit Example Brokerage Contributions. De netto-inleg voor andere beleggingsrekeningen is onbekend."
 
 msgid "Keep this account value to preserve its archived position data."

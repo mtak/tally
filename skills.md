@@ -55,7 +55,7 @@ historical adjustments to make a new view look complete.
 - Interest is a period amount with explicit start/end dates; the end equals valuation
   date. Legacy undated interest remains uncovered. Attribute it only for an exact
   interval match; never infer coverage from nearby observations.
-- Business liquidation adjustments follow the user's simplified assumptions, not
+- Business liquidation adjustments follow the documented example assumptions, not
   general tax advice or a claim about current law. Missing company-broker tax basis
   leaves broker deductions and net totals unknown unless both snapshot-level broker
   VPB and AB overrides are recorded. Preserve imported corrections when balances
@@ -125,9 +125,8 @@ historical adjustments to make a new view look complete.
   data in docs, screenshots, tests, or CI logs. The project mirror's `sources/` and
   synced files are read-only.
 - There is one shared portfolio per instance; authentication is not tenant isolation.
-  Keep real-data and demo instances in separate Compose projects and volumes. Never
-  seed, reset, or re-import into the existing real-data instance without an explicit
-  task and careful state inspection.
+  Keep portfolios in separate Compose projects and volumes. Use fictional data in
+  development and never seed a non-empty portfolio.
 - SQLite must stay on local persistent storage, not R2/NFS. Production routing,
   secrets, hostnames, certificates, and operator records belong in the separate
   infrastructure repository and `DEPLOYMENT.md` workflow, not app-specific config
@@ -144,9 +143,9 @@ UI changes also need relevant Playwright MCP browser validation. Deployment-inpu
 changes need Docker build checks and the production smoke workflow in
 `docs/verification.md`.
 Documentation-only edits do not need unrelated test reruns. Check current CI with
-`gh run list --repo OWNER/REPOSITORY --limit 5`; old green runs are historical evidence only.
+`gh run list --repo example/tally --limit 5`; old green runs are historical evidence only.
 
 Do not reset Docker volumes or credentials as a troubleshooting shortcut. Use
 `make help`, specify the same `TALLY_INSTANCE_NAME` for each operation, and seed demo
 data only into an empty disposable instance. Production deployment is not implied by
-local real-data development.
+local development.

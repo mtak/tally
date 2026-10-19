@@ -13,8 +13,8 @@ def backfill_net_deposits(apps, schema_editor):
         elif (value.snapshot.imported and value.account.name == "Example Brokerage Value"
                 and value.account.entity.name == "Holding" and value.account.entity.kind == "company"
                 and value.flow_mode == "period" and value.inflow_minor is None and value.outflow_minor is None):
-            # The Overview importer stored Example Brokerage Contributions here. The user has confirmed
-            # that this source row is inception net deposits. Do not generalize
+            # The example importer stores its brokerage contributions row here. The documented
+            # layout defines that row as inception net deposits. Do not generalize
             # this mapping to other tax bases or override explicit flow inputs.
             net = value.basis_minor
         if net is not None:
