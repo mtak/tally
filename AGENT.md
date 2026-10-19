@@ -6,7 +6,9 @@
 - Use this checkout for solo work. For concurrent tasks, create a separate Git
   worktree and branch; inspect status in the selected checkout and preserve user
   changes. See [docs/worktrees.md](docs/worktrees.md).
-- Read README.md, docs/decisions.md, and relevant code before changing behavior.
+- Read README.md, docs/product-spec.md, docs/decisions.md, and relevant code before
+  changing behavior. The product spec summarizes current user-visible requirements;
+  the decision log records detailed edge cases and rationale.
 - Generic production instructions are in DEPLOYMENT.md. Site-specific deployment
   scripts, configuration and operational records belong in a separate private
   infrastructure repository, not this application repository.

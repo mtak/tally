@@ -1,8 +1,9 @@
 # Tally project working guide
 
 This file is a compact working guide for an agent making changes in Tally. Read
-`AGENT.md` for the full product handoff and `docs/decisions.md` for settled design
-decisions; those files remain authoritative when this summary is incomplete.
+`AGENT.md` for the full product handoff, `docs/product-spec.md` for the current
+product contract, and `docs/decisions.md` for detailed design decisions; those files
+remain authoritative when this summary is incomplete.
 
 ## What this project has been doing
 
@@ -20,7 +21,8 @@ historical adjustments to make a new view look complete.
 
 ## Before changing code
 
-1. Read `AGENT.md`, `README.md`, and relevant sections of `docs/decisions.md`.
+1. Read `AGENT.md`, `README.md`, `docs/product-spec.md`, and relevant sections of
+   `docs/decisions.md`.
 2. Inspect `git status --short` and preserve existing user changes and untracked files.
 3. Trace the behavior through the calculation/service layer, form or importer,
    template, translations, and tests as applicable. Keep financial rules out of

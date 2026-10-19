@@ -1,5 +1,9 @@
 # Product and architecture decisions
 
+The current product contract is summarized in [`product-spec.md`](product-spec.md).
+This log records detailed behavior and rationale where implementation edge cases
+need more precision.
+
 - One self-hosted portfolio per instance. Dutch and English, EUR reporting.
 - English and dark mode are the first-visit defaults, independent of browser language
   and OS color preference. Explicit language cookies and saved theme choices take
