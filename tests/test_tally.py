@@ -206,7 +206,7 @@ def test_sole_proprietor_is_not_box_two(snap):
 
 def test_account_return_uses_flows_not_trades(account, snap):
     Valuation.objects.create(account=account, snapshot=snap, amount_minor=10000000, net_deposits_minor=10000000)
-    s = Snapshot.objects.create(date=date(2025, 8, 1), complete=True)
+    s = Snapshot.objects.create(date=date(2026, 8, 1), complete=True)
     v = Valuation.objects.create(
         account=account,
         snapshot=s,
@@ -993,9 +993,9 @@ def test_maturities_unknown_overdue_zero_and_missing_stay_separate(owner, snap):
 def test_maturities_as_of_carries_published_values_and_excludes_replaced_claims(owner, snap):
     from wealth.services import maturity_calendar
     aggregate = Account.objects.create(name="Historical aggregate", entity=owner, kind="claim",
-        closed_on=date(2026, 2, 1), matures_on=date(2025, 8, 1))
+        closed_on=date(2026, 2, 1), matures_on=date(2026, 8, 1))
     replacement = Account.objects.create(name="Detailed deposit", entity=owner, kind="claim",
-        started_on=date(2026, 2, 1), matures_on=date(2025, 8, 1))
+        started_on=date(2026, 2, 1), matures_on=date(2026, 8, 1))
     carried = Account.objects.create(name="Carried loan", entity=owner, kind="claim",
         matures_on=date(2026, 5, 1))
     Valuation.objects.create(snapshot=snap, account=aggregate, amount_minor=900000)
@@ -1038,7 +1038,7 @@ def test_maturity_view_localized_and_read_only(logged, owner, snap, settings, la
     assert title in html and amount in html and quarter in html
     assert 'tabindex="0"' in html and 'scope="col"' in html
     assert 'Fictional &lt;claim&gt;' in html and '\\u003Cclaim\\u003E' in html
-    assert logged.get("/maturities/", {"at": draft.pk}).context["selected"] == published
+    assert logged.get("/maturities/", {"at": draft.pk}).context["selected"] == snap
     assert Client().get("/maturities/").status_code == 302
     assert list(Valuation.objects.values()) == before[0]
     assert list(TaxAdjustment.objects.values()) == before[1]
