@@ -47,4 +47,4 @@ def test_blank_name_preserves_default_ui(settings, language, label, name):
 def test_instance_name_trims_surrounding_whitespace(settings):
     settings.TALLY_INSTANCE_NAME = "  Example portfolio  "
     response = Client().get("/login/")
-    assert "<title>Tally · Example User A&#x27;s portfolio</title>" in response.content.decode()
+    assert "<title>Tally · Example portfolio</title>" in response.content.decode()

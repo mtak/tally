@@ -75,7 +75,7 @@ def test_reused_metadata_conflicts(field, value):
 def test_safe_customizations_and_lifecycle_boundaries_preserved():
     owner = Entity.objects.create(name='Private', kind='private')
     account = Account.objects.create(name='Example Bank Private Current', entity=owner,
-        started_on=date(2025, 1, 1), closed_on=date(2026, 8, 2),
+        started_on=date(2024, 1, 1), closed_on=date(2026, 8, 2),
         matures_on=date(2030, 1, 1), rate_bps=123, notes='Keep this')
     before = Account.objects.values().get(pk=account.pk)
     assert preflight_overview(parse_overview(fixture_csv()))['compatible']
@@ -116,7 +116,7 @@ def test_rounding_tolerance_zero_blanks_and_optional_rows():
     assert checked['observations'][0]['difference'] == -200
     assert checked['observations'][0]['balance_count'] == 2
     import_overview(checked)
-    assert Valuation.objects.get(account__name='Example Bank Private Current', snapshot__date=date(2025, 1, 1)).amount_minor == 0
+    assert Valuation.objects.get(account__name='Example Bank Private Current', snapshot__date=date(2024, 1, 1)).amount_minor == 0
     assert not Valuation.objects.filter(account__name='Example Deposit Provider').exists()
 
 
